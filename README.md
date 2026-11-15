@@ -90,6 +90,7 @@ Straight about where this stands (measured, not assumed):
 | `units.kml` generated from the live feed (`:8080`) | **Built and confirmed live on ArcGIS Earth (2026-11-14).** Pipeline verified end to end (fake radio → bridge → `units_kml.py` → correct `units.kml`), then three named units served appeared and moved in ArcGIS Earth with nothing installed on the PC (screenshot above). |
 | End-to-end with a live transmitting unit | **Proven live, 2026-11-15.** A real unit (ID `9076803`) keyed up and landed on ArcGIS Earth in Bryceville, FL — read off the radio, served over the LAN, consumed by a PC that had only a KML file. |
 | Whole stack on a travel router instead of a Pi | **Proven live, 2026-11-15.** The bridge and the KML server both run on a **GL-MT6000** (OpenWrt); the router reads the radio over USB and serves the live unit to the LAN. |
+| Comes back on its own after a power cut (router) | **Proven live, 2026-11-15.** Installed as OpenWrt `procd` boot services (`openwrt/`); a cold power-pull brought both services back with new PIDs and the unit reappeared on the map, nothing touched by hand. |
 
 ## Also proven on a travel router
 
