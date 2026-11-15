@@ -38,11 +38,11 @@ admin_token.txt beside this file.
 import re, time, math, json, socket, threading, sys, argparse
 from collections import deque
 from pathlib import Path
-import os, sqlite3
+import os, sqlite3, struct, zipfile
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-VERSION = "1.8"
+VERSION = "1.9"
 
 # ---- where we read from / serve to ----
 BRIDGE_HOST = "127.0.0.1"     # the bridge's NMEA feed (same box)
@@ -58,10 +58,74 @@ ADMIN_TOKEN_DEFAULT = "lookout"   # shared token for the Alias Manager; override
 ALIASES_PATH  = Path(__file__).with_name("aliases.json")   # unit id -> name, read live every refresh
 LOG_DIR     = Path(__file__).with_name("logs")   # daily track CSVs land here
 
-# ---------- offline basemap: serve map tiles straight out of an MBTiles file ----------
-MBTILES_PATH = os.environ.get("LOOKOUT_MBTILES", str(Path(__file__).with_name("basemap.mbtiles")))
+# ---------- offline basemap: serve tiles out of an MBTiles file OR an Esri .tpkx ----------
+# .tpkx is Esri Compact Cache V2 (exactly what mb2tpkx writes), so this serves the SAME tile
+# packages ArcGIS Earth uses - no conversion. The backend is picked by file extension.
+def _default_basemap():
+    for name in ("basemap.tpkx", "basemap.mbtiles"):   # lexists: a symlink counts even before
+        p = str(Path(__file__).with_name(name))        # its SSD target is mounted (cold boot)
+        if os.path.lexists(p):
+            return p
+    return str(Path(__file__).with_name("basemap.mbtiles"))
+
+MBTILES_PATH = os.environ.get("LOOKOUT_MBTILES") or _default_basemap()
 _ASSET_DIR   = Path(__file__).resolve().parent
 _meta_cache  = {}
+_tpkx_reader = None
+_tpkx_lock   = threading.Lock()
+
+def _is_tpkx():
+    return MBTILES_PATH.lower().endswith(".tpkx")
+
+class _Tpkx:
+    """Read tiles straight out of an Esri Compact Cache V2 .tpkx by direct seek (thread-safe)."""
+    def __init__(self, path):
+        self.path = path; self._tl = threading.local(); self._dataoff = {}
+        z = zipfile.ZipFile(path)
+        self._hdroff = {zi.filename: zi.header_offset for zi in z.infolist() if zi.filename.endswith(".bundle")}
+        root = json.loads(z.read("root.json")); item = json.loads(z.read("iteminfo.json"))
+        lods = root["tileInfo"]["lods"]
+        self.minzoom = int(root.get("minLOD", lods[0]["level"]))
+        self.maxzoom = int(root.get("maxLOD", lods[-1]["level"]))
+        e = item["extent"]; self.bounds = [e["xmin"], e["ymin"], e["xmax"], e["ymax"]]
+        z.close()
+    def _fh(self):
+        f = getattr(self._tl, "f", None)
+        if f is None:
+            f = self._tl.f = open(self.path, "rb")
+        return f
+    def _base(self, name):
+        off = self._dataoff.get(name)
+        if off is None:
+            f = self._fh(); ho = self._hdroff[name]
+            f.seek(ho + 26); n, m = struct.unpack("<HH", f.read(4))   # local header: name + extra len
+            off = self._dataoff[name] = ho + 30 + n + m
+        return off
+    def tile(self, z, x, y):
+        rb = (y // 128) * 128; cb = (x // 128) * 128
+        name = "tile/L%02d/R%04xC%04x.bundle" % (z, rb, cb)
+        if name not in self._hdroff:
+            return None
+        base = self._base(name); f = self._fh()
+        f.seek(base + 64 + ((y - rb) * 128 + (x - cb)) * 8)
+        v = int.from_bytes(f.read(8), "little"); off = v & ((1 << 40) - 1); sz = v >> 40
+        if sz == 0:
+            return None
+        f.seek(base + off); return f.read(sz)
+    def meta(self):
+        return {"has_tiles": True, "minzoom": self.minzoom, "maxzoom": self.maxzoom, "bounds": self.bounds}
+
+def _get_tpkx():
+    global _tpkx_reader
+    if _tpkx_reader is not None:
+        return _tpkx_reader
+    with _tpkx_lock:
+        if _tpkx_reader is None:
+            try:
+                _tpkx_reader = _Tpkx(MBTILES_PATH)   # fails if the SSD isn't mounted yet - retry later
+            except Exception:
+                return None
+    return _tpkx_reader
 
 def _mb_conn():
     return sqlite3.connect("file:%s?mode=ro" % MBTILES_PATH, uri=True, timeout=5)
@@ -69,7 +133,14 @@ def _mb_conn():
 def _mbtiles_meta():
     if _meta_cache:
         return _meta_cache
-    m = {"has_tiles": False, "minzoom": 0, "maxzoom": 20, "bounds": [-180.0, -85.0, 180.0, 85.0]}
+    blank = {"has_tiles": False, "minzoom": 0, "maxzoom": 20, "bounds": [-180.0, -85.0, 180.0, 85.0]}
+    if _is_tpkx():
+        r = _get_tpkx()
+        if r:
+            _meta_cache.update(r.meta())
+            return _meta_cache
+        return blank                      # not mounted yet - keep retrying, don't cache
+    m = dict(blank)
     try:
         c = _mb_conn()
         md = dict(c.execute("select name, value from metadata").fetchall())
@@ -86,7 +157,10 @@ def _mbtiles_meta():
     return m
 
 def _get_tile(z, x, y):
-    # Leaflet asks XYZ (y=0 at north); MBTiles stores TMS (row 0 at south) -> flip.
+    if _is_tpkx():
+        r = _get_tpkx()
+        return r.tile(z, x, y) if r else None
+    # MBTiles: Leaflet asks XYZ (y=0 at north); MBTiles stores TMS (row 0 at south) -> flip.
     try:
         c = _mb_conn()
         r = c.execute("select tile_data from tiles where zoom_level=? and tile_column=? and tile_row=?",
@@ -424,8 +498,9 @@ class _H(BaseHTTPRequestHandler):
             data = _get_tile(z, x, y)
             if data is None:
                 self.send_response(204); self.end_headers(); return
+            ctype = "image/png" if data[:4] == b"\x89PNG" else "image/jpeg"   # .tpkx is MIXED
             self.send_response(200)
-            self.send_header("Content-Type", "image/jpeg")
+            self.send_header("Content-Type", ctype)
             self.send_header("Content-Length", str(len(data)))
             self.send_header("Cache-Control", "max-age=86400")
             self.end_headers()

@@ -42,7 +42,8 @@ The browser loads `map.html`, which starts a Leaflet map, adds a raster tile lay
 - **Leaflet 1.9.4 is bundled on the router** (`/leaflet.js`, `/leaflet.css`) and served locally, so the page needs no internet and no CDN.
 - **`/meta.json`** hands the page the basemap's `bounds`, `minzoom`, `maxzoom` so the map fits the right area and zoom range automatically.
 - **Graceful with no basemap:** if `basemap.mbtiles` is missing, tiles 404 and the units simply draw on a blank background (older behavior).
-- **Config:** `MBTILES_PATH` defaults to `basemap.mbtiles` beside `units_kml.py` (i.e. `/root/basemap.mbtiles` on the router); override with the `LOOKOUT_MBTILES` environment variable.
+- **Config:** the basemap defaults to `basemap.tpkx` then `basemap.mbtiles` beside `units_kml.py` (i.e. `/root/…` on the router); override with the `LOOKOUT_MBTILES` environment variable.
+- **TPKX is supported too (v1.9).** The server reads tiles straight out of an Esri **`.tpkx`** (Compact Cache V2 — exactly what `mb2tpkx` writes), so it serves the **same tile packages ArcGIS Earth uses, with no conversion**. Backend chosen by extension. Bundle path `tile/L{zz}/R{row:hex}C{col:hex}.bundle`; 8-byte index record = offset (low 40 bits) + size (high bits); row-major; **no TMS flip** (TPKX stores rows north-down already); MIXED JPEG/PNG sniffed per tile. Direct-seek reader, thread-safe, reboot-safe. To use one: put a `.tpkx` on the SSD and symlink `/root/basemap.tpkx` to it.
 
 ## 4. How to reproduce it (deploy to a router)
 
