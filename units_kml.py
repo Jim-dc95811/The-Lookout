@@ -40,7 +40,7 @@ from pathlib import Path
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-VERSION = "1.3"
+VERSION = "1.4"
 
 # ---- where we read from / serve to ----
 BRIDGE_HOST = "127.0.0.1"     # the bridge's NMEA feed (same box)
@@ -266,8 +266,11 @@ def build_kml():
 # ---------- HTTP server ----------
 class _H(BaseHTTPRequestHandler):
     def do_GET(self):
-        if urlparse(self.path).path.rstrip("/") == "/admin/aliases":
+        path = urlparse(self.path).path.rstrip("/")
+        if path == "/admin/aliases":
             return self._admin(read=True)
+        if path in ("/open.kml", "/open", "/live", "/live.kml"):
+            return self._serve_opener()   # one URL any device opens to get the LIVE, refreshing map
         body = build_kml()
         self.send_response(200)
         self.send_header("Content-Type", "application/vnd.google-earth.kml+xml")
@@ -275,6 +278,24 @@ class _H(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
         self.end_headers()
         self.wfile.write(body)
+
+    def _serve_opener(self):
+        # A NetworkLink opener that points back at THIS box (whatever address the device used
+        # to reach it, via the Host header), so a phone just opens http://<box>:8080/open.kml
+        # in ArcGIS Earth and the units refresh on their own - no file to sideload, no IP to edit.
+        host = self.headers.get("Host") or ("%s:%d" % (SERVE_HOST, SERVE_PORT))
+        kml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+               '<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>The Lookout - Live Units</name>'
+               '<NetworkLink><name>Live units</name><Link>'
+               '<href>http://%s/units.kml</href>'
+               '<refreshMode>onInterval</refreshMode><refreshInterval>3</refreshInterval>'
+               '</Link></NetworkLink></Document></kml>' % host).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/vnd.google-earth.kml+xml")
+        self.send_header("Content-Disposition", 'attachment; filename="Live_Units.kml"')
+        self.send_header("Content-Length", str(len(kml)))
+        self.end_headers()
+        self.wfile.write(kml)
 
     def do_POST(self):
         if urlparse(self.path).path.rstrip("/") == "/admin/aliases":
