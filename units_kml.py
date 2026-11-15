@@ -218,19 +218,20 @@ def build_kml():
         return ('<?xml version="1.0" encoding="UTF-8"?>\n'
                 '<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Live units</name>'
                 + "".join(marks) + '</Document></kml>').encode("utf-8")
-    # --- alarm on: the red style is INLINE on the banner placemark only, so it never
-    #     bleeds onto the unit pins (which stay their normal yellow) and leaves no cached
-    #     colour behind when the link recovers. Units are flagged by the "⚠ " label prefix. ---
+    # --- alarm on: a document-level red style drives the banner AND (by ArcGIS Earth's
+    #     own behaviour) tints the unit pins red. AE keeps the pins red until the layer is
+    #     reloaded - kept ON PURPOSE as a "lingering alarm": a recovered map that is still
+    #     red tells the operator the link flickered. Reload the layer to clear it. ---
+    style = ('<Style id="alarm"><LabelStyle><color>ff0000ff</color><scale>1.4</scale></LabelStyle>'
+             '<IconStyle><color>ff0000ff</color><scale>1.3</scale></IconStyle></Style>')
     anchor = (sum(lats) / len(lats), sum(lons) / len(lons)) if lats else ALARM_ANCHOR
     banner = ""
     if anchor:
-        banner = (f'<Placemark><name>⚠ RADIO LINK DOWN — {why}</name>'
-                  f'<Style><IconStyle><color>ff0000ff</color><scale>1.3</scale></IconStyle>'
-                  f'<LabelStyle><color>ff0000ff</color><scale>1.4</scale></LabelStyle></Style>'
+        banner = (f'<Placemark><name>⚠ RADIO LINK DOWN — {why}</name><styleUrl>#alarm</styleUrl>'
                   f'<Point><coordinates>{anchor[1]:.6f},{anchor[0]:.6f},0</coordinates></Point></Placemark>')
     return ('<?xml version="1.0" encoding="UTF-8"?>\n'
             '<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>⚠ RADIO LINK DOWN</name>'
-            + banner + "".join(marks) + '</Document></kml>').encode("utf-8")
+            + style + banner + "".join(marks) + '</Document></kml>').encode("utf-8")
 
 # ---------- HTTP server ----------
 class _H(BaseHTTPRequestHandler):
