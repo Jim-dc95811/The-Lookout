@@ -9,24 +9,34 @@ the units move on their own - no Python, no install on the viewing PC.
 It reads the BRIDGE's feed, not the radio, so it never opens a second connection to
 the radio and it works with any NMEA source the bridge is serving.
 
+v1.1 (2026-11-15): writes a daily CSV track log of every fix (logs/track_YYYY-MM-DD.csv)
+so there is a persistent record after an incident. Each row is time-stamped from the
+GPS fix itself when the radio also sends $..RMC (which carries the date) - that stays
+accurate even when the box is offline and its own clock has drifted; it falls back to
+the box clock, flagged, when no GPS date has been seen. The live map is unchanged.
+
 Run (normal):  python3 units_kml.py              # reads the bridge on 127.0.0.1:10110
 Run (demo):    python3 units_kml.py --demo        # 3 moving synthetic units, no radio
 Stop:          Ctrl+C
-Serves:        http://<this-pi>:8080/units.kml
+Serves:        http://<this-box>:8080/units.kml
 Optional:      aliases.json beside this file = {"7101": "Engine 7", ...}
+Writes:        logs/track_YYYY-MM-DD.csv  (one row per real fix)
 """
 import re, time, math, json, socket, threading, sys, argparse
 from pathlib import Path
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
+VERSION = "1.1"
+
 # ---- where we read from / serve to ----
-BRIDGE_HOST = "127.0.0.1"     # the bridge's NMEA feed (same Pi)
+BRIDGE_HOST = "127.0.0.1"     # the bridge's NMEA feed (same box)
 BRIDGE_PORT = 10110
 SERVE_HOST  = "0.0.0.0"       # serve units.kml to the whole LAN
 SERVE_PORT  = 8080
 STALE_S     = 90             # a unit with no update this long is labelled "stale"
 EXPIRE_S    = 7200           # ...and dropped from the map after this long (0 = never)
 RECONNECT_S = 4
+LOG_DIR     = Path(__file__).with_name("logs")   # daily track CSVs land here
 
 # ---------- NMEA parser: lifted verbatim from the P25 GPS Tracker (p25_core.py) ----------
 _SENTENCE = re.compile(r"\$[^*$\r\n]{2,88}\*[0-9A-Fa-f]{2}")
@@ -61,6 +71,10 @@ def _valid_coord(lat, lon):
         return False
     return True
 
+# Last date seen in a $..RMC sentence (DDMMYY). GGA carries no date, so this is the
+# only GPS-sourced date; it lets the track log stay accurate with a drifted box clock.
+_last_gps_date = None
+
 class Report:
     __slots__ = ("unit", "lat", "lon", "alt", "sats", "utc")
     def __init__(self, unit, lat, lon, alt, sats, utc):
@@ -72,6 +86,7 @@ class StreamParser:
         self._buf = bytearray()
         self._pending = None
     def feed(self, data: bytes):
+        global _last_gps_date
         out = []
         self._buf.extend(data)
         text = self._buf.decode("latin-1")
@@ -93,6 +108,10 @@ class StreamParser:
                     p = self._pending
                     out.append(Report(f[1], p["lat"], p["lon"], p["alt"], p["sats"], p["utc"]))
                     self._pending = None
+            elif tag.endswith("RMC") and len(f) >= 10:
+                d = f[9]                        # DDMMYY; keep for offline-accurate log timestamps
+                if len(d) == 6 and d.isdigit():
+                    _last_gps_date = d
         if last_end:
             del self._buf[:last_end]
         if len(self._buf) > 8192:
@@ -107,6 +126,30 @@ def _put(rep):
     with _lock:
         _units[str(rep.unit)] = {"lat": rep.lat, "lon": rep.lon, "alt": rep.alt,
                                  "sats": rep.sats, "utc": rep.utc, "seen": time.monotonic()}
+
+# ---------- daily track log ----------
+def _log_fix(rep):
+    """Append one row per real fix. Never let a logging error break the live feed."""
+    hhmmss = (rep.utc or "")[:6]
+    if _last_gps_date and len(hhmmss) == 6 and hhmmss.isdigit():
+        yy, mm, dd = _last_gps_date[4:6], _last_gps_date[2:4], _last_gps_date[0:2]
+        date = f"20{yy}-{mm}-{dd}"
+        iso  = f"{date}T{hhmmss[0:2]}:{hhmmss[2:4]}:{hhmmss[4:6]}Z"
+        src  = "gps"
+    else:
+        date = time.strftime("%Y-%m-%d")
+        iso  = time.strftime("%Y-%m-%dT%H:%M:%S")
+        src  = "box"                            # box clock - may be wrong if offline with no RTC
+    try:
+        LOG_DIR.mkdir(exist_ok=True)
+        path = LOG_DIR / f"track_{date}.csv"
+        new = not path.exists()
+        with path.open("a", encoding="utf-8") as fh:
+            if new:
+                fh.write("time,time_src,gps_utc,unit,lat,lon,alt,sats\n")
+            fh.write(f"{iso},{src},{rep.utc},{rep.unit},{rep.lat:.6f},{rep.lon:.6f},{rep.alt},{rep.sats}\n")
+    except OSError:
+        pass
 
 def _aliases():
     try:
@@ -174,6 +217,7 @@ def read_bridge():
                     break
                 for rep in sp.feed(data):
                     _put(rep)
+                    _log_fix(rep)
                     print(f"[units] {rep.unit}  {rep.lat:.5f},{rep.lon:.5f}", flush=True)
         except OSError as e:
             print(f"[units] bridge connection problem: {e} - retrying", flush=True)
@@ -203,7 +247,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="The Lookout - live units KML server")
     ap.add_argument("--demo", action="store_true", help="serve moving synthetic units, no radio")
     args = ap.parse_args()
-    print("=== The Lookout - live units KML server ===", flush=True)
+    print(f"=== The Lookout - live units KML server  v{VERSION} ===", flush=True)
     print(f"serving units.kml on http://{SERVE_HOST}:{SERVE_PORT}/units.kml  (Ctrl+C to stop)", flush=True)
     threading.Thread(target=(demo_feed if args.demo else read_bridge), daemon=True).start()
     try:
