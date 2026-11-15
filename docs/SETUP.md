@@ -118,8 +118,45 @@ Good result: you see **`[radio] connected + subscribed`** and steady `alive` hea
 
 - **Watch it live, anytime:** `journalctl -u bk-bridge -f` (Ctrl+C stops *watching*, not the service).
 - **Any device reads it** at **`<pi-ip>:10110`** — a phone/tablet NMEA app, a chart plotter, or a Windows tracker.
-- **ArcGIS Earth** opens the Pi's `units.kml` as a NetworkLink and pulls it on a timer — no install on the PC. (See the project roadmap: the live `units.kml` generator is the active build; the KML-pull delivery is already proven.)
+- **ArcGIS Earth** opens the Pi's `units.kml` as a NetworkLink and pulls it on a timer — no install on the PC (see the next section).
 - **Control the service:** `sudo systemctl restart|stop|status bk-bridge`.
+
+---
+
+## The live units layer in ArcGIS Earth
+
+`bk_bridge.py` puts clean NMEA on the network. `units_kml.py` turns that into a moving map layer: it reads the bridge's feed, tracks the latest position per unit, and serves a live `units.kml` on port **8080** that any ArcGIS Earth pulls on a timer.
+
+**1. Copy it to the Pi** (from your PC's Command Prompt):
+
+```
+scp units_kml.py <username>@<pi-ip>:~
+```
+
+**2. See it work right now — no field unit needed.** On the Pi:
+
+```
+python3 units_kml.py --demo
+```
+
+That serves three synthetic units walking in circles. On a viewing PC, open **`Live_Units.kml`** in ArcGIS Earth (edit `PI-IP` in that file to your Pi's address first). Within a few seconds three named units appear and crawl across the map on their own — that's the whole pipeline proven on a real screen.
+
+**3. Run it for real.** Stop the demo (Ctrl+C) and run it plain — it now reads live positions from the bridge:
+
+```
+python3 units_kml.py
+```
+
+**4. Make it a boot service** (so it comes up with the bridge):
+
+```
+sudo cp units-kml.service /etc/systemd/system/
+sudo systemctl enable --now units-kml
+```
+
+**Name your units:** drop an `aliases.json` next to `units_kml.py` mapping IDs to names, e.g. `{"7101": "Engine 7", "7102": "Tanker 2"}`. Unknown units show their raw ID.
+
+**How refresh is set:** `Live_Units.kml` carries `<refreshInterval>3</refreshInterval>` — ArcGIS Earth re-pulls every 3 seconds. Change that number to pull faster or slower.
 
 ## Troubleshooting
 

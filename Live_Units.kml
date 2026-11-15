@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The Lookout - open this ONCE in ArcGIS Earth. It pulls the live units from the
+     Pi every few seconds on its own. Replace PI-IP below with your Pi's address. -->
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>The Lookout - Live Units</name>
+    <NetworkLink>
+      <name>Live units</name>
+      <Link>
+        <href>http://PI-IP:8080/units.kml</href>
+        <refreshMode>onInterval</refreshMode>
+        <refreshInterval>3</refreshInterval>
+      </Link>
+    </NetworkLink>
+  </Document>
+</kml>
