@@ -9,24 +9,43 @@ the units move on their own - no Python, no install on the viewing PC.
 It reads the BRIDGE's feed, not the radio, so it never opens a second connection to
 the radio and it works with any NMEA source the bridge is serving.
 
+v1.1 (2026-11-15): writes a daily CSV track log of every fix (logs/track_YYYY-MM-DD.csv)
+so there is a persistent record after an incident. Each row is time-stamped from the
+GPS fix itself when the radio also sends $..RMC (which carries the date) - that stays
+accurate even when the box is offline and its own clock has drifted; it falls back to
+the box clock, flagged, when no GPS date has been seen. The live map is unchanged.
+
+v1.2 (2026-11-15): RADIO LINK ALARM. The bridge announces its radio link state
+($PLKT,LINK,UP/DOWN). The instant the radio is unplugged (DOWN), or the bridge itself
+goes unreachable, a big red "RADIO LINK DOWN" marker drops on the map and every unit is
+flagged - no 90-second wait for units to go stale. "Nobody is transmitting" (link UP,
+units quiet) is NOT an alarm, which only the bridge can tell apart. When the link is
+healthy the units.kml is byte-for-byte identical to v1.1.
+
 Run (normal):  python3 units_kml.py              # reads the bridge on 127.0.0.1:10110
 Run (demo):    python3 units_kml.py --demo        # 3 moving synthetic units, no radio
 Stop:          Ctrl+C
-Serves:        http://<this-pi>:8080/units.kml
+Serves:        http://<this-box>:8080/units.kml
 Optional:      aliases.json beside this file = {"7101": "Engine 7", ...}
+Writes:        logs/track_YYYY-MM-DD.csv  (one row per real fix)
 """
 import re, time, math, json, socket, threading, sys, argparse
 from pathlib import Path
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
+VERSION = "1.2"
+
 # ---- where we read from / serve to ----
-BRIDGE_HOST = "127.0.0.1"     # the bridge's NMEA feed (same Pi)
+BRIDGE_HOST = "127.0.0.1"     # the bridge's NMEA feed (same box)
 BRIDGE_PORT = 10110
 SERVE_HOST  = "0.0.0.0"       # serve units.kml to the whole LAN
 SERVE_PORT  = 8080
 STALE_S     = 90             # a unit with no update this long is labelled "stale"
 EXPIRE_S    = 7200           # ...and dropped from the map after this long (0 = never)
 RECONNECT_S = 4
+ALARM_AFTER_S = 15          # no LINK status heard from the bridge this long -> treat as down
+ALARM_ANCHOR  = None        # (lat, lon) to pin the alarm when no units are known; None = skip
+LOG_DIR     = Path(__file__).with_name("logs")   # daily track CSVs land here
 
 # ---------- NMEA parser: lifted verbatim from the P25 GPS Tracker (p25_core.py) ----------
 _SENTENCE = re.compile(r"\$[^*$\r\n]{2,88}\*[0-9A-Fa-f]{2}")
@@ -61,6 +80,14 @@ def _valid_coord(lat, lon):
         return False
     return True
 
+# Last date seen in a $..RMC sentence (DDMMYY). GGA carries no date, so this is the
+# only GPS-sourced date; it lets the track log stay accurate with a drifted box clock.
+_last_gps_date = None
+
+# Radio link state, learned from the bridge's $PLKT,LINK,* heartbeat.
+_link_state = "unknown"       # "up" / "down" / "unknown"
+_link_seen  = 0.0             # monotonic time of the last LINK status heard
+
 class Report:
     __slots__ = ("unit", "lat", "lon", "alt", "sats", "utc")
     def __init__(self, unit, lat, lon, alt, sats, utc):
@@ -72,6 +99,7 @@ class StreamParser:
         self._buf = bytearray()
         self._pending = None
     def feed(self, data: bytes):
+        global _last_gps_date, _link_state, _link_seen
         out = []
         self._buf.extend(data)
         text = self._buf.decode("latin-1")
@@ -93,6 +121,13 @@ class StreamParser:
                     p = self._pending
                     out.append(Report(f[1], p["lat"], p["lon"], p["alt"], p["sats"], p["utc"]))
                     self._pending = None
+            elif tag.endswith("RMC") and len(f) >= 10:
+                d = f[9]                        # DDMMYY; keep for offline-accurate log timestamps
+                if len(d) == 6 and d.isdigit():
+                    _last_gps_date = d
+            elif tag == "PLKT" and len(f) >= 3 and f[1] == "LINK":
+                _link_state = "up" if f[2].split("*")[0] == "UP" else "down"
+                _link_seen = time.monotonic()
         if last_end:
             del self._buf[:last_end]
         if len(self._buf) > 8192:
@@ -102,11 +137,37 @@ class StreamParser:
 # ---------- live unit state ----------
 _units = {}                 # unit id -> dict(lat, lon, alt, sats, utc, seen=monotonic)
 _lock = threading.Lock()
+_bridge_connected = False   # are we currently reading from the bridge?
+_ever_connected   = False   # have we ever reached the bridge? (no alarm before first contact)
 
 def _put(rep):
     with _lock:
         _units[str(rep.unit)] = {"lat": rep.lat, "lon": rep.lon, "alt": rep.alt,
                                  "sats": rep.sats, "utc": rep.utc, "seen": time.monotonic()}
+
+# ---------- daily track log ----------
+def _log_fix(rep):
+    """Append one row per real fix. Never let a logging error break the live feed."""
+    hhmmss = (rep.utc or "")[:6]
+    if _last_gps_date and len(hhmmss) == 6 and hhmmss.isdigit():
+        yy, mm, dd = _last_gps_date[4:6], _last_gps_date[2:4], _last_gps_date[0:2]
+        date = f"20{yy}-{mm}-{dd}"
+        iso  = f"{date}T{hhmmss[0:2]}:{hhmmss[2:4]}:{hhmmss[4:6]}Z"
+        src  = "gps"
+    else:
+        date = time.strftime("%Y-%m-%d")
+        iso  = time.strftime("%Y-%m-%dT%H:%M:%S")
+        src  = "box"                            # box clock - may be wrong if offline with no RTC
+    try:
+        LOG_DIR.mkdir(exist_ok=True)
+        path = LOG_DIR / f"track_{date}.csv"
+        new = not path.exists()
+        with path.open("a", encoding="utf-8") as fh:
+            if new:
+                fh.write("time,time_src,gps_utc,unit,lat,lon,alt,sats\n")
+            fh.write(f"{iso},{src},{rep.utc},{rep.unit},{rep.lat:.6f},{rep.lon:.6f},{rep.alt},{rep.sats}\n")
+    except OSError:
+        pass
 
 def _aliases():
     try:
@@ -123,23 +184,54 @@ def _age(sec):
 def _esc(t):
     return str(t).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
+def _alarm_state(now):
+    """Return (down, why). Only the bridge can tell 'radio unplugged' from 'nobody talking'."""
+    if _bridge_connected:
+        if _link_state == "down":
+            return True, "radio link down"
+        if _link_seen and (now - _link_seen) > ALARM_AFTER_S:
+            return True, "no status from bridge"
+        return False, ""
+    if _ever_connected:
+        return True, "feed lost (bridge unreachable)"
+    return False, ""                            # cold start, never connected - behave like before
+
 def build_kml():
-    al = _aliases(); now = time.monotonic(); marks = []
+    al = _aliases(); now = time.monotonic()
+    down, why = _alarm_state(now)
     with _lock:
         items = list(_units.items())
+    pfx = "⚠ " if down else ""
+    marks = []; lats = []; lons = []
     for uid, u in items:
         age = now - u["seen"]
         if EXPIRE_S and age > EXPIRE_S:
             continue
         name = al.get(uid, uid)
         stale = "  (stale)" if age > STALE_S else ""
-        label = f"{_esc(name)} · {_age(age)}{stale}"
+        label = f"{pfx}{_esc(name)} · {_age(age)}{stale}"
         marks.append(
             f'<Placemark><name>{label}</name>'
             f'<Point><coordinates>{u["lon"]:.6f},{u["lat"]:.6f},0</coordinates></Point></Placemark>')
+        lats.append(u["lat"]); lons.append(u["lon"])
+    if not down:
+        return ('<?xml version="1.0" encoding="UTF-8"?>\n'
+                '<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Live units</name>'
+                + "".join(marks) + '</Document></kml>').encode("utf-8")
+    # --- alarm on: a document-level red style drives the banner AND (by ArcGIS Earth's
+    #     own behaviour) tints the unit pins red. AE keeps the pins red until the layer is
+    #     reloaded - kept ON PURPOSE as a "lingering alarm": a recovered map that is still
+    #     red tells the operator the link flickered. Reload the layer to clear it. ---
+    style = ('<Style id="alarm"><LabelStyle><color>ff0000ff</color><scale>1.4</scale></LabelStyle>'
+             '<IconStyle><color>ff0000ff</color><scale>1.3</scale></IconStyle></Style>')
+    anchor = (sum(lats) / len(lats), sum(lons) / len(lons)) if lats else ALARM_ANCHOR
+    banner = ""
+    if anchor:
+        banner = (f'<Placemark><name>⚠ RADIO LINK DOWN — {why}</name><styleUrl>#alarm</styleUrl>'
+                  f'<Point><coordinates>{anchor[1]:.6f},{anchor[0]:.6f},0</coordinates></Point></Placemark>')
     return ('<?xml version="1.0" encoding="UTF-8"?>\n'
-            '<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Live units</name>'
-            + "".join(marks) + '</Document></kml>').encode("utf-8")
+            '<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>⚠ RADIO LINK DOWN</name>'
+            + style + banner + "".join(marks) + '</Document></kml>').encode("utf-8")
 
 # ---------- HTTP server ----------
 class _H(BaseHTTPRequestHandler):
@@ -156,6 +248,7 @@ class _H(BaseHTTPRequestHandler):
 
 # ---------- read the bridge's NMEA feed ----------
 def read_bridge():
+    global _bridge_connected, _ever_connected
     while True:
         s = None
         try:
@@ -163,6 +256,7 @@ def read_bridge():
             s = socket.create_connection((BRIDGE_HOST, BRIDGE_PORT), timeout=6)
             s.settimeout(1.0)
             sp = StreamParser()
+            _bridge_connected = True; _ever_connected = True
             print("[units] reading NMEA from the bridge", flush=True)
             while True:
                 try:
@@ -174,10 +268,12 @@ def read_bridge():
                     break
                 for rep in sp.feed(data):
                     _put(rep)
+                    _log_fix(rep)
                     print(f"[units] {rep.unit}  {rep.lat:.5f},{rep.lon:.5f}", flush=True)
         except OSError as e:
             print(f"[units] bridge connection problem: {e} - retrying", flush=True)
         finally:
+            _bridge_connected = False
             if s is not None:
                 try: s.close()
                 except OSError: pass
@@ -203,7 +299,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="The Lookout - live units KML server")
     ap.add_argument("--demo", action="store_true", help="serve moving synthetic units, no radio")
     args = ap.parse_args()
-    print("=== The Lookout - live units KML server ===", flush=True)
+    print(f"=== The Lookout - live units KML server  v{VERSION} ===", flush=True)
     print(f"serving units.kml on http://{SERVE_HOST}:{SERVE_PORT}/units.kml  (Ctrl+C to stop)", flush=True)
     threading.Thread(target=(demo_feed if args.demo else read_bridge), daemon=True).start()
     try:
