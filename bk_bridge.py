@@ -15,12 +15,18 @@ v1.1 (2026-11-15): one stuck/frozen viewer can no longer stall the feed for the 
 each client socket has a send timeout and a viewer that can't keep up is dropped, and
 the fan-out no longer holds the lock while sending.
 
+v1.2 (2026-11-15): the bridge now ANNOUNCES its radio link state into the feed, so the
+map can raise an immediate alarm when the radio is unplugged instead of letting units
+quietly go stale. It emits a $PLKT,LINK,UP / $PLKT,LINK,DOWN heartbeat every few seconds
+(and instantly on any change). This is a proprietary NMEA sentence; other NMEA apps
+ignore it. All sends still come from this one thread, so nothing interleaves on a socket.
+
 Run:   python3 bk_bridge.py
 Stop:  Ctrl+C
 """
 import re, socket, threading, time, sys
 
-VERSION = "1.1"
+VERSION = "1.2"
 
 # ---- upstream: the BK base relay ----
 RADIO_IP    = "10.250.46.6"
@@ -35,6 +41,7 @@ SERVE_HOST     = "0.0.0.0"                    # all of the box's networks (LAN, 
 SERVE_PORT     = 10110                        # the standard NMEA-0183-over-TCP port
 HEARTBEAT_S    = 15                           # print an "alive, no fixes yet" line this often
 SEND_TIMEOUT_S = 5                            # drop a viewer that can't accept data within this
+STATUS_EVERY_S = 5                            # broadcast the LINK UP/DOWN heartbeat this often
 
 # ---- NMEA extraction (verbatim from p25_core.py) ----
 _SENTENCE = re.compile(r"\$[^*$\r\n]{2,88}\*[0-9A-Fa-f]{2}")
@@ -49,6 +56,12 @@ def _nmea_ok(s):
     for c in body:
         g ^= ord(c)
     return g == want
+
+def _mk(body):
+    g = 0
+    for c in body:
+        g ^= ord(c)
+    return f"${body}*{g:02X}"
 
 # ---- client fan-out ----
 _clients = set()
@@ -96,6 +109,33 @@ def _serve_clients():
         print(f"[bridge] client connected: {addr[0]}:{addr[1]}  (now {n} connected)",
               flush=True)
 
+# ---- radio link status (announced into the feed so the map can alarm) ----
+_link_state     = "down"       # "up" once subscribed and reading; "down" while the radio is lost
+_last_status_at = 0.0
+_printed_state  = None
+
+def _emit_status(now, force=False):
+    global _last_status_at, _printed_state
+    if force or (now - _last_status_at) >= STATUS_EVERY_S:
+        _broadcast(_mk("PLKT,LINK,UP" if _link_state == "up" else "PLKT,LINK,DOWN"))
+        _last_status_at = now
+    if _printed_state != _link_state:
+        print(f"[radio] LINK {_link_state.upper()}", flush=True)
+        _printed_state = _link_state
+
+def _set_link(state, now):
+    global _link_state
+    if _link_state != state:
+        _link_state = state
+        _emit_status(now, force=True)         # announce the change immediately
+
+def _wait(seconds):
+    """Sleep in small steps so the LINK heartbeat keeps going while we are disconnected."""
+    end = time.monotonic() + seconds
+    while time.monotonic() < end:
+        _emit_status(time.monotonic())
+        time.sleep(0.5)
+
 # ---- radio reader ----
 def _radio_loop():
     buf = bytearray()
@@ -107,6 +147,7 @@ def _radio_loop():
             s.sendall(SUBSCRIBE)
             s.settimeout(0.5)
             print("[radio] connected + subscribed - listening for GPS", flush=True)
+            _set_link("up", time.monotonic())
             last_keep = last_data = last_beat = time.monotonic()
             got_any = False
             while True:
@@ -136,6 +177,7 @@ def _radio_loop():
                     try: s.sendall(SUBSCRIBE)
                     except OSError: pass
                     last_keep = now
+                _emit_status(now)                       # LINK UP heartbeat
                 if not got_any and now - last_beat > HEARTBEAT_S:
                     print("[radio] alive - subscribed and waiting (no units transmitting yet)",
                           flush=True)
@@ -149,7 +191,8 @@ def _radio_loop():
             if s is not None:
                 try: s.close()
                 except OSError: pass
-        time.sleep(RECONNECT_S)
+        _set_link("down", time.monotonic())             # radio is gone -> raise the alarm
+        _wait(RECONNECT_S)
 
 if __name__ == "__main__":
     print(f"=== BK radio -> NMEA network bridge  v{VERSION} ===", flush=True)
