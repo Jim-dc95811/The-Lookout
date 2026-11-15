@@ -36,11 +36,12 @@ refresh (aliases.json is already read live). Token default "lookout"; override w
 admin_token.txt beside this file.
 """
 import re, time, math, json, socket, threading, sys, argparse
+from collections import deque
 from pathlib import Path
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-VERSION = "1.4"
+VERSION = "1.5"
 
 # ---- where we read from / serve to ----
 BRIDGE_HOST = "127.0.0.1"     # the bridge's NMEA feed (same box)
@@ -55,6 +56,51 @@ ALARM_ANCHOR  = None        # (lat, lon) to pin the alarm when no units are know
 ADMIN_TOKEN_DEFAULT = "lookout"   # shared token for the Alias Manager; override via admin_token.txt
 ALIASES_PATH  = Path(__file__).with_name("aliases.json")   # unit id -> name, read live every refresh
 LOG_DIR     = Path(__file__).with_name("logs")   # daily track CSVs land here
+
+# ---- diagnostic: who pulls units.kml, and how often (answers "does this client auto-refresh?") ----
+_fetch_log  = deque(maxlen=400)          # (epoch, client_ip) for each units.kml GET
+_fetch_lock = threading.Lock()
+
+def _note_fetch(ip):
+    with _fetch_lock:
+        _fetch_log.append((time.time(), ip))
+
+def _fetchlog_report():
+    """Plain-text report: per-client pull cadence (static load vs. timed refresh), then raw hits."""
+    with _fetch_lock:
+        rows = list(_fetch_log)
+    now = time.time()
+    lines = ["The Lookout - units.kml fetch log   (now %s)" % time.strftime("%H:%M:%S", time.localtime(now)),
+             "Each client that opens the live map pulls units.kml. One pull = static load;",
+             "a pull every few seconds = it honors the NetworkLink refresh.",
+             ""]
+    by_ip = {}
+    for ts, ip in rows:
+        by_ip.setdefault(ip, []).append(ts)
+    if not by_ip:
+        lines.append("(no pulls yet - open the map on a device, then reload this page)")
+    else:
+        lines.append("Per device:")
+        for ip in sorted(by_ip):
+            tss = by_ip[ip]
+            n = len(tss)
+            last_ago = now - tss[-1]
+            if n == 1:
+                verdict = "1 pull - loaded once (STATIC, no auto-refresh seen yet)"
+            else:
+                w = tss[-20:]
+                gaps = [b - a for a, b in zip(w, w[1:]) if b - a > 0]
+                med = sorted(gaps)[len(gaps) // 2] if gaps else 0
+                if med and med <= 20:
+                    verdict = "%d pulls, every ~%.1fs - REFRESHING on a timer" % (n, med)
+                else:
+                    verdict = "%d pulls, spread over %.0fs - irregular" % (n, tss[-1] - tss[0])
+            lines.append("  %-16s  %s   (last %.0fs ago)" % (ip, verdict, last_ago))
+        lines.append("")
+        lines.append("Recent pulls (newest last):")
+        for ts, ip in rows[-40:]:
+            lines.append("  %s   %s" % (time.strftime("%H:%M:%S", time.localtime(ts)), ip))
+    return ("\n".join(lines) + "\n").encode("utf-8")
 
 # ---------- NMEA parser: lifted verbatim from the P25 GPS Tracker (p25_core.py) ----------
 _SENTENCE = re.compile(r"\$[^*$\r\n]{2,88}\*[0-9A-Fa-f]{2}")
@@ -271,6 +317,16 @@ class _H(BaseHTTPRequestHandler):
             return self._admin(read=True)
         if path in ("/open.kml", "/open", "/live", "/live.kml"):
             return self._serve_opener()   # one URL any device opens to get the LIVE, refreshing map
+        if path == "/fetchlog":
+            rep = _fetchlog_report()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Length", str(len(rep)))
+            self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+            self.end_headers()
+            self.wfile.write(rep)
+            return
+        _note_fetch(self.client_address[0])   # this pull is a device asking for the live units
         body = build_kml()
         self.send_response(200)
         self.send_header("Content-Type", "application/vnd.google-earth.kml+xml")
@@ -386,6 +442,7 @@ if __name__ == "__main__":
     args = ap.parse_args()
     print(f"=== The Lookout - live units KML server  v{VERSION} ===", flush=True)
     print(f"serving units.kml on http://{SERVE_HOST}:{SERVE_PORT}/units.kml  (Ctrl+C to stop)", flush=True)
+    print(f"   diagnostic: who pulls the map + how often -> http://{SERVE_HOST}:{SERVE_PORT}/fetchlog", flush=True)
     threading.Thread(target=(demo_feed if args.demo else read_bridge), daemon=True).start()
     try:
         ThreadingHTTPServer((SERVE_HOST, SERVE_PORT), _H).serve_forever()
