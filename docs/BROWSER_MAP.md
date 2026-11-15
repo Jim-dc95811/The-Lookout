@@ -2,7 +2,7 @@
 
 **Proven live 2026-11-15** on a GL-MT6000 router, on a PC and an Android phone, with real P25 units (9076801, 9076803) riding on Bryceville aerial imagery — nothing installed on the viewing devices but a web browser. The same day it went further: the router served a **46 GB Z20 Esri `.tpkx`** — the exact tile package ArcGIS Earth opens, with no conversion — straight off an external SSD, at full Z20 detail and smooth zoom, to a PC and a phone.
 
-This document is the permanent record of what was built, why it matters, and exactly how to stand it up again. Code lives on branch `browser-map-wip` (`units_kml.py` **v1.9** + `map.html` + `leaflet.js` + `leaflet.css`).
+This document is the permanent record of what was built, why it matters, and exactly how to stand it up again. Code lives on **`main`** (`units_kml.py` **v1.9** + `map.html` + `leaflet.js` + `leaflet.css`) — merged from `browser-map-wip` and made official 2026-11-15.
 
 ---
 
@@ -61,13 +61,13 @@ There's no progress bar; it goes quiet, then returns to the prompt. Verify the s
 ssh root@192.168.8.1 "ls -l /root/basemap.mbtiles"
 ```
 
-**Step 2 — pull the v1.7 code and restart.**
+**Step 2 — pull the v1.9 code and restart.**
 ```
 ssh root@192.168.8.1 "cd /root && \
-  wget -O units_kml.py https://raw.githubusercontent.com/Jim-dc95811/The-Lookout/browser-map-wip/units_kml.py && \
-  wget -O leaflet.js  https://raw.githubusercontent.com/Jim-dc95811/The-Lookout/browser-map-wip/leaflet.js && \
-  wget -O leaflet.css https://raw.githubusercontent.com/Jim-dc95811/The-Lookout/browser-map-wip/leaflet.css && \
-  wget -O map.html    https://raw.githubusercontent.com/Jim-dc95811/The-Lookout/browser-map-wip/map.html && \
+  wget -O units_kml.py https://raw.githubusercontent.com/Jim-dc95811/The-Lookout/main/units_kml.py && \
+  wget -O leaflet.js  https://raw.githubusercontent.com/Jim-dc95811/The-Lookout/main/leaflet.js && \
+  wget -O leaflet.css https://raw.githubusercontent.com/Jim-dc95811/The-Lookout/main/leaflet.css && \
+  wget -O map.html    https://raw.githubusercontent.com/Jim-dc95811/The-Lookout/main/map.html && \
   /etc/init.d/units-kml restart && echo UPDATED"
 ```
 
@@ -86,7 +86,7 @@ Type the `http://` on purpose (see gotcha below). You'll see your tiles with the
 
 ## 6. Status and what's left
 
-**Status:** `units_kml.py` **v1.9** is LIVE-PROVEN on the GL-MT6000 (2026-11-15) on PC and phone — served from the router's internal flash, from an external SSD, and from both basemap formats: an **MBTiles** pyramid *and* an Esri **`.tpkx`** (the same package ArcGIS Earth opens, no conversion). High-water mark: a **46 GB Z20 `.tpkx`** served off the SSD at full detail and smooth zoom. Code committed and pushed to `browser-map-wip`. Reboot-survival services are in place (v1.8 boot-ordering safety, §7).
+**Status:** `units_kml.py` **v1.9** is LIVE-PROVEN on the GL-MT6000 (2026-11-15) on PC and phone — served from the router's internal flash, from an external SSD, and from both basemap formats: an **MBTiles** pyramid *and* an Esri **`.tpkx`** (the same package ArcGIS Earth opens, no conversion). High-water mark: a **46 GB Z20 `.tpkx`** served off the SSD at full detail and smooth zoom. Merged to **`main`** and made official 2026-11-15. Reboot-survival services are in place (v1.8 boot-ordering safety, §7).
 
 **In progress (2026-11-15):** a single whole-area **Z19** package covering a 2°×2° box (≈4 counties) building in QGIS — expected on the order of **100–150 GB**, to be served the same way. When it lands, verify the total file size and that all four corners of the box actually carry imagery (a long, slow basemap fetch can leave edges blank).
 
@@ -96,7 +96,7 @@ Type the `http://` on purpose (see gotcha below). You'll see your tiles with the
 - **QR code** that opens `http://<router>:8080/` — the right crew-onboarding tool (and it kills the `http://` typing gotcha).
 - Fold the basemap step into the setup flow / Lookout Manager so any router is built this way in one shot.
 - Bigger / multiple basemaps for wider coverage; a way to pick which map file is active.
-- Decide whether to merge `browser-map-wip` into `main` and document it in the main README (this is the "make it official" step).
+- ~~Merge `browser-map-wip` into `main`~~ — **done 2026-11-15; v1.9 is on `main`.** The `browser-map-wip` branch is now redundant and can be deleted.
 
 ## 7. Big storage: external SSD on a powered hub (statewide)
 
