@@ -28,12 +28,19 @@ Stop:          Ctrl+C
 Serves:        http://<this-box>:8080/units.kml
 Optional:      aliases.json beside this file = {"7101": "Engine 7", ...}
 Writes:        logs/track_YYYY-MM-DD.csv  (one row per real fix)
+Admin:         GET/POST http://<this-box>:8080/admin/aliases?token=...  (the Alias Manager app)
+
+v1.3 (2026-11-15): token-guarded /admin/aliases endpoint so the Alias Manager PC app can
+read and replace the unit id -> name table over the LAN. Names take effect within one map
+refresh (aliases.json is already read live). Token default "lookout"; override with
+admin_token.txt beside this file.
 """
 import re, time, math, json, socket, threading, sys, argparse
 from pathlib import Path
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
+from urllib.parse import urlparse, parse_qs
 
-VERSION = "1.2"
+VERSION = "1.3"
 
 # ---- where we read from / serve to ----
 BRIDGE_HOST = "127.0.0.1"     # the bridge's NMEA feed (same box)
@@ -45,6 +52,8 @@ EXPIRE_S    = 7200           # ...and dropped from the map after this long (0 = 
 RECONNECT_S = 4
 ALARM_AFTER_S = 15          # no LINK status heard from the bridge this long -> treat as down
 ALARM_ANCHOR  = None        # (lat, lon) to pin the alarm when no units are known; None = skip
+ADMIN_TOKEN_DEFAULT = "lookout"   # shared token for the Alias Manager; override via admin_token.txt
+ALIASES_PATH  = Path(__file__).with_name("aliases.json")   # unit id -> name, read live every refresh
 LOG_DIR     = Path(__file__).with_name("logs")   # daily track CSVs land here
 
 # ---------- NMEA parser: lifted verbatim from the P25 GPS Tracker (p25_core.py) ----------
@@ -171,9 +180,30 @@ def _log_fix(rep):
 
 def _aliases():
     try:
-        return json.loads(Path(__file__).with_name("aliases.json").read_text())
+        return json.loads(ALIASES_PATH.read_text())
     except Exception:
         return {}
+
+def _admin_token():
+    try:
+        t = Path(__file__).with_name("admin_token.txt").read_text().strip()
+        return t or ADMIN_TOKEN_DEFAULT
+    except OSError:
+        return ADMIN_TOKEN_DEFAULT
+
+def _write_aliases(data):
+    """Validate {id: name} and write aliases.json atomically. Returns the count written."""
+    if not isinstance(data, dict):
+        raise ValueError("expected a JSON object of id -> name")
+    clean = {}
+    for k, v in list(data.items())[:2000]:
+        key = str(k).strip()
+        if key:
+            clean[key] = str(v).strip()[:64]
+    tmp = ALIASES_PATH.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(clean, indent=2))
+    tmp.replace(ALIASES_PATH)
+    return len(clean)
 
 def _age(sec):
     s = int(sec)
@@ -236,6 +266,8 @@ def build_kml():
 # ---------- HTTP server ----------
 class _H(BaseHTTPRequestHandler):
     def do_GET(self):
+        if urlparse(self.path).path.rstrip("/") == "/admin/aliases":
+            return self._admin(read=True)
         body = build_kml()
         self.send_response(200)
         self.send_header("Content-Type", "application/vnd.google-earth.kml+xml")
@@ -243,6 +275,38 @@ class _H(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
         self.end_headers()
         self.wfile.write(body)
+
+    def do_POST(self):
+        if urlparse(self.path).path.rstrip("/") == "/admin/aliases":
+            return self._admin(read=False)
+        self.send_error(404)
+
+    # ---- Alias Manager endpoint: GET returns the names, POST replaces them ----
+    def _admin(self, read):
+        q = parse_qs(urlparse(self.path).query)
+        tok = (q.get("token", [""])[0]) or self.headers.get("X-Token", "")
+        if tok != _admin_token():
+            return self._json(403, {"ok": False, "error": "bad token"})
+        if read:
+            return self._json(200, {"ok": True, "aliases": _aliases()})
+        try:
+            n = int(self.headers.get("Content-Length", 0))
+            if n <= 0 or n > 262144:
+                return self._json(400, {"ok": False, "error": "bad length"})
+            count = _write_aliases(json.loads(self.rfile.read(n).decode("utf-8")))
+            return self._json(200, {"ok": True, "count": count})
+        except (ValueError, OSError) as e:
+            return self._json(400, {"ok": False, "error": str(e)})
+
+    def _json(self, code, obj):
+        body = json.dumps(obj).encode("utf-8")
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(body)
+
     def log_message(self, *a):
         pass
 
