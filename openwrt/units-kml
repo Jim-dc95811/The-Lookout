@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+# The Lookout - live units KML server, as an OpenWrt boot service (procd).
+# Starts after bk-bridge; reads the bridge on 127.0.0.1:10110, serves :8080.
+# Install:  put in /etc/init.d/, chmod +x, then /etc/init.d/units-kml enable
+
+USE_PROCD=1
+START=96
+STOP=10
+
+start_service() {
+    procd_open_instance
+    procd_set_param command /usr/bin/python3 /root/units_kml.py
+    procd_set_param respawn
+    procd_set_param stdout 1
+    procd_set_param stderr 1
+    procd_close_instance
+}
