@@ -31,6 +31,7 @@ VERSION = "1.2"
 # ---- upstream: the BK base relay ----
 RADIO_IP    = "10.250.46.6"
 RADIO_PORT  = 65535
+RADIO_IFACE = "usb0"                          # the radio's USB interface (instant unplug detection)
 SUBSCRIBE   = bytes.fromhex("800418e481")     # the 5-byte subscribe: 80 04 18 e4 81
 KEEPALIVE_S = 20                              # re-send subscribe this often
 WATCHDOG_S  = 90                              # no bytes at all this long -> reconnect
@@ -136,6 +137,19 @@ def _wait(seconds):
         _emit_status(time.monotonic())
         time.sleep(0.5)
 
+_iface_seen = False
+def _iface_lost():
+    """True once the radio's USB interface vanishes or goes down - instant unplug detection.
+    Stays inert (False) on systems where the interface never appears, so a non-usb0 setup
+    falls back to the keepalive probe and the watchdog."""
+    global _iface_seen
+    try:
+        with open(f"/sys/class/net/{RADIO_IFACE}/operstate") as fh:
+            _iface_seen = True
+            return fh.read().strip() == "down"
+    except OSError:
+        return _iface_seen
+
 # ---- radio reader ----
 def _radio_loop():
     buf = bytearray()
@@ -173,9 +187,15 @@ def _radio_loop():
                         del buf[:last_end]
                     if len(buf) > 8192:
                         del buf[:-2048]
+                if _iface_lost():
+                    print(f"[radio] {RADIO_IFACE} is gone - radio unplugged", flush=True)
+                    break
                 if KEEPALIVE_S and now - last_keep > KEEPALIVE_S:
-                    try: s.sendall(SUBSCRIBE)
-                    except OSError: pass
+                    try:
+                        s.sendall(SUBSCRIBE)            # re-subscribe + probe the link
+                    except OSError:
+                        print("[radio] keepalive failed - radio lost", flush=True)
+                        break
                     last_keep = now
                 _emit_status(now)                       # LINK UP heartbeat
                 if not got_any and now - last_beat > HEARTBEAT_S:
