@@ -38,10 +38,11 @@ admin_token.txt beside this file.
 import re, time, math, json, socket, threading, sys, argparse
 from collections import deque
 from pathlib import Path
+import os, sqlite3
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-VERSION = "1.6"
+VERSION = "1.7"
 
 # ---- where we read from / serve to ----
 BRIDGE_HOST = "127.0.0.1"     # the bridge's NMEA feed (same box)
@@ -56,6 +57,56 @@ ALARM_ANCHOR  = None        # (lat, lon) to pin the alarm when no units are know
 ADMIN_TOKEN_DEFAULT = "lookout"   # shared token for the Alias Manager; override via admin_token.txt
 ALIASES_PATH  = Path(__file__).with_name("aliases.json")   # unit id -> name, read live every refresh
 LOG_DIR     = Path(__file__).with_name("logs")   # daily track CSVs land here
+
+# ---------- offline basemap: serve map tiles straight out of an MBTiles file ----------
+MBTILES_PATH = os.environ.get("LOOKOUT_MBTILES", str(Path(__file__).with_name("basemap.mbtiles")))
+_ASSET_DIR   = Path(__file__).resolve().parent
+_meta_cache  = {}
+
+def _mb_conn():
+    return sqlite3.connect("file:%s?mode=ro" % MBTILES_PATH, uri=True, timeout=5)
+
+def _mbtiles_meta():
+    if _meta_cache:
+        return _meta_cache
+    m = {"has_tiles": False, "minzoom": 0, "maxzoom": 20, "bounds": [-180.0, -85.0, 180.0, 85.0]}
+    try:
+        c = _mb_conn()
+        md = dict(c.execute("select name, value from metadata").fetchall())
+        if md.get("bounds"):
+            m["bounds"] = [float(x) for x in md["bounds"].split(",")][:4]
+        if md.get("minzoom"): m["minzoom"] = int(float(md["minzoom"]))
+        if md.get("maxzoom"): m["maxzoom"] = int(float(md["maxzoom"]))
+        m["has_tiles"] = True
+        c.close()
+    except Exception:
+        pass
+    _meta_cache.update(m)
+    return m
+
+def _get_tile(z, x, y):
+    # Leaflet asks XYZ (y=0 at north); MBTiles stores TMS (row 0 at south) -> flip.
+    try:
+        c = _mb_conn()
+        r = c.execute("select tile_data from tiles where zoom_level=? and tile_column=? and tile_row=?",
+                      (z, x, (1 << z) - 1 - y)).fetchone()
+        c.close()
+        return r[0] if r else None
+    except Exception:
+        return None
+
+_CTYPE = {".js": "application/javascript", ".css": "text/css", ".html": "text/html; charset=utf-8"}
+def _serve_asset(h, name):
+    try:
+        data = (_ASSET_DIR / name).read_bytes()
+    except OSError:
+        h.send_error(404); return
+    h.send_response(200)
+    h.send_header("Content-Type", _CTYPE.get(Path(name).suffix, "application/octet-stream"))
+    h.send_header("Content-Length", str(len(data)))
+    h.send_header("Cache-Control", "no-store" if name.endswith(".html") else "max-age=86400")
+    h.end_headers()
+    h.wfile.write(data)
 
 # ---- diagnostic: who pulls units.kml, and how often (answers "does this client auto-refresh?") ----
 _fetch_log  = deque(maxlen=400)          # (epoch, client_ip) for each units.kml GET
@@ -331,85 +382,6 @@ def _units_payload():
 
 # A self-contained live map for any phone/tablet browser. No internet, no app, no CDN:
 # it polls /units.json every few seconds and plots the units on a scaled grid.
-MAP_PAGE = b'''<!doctype html><html><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>The Lookout - Live Units</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:#0b0f14;color:#e6eef6;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;overflow:hidden}
-#bar{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;gap:10px;
- height:calc(46px + env(safe-area-inset-top,0px));padding-top:env(safe-area-inset-top,0px);
- padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));
- background:rgba(17,22,29,.82);border-bottom:1px solid #1e2732;font-size:14px}
-#title{font-weight:700;letter-spacing:.5px;color:#7fd1ff}
-#status{margin-left:auto;display:flex;align-items:center;gap:7px;color:#9fb3c8}
-#dot{width:9px;height:9px;border-radius:50%;background:#2ecc71;box-shadow:0 0 7px #2ecc71}
-#dot.bad{background:#e74c3c;box-shadow:0 0 7px #e74c3c}
-canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
-#banner{position:fixed;left:0;right:0;z-index:6;display:none;text-align:center;font-weight:700;color:#fff;
- background:#c0392b;padding:9px;top:calc(46px + env(safe-area-inset-top,0px))}
-</style></head><body>
-<div id="bar"><span id="title">THE LOOKOUT</span>
-<span id="status"><span id="clock">--:--:--</span><span id="count">0 units</span><i id="dot"></i></span></div>
-<div id="banner"></div>
-<canvas id="map"></canvas>
-<script>
-var cv=document.getElementById("map"),cx=cv.getContext("2d"),DPR=1;
-var state={units:[],alarm:{down:false,why:""}},W=0,H=0;
-function resize(){DPR=window.devicePixelRatio||1;W=cv.clientWidth;H=cv.clientHeight;
- cv.width=W*DPR;cv.height=H*DPR;cx.setTransform(DPR,0,0,DPR,0,0);draw();}
-window.addEventListener("resize",resize);
-function niceM(m){var p=Math.pow(10,Math.floor(Math.log10(m))),n=m/p;return (n>=5?5:n>=2?2:1)*p;}
-function fit(u){
- var la=u.map(function(x){return x.lat}),lo=u.map(function(x){return x.lon});
- var cLa=(Math.min.apply(0,la)+Math.max.apply(0,la))/2,cLo=(Math.min.apply(0,lo)+Math.max.apply(0,lo))/2;
- var sLa=Math.max(Math.max.apply(0,la)-Math.min.apply(0,la),0.003)*1.5;
- var sLo=Math.max(Math.max.apply(0,lo)-Math.min.apply(0,lo),0.003)*1.5;
- var mLat=111320,mLon=111320*Math.cos(cLa*Math.PI/180);
- var sc=Math.min((W*0.82)/(sLo*mLon),(H*0.78)/(sLa*mLat));
- return {cLa:cLa,cLo:cLo,mLat:mLat,mLon:mLon,sc:sc};
-}
-function draw(){
- cx.clearRect(0,0,W,H);
- var u=state.units;
- if(!u.length){cx.fillStyle="#5d7084";cx.font="16px sans-serif";cx.textAlign="center";
-  cx.fillText("Waiting for units\\u2026 (feed is live)",W/2,H/2);cx.textAlign="left";return;}
- var f=fit(u);
- function P(lat,lon){return [W/2+(lon-f.cLo)*f.mLon*f.sc, H/2-(lat-f.cLa)*f.mLat*f.sc];}
- // scale bar
- var tgt=(W*0.25)/f.sc, m=niceM(tgt), px=m*f.sc, bx=18, by=H-34;
- cx.strokeStyle="#9fb3c8";cx.fillStyle="#9fb3c8";cx.lineWidth=2;
- cx.beginPath();cx.moveTo(bx,by);cx.lineTo(bx+px,by);cx.moveTo(bx,by-5);cx.lineTo(bx,by+5);
- cx.moveTo(bx+px,by-5);cx.lineTo(bx+px,by+5);cx.stroke();
- cx.font="12px sans-serif";cx.fillText(m>=1000?(m/1000)+" km":m+" m",bx,by-9);
- // north
- cx.fillStyle="#7fd1ff";cx.font="bold 13px sans-serif";cx.textAlign="center";
- cx.fillText("N \\u2191",W-26,70);cx.textAlign="left";
- // units
- for(var i=0;i<u.length;i++){var p=P(u[i].lat,u[i].lon),col=u[i].stale?"#f1c40f":"#2ecc71";
-  cx.beginPath();cx.arc(p[0],p[1],7,0,7);cx.fillStyle=col;cx.fill();
-  cx.lineWidth=2;cx.strokeStyle="#0b0f14";cx.stroke();
-  var t=u[i].name+" \\u00b7 "+u[i].age+(u[i].stale?" (stale)":"");
-  cx.font="13px sans-serif";var w=cx.measureText(t).width;
-  var right=(p[0]+19+w)<W, boxX=right?p[0]+11:p[0]-19-w, txX=right?p[0]+15:p[0]-15-w;
-  cx.fillStyle="rgba(11,15,20,.72)";cx.fillRect(boxX,p[1]-10,w+8,20);
-  cx.fillStyle=col;cx.fillText(t,txX,p[1]+4);
- }
-}
-function tick(){
- fetch("/units.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(d){
-  state=d;document.getElementById("dot").className="";
-  document.getElementById("clock").textContent=d.server_time;
-  document.getElementById("count").textContent=d.count+(d.count==1?" unit":" units");
-  var b=document.getElementById("banner");
-  if(d.alarm&&d.alarm.down){b.style.display="block";b.textContent="\\u26a0 RADIO LINK DOWN \\u2014 "+d.alarm.why;}
-  else b.style.display="none";
-  draw();
- }).catch(function(){document.getElementById("dot").className="bad";
-  document.getElementById("clock").textContent="reconnecting\\u2026";});
-}
-resize();tick();setInterval(tick,3000);
-</script></body></html>'''
 
 
 # ---------- HTTP server ----------
@@ -430,11 +402,33 @@ class _H(BaseHTTPRequestHandler):
             self.wfile.write(rep)
             return
         if path in ("", "/map", "/index.html"):
+            return _serve_asset(self, "map.html")
+        if path in ("/leaflet.js", "/leaflet.css"):
+            return _serve_asset(self, path.lstrip("/"))
+        if path == "/meta.json":
+            body = json.dumps(_mbtiles_meta()).encode("utf-8")
             self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(MAP_PAGE)))
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
-            self.wfile.write(MAP_PAGE)
+            self.wfile.write(body)
+            return
+        if path.startswith("/tiles/"):
+            try:
+                z, x, y = path[len("/tiles/"):].split("/")[:3]
+                z, x, y = int(z), int(x), int(y.split(".")[0])
+            except ValueError:
+                self.send_error(400); return
+            data = _get_tile(z, x, y)
+            if data is None:
+                self.send_response(204); self.end_headers(); return
+            self.send_response(200)
+            self.send_header("Content-Type", "image/jpeg")
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "max-age=86400")
+            self.end_headers()
+            self.wfile.write(data)
             return
         if path == "/units.json":
             body = json.dumps(_units_payload()).encode("utf-8")
