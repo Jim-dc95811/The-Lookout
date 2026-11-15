@@ -1,8 +1,8 @@
 # The Lookout — Live Map in Any Browser (no app, no internet)
 
-**Proven live 2026-11-15** on a GL-MT6000 router, on a PC and an Android phone, with real P25 units (9076801, 9076803) riding on Bryceville aerial imagery — nothing installed on the viewing devices but a web browser.
+**Proven live 2026-11-15** on a GL-MT6000 router, on a PC and an Android phone, with real P25 units (9076801, 9076803) riding on Bryceville aerial imagery — nothing installed on the viewing devices but a web browser. The same day it went further: the router served a **46 GB Z20 Esri `.tpkx`** — the exact tile package ArcGIS Earth opens, with no conversion — straight off an external SSD, at full Z20 detail and smooth zoom, to a PC and a phone.
 
-This document is the permanent record of what was built, why it matters, and exactly how to stand it up again. Code lives on branch `browser-map-wip` (`units_kml.py` v1.7 + `map.html` + `leaflet.js` + `leaflet.css`).
+This document is the permanent record of what was built, why it matters, and exactly how to stand it up again. Code lives on branch `browser-map-wip` (`units_kml.py` **v1.9** + `map.html` + `leaflet.js` + `leaflet.css`).
 
 ---
 
@@ -17,8 +17,11 @@ Put plainly: this is the 2D heart of ArcGIS Earth (an offline multiresolution ti
 - **It reaches every device with zero install.** A locked-down, Group-Policy PC with no admin and no Python? It opens a link. A phone or tablet? It opens a link. Same live map on every screen.
 - **It fits the mission:** *don't make the user learn GIS before they can use geography.* Nobody installs or learns an app. They open a URL and see the map.
 - **It sidesteps ArcGIS Earth mobile's walls entirely.** AE mobile refuses plain `http://`, won't trust a self-signed cert, and only takes URLs from ArcGIS Online / Enterprise — so a self-hosted live LAN feed can't get in. A browser doesn't care. (Full research record: AE mobile was a dead end for a live self-hosted feed; the browser is the answer.)
+- **It serves the very tile packages ArcGIS Earth uses — no conversion.** Since v1.9 the router reads tiles straight out of an Esri `.tpkx` (Compact Cache V2, exactly what `mb2tpkx` writes). The map file you already built for ArcGIS Earth *is* the file the browser serves. Proven at 46 GB of Z20 off an SSD (see §7).
 
 What it is **not**: no 3D globe or terrain, no Esri/Living Atlas data ecosystem, no KML authoring. It is 2D tiles + live points. ArcGIS Earth still owns the rest — this is a new, dead-simple *delivery channel*, not a replacement.
+
+**Why it can out-run ArcGIS Earth at this one job.** It isn't magic and it isn't a better GIS — it's doing far less. ArcGIS Earth is a 3D globe: terrain mesh, draping, reprojection, a whole authoring and data ecosystem riding along. The browser map draws 2D raster tiles only — seek to the tile in the package, hand the raw JPEG to Leaflet, draw the units on top. No globe math, no decode-and-recompress, no weight. For the one thing most field users actually need — *look at the map, see the units* — stripping the problem down to its 2D heart is exactly why it flies. Keep ArcGIS Earth for the globe, the KML authoring and the Esri data; this is the delivery truck that reaches the crew who would never open the globe.
 
 ## 3. How it works
 
@@ -83,7 +86,9 @@ Type the `http://` on purpose (see gotcha below). You'll see your tiles with the
 
 ## 6. Status and what's left
 
-**Status:** `units_kml.py` v1.8 is LIVE-PROVEN on the GL-MT6000 (2026-11-15) on PC and phone with real units on Bryceville imagery — served both from the router's internal flash *and* from an external SSD (see §7). Code committed and pushed to `browser-map-wip`. Reboot-survival services are in place, and v1.8 adds basemap boot-ordering safety (§7).
+**Status:** `units_kml.py` **v1.9** is LIVE-PROVEN on the GL-MT6000 (2026-11-15) on PC and phone — served from the router's internal flash, from an external SSD, and from both basemap formats: an **MBTiles** pyramid *and* an Esri **`.tpkx`** (the same package ArcGIS Earth opens, no conversion). High-water mark: a **46 GB Z20 `.tpkx`** served off the SSD at full detail and smooth zoom. Code committed and pushed to `browser-map-wip`. Reboot-survival services are in place (v1.8 boot-ordering safety, §7).
+
+**In progress (2026-11-15):** a single whole-area **Z19** package covering a 2°×2° box (≈4 counties) building in QGIS — expected on the order of **100–150 GB**, to be served the same way. When it lands, verify the total file size and that all four corners of the box actually carry imagery (a long, slow basemap fetch can leave edges blank).
 
 **Polish / next (none urgent):**
 - Zoom control sits partly under the top header bar — nudge it down.
@@ -95,7 +100,9 @@ Type the `http://` on purpose (see gotcha below). You'll see your tiles with the
 
 ## 7. Big storage: external SSD on a powered hub (statewide)
 
-The router's internal flash caps the basemap at a few hundred MB. To hold a whole state's Z20 imagery, put the map on an **external SSD** and serve tiles straight off it. **Proven live 2026-11-15** on a Samsung T5 (465 GB), with the radio and the SSD sharing the router's one port through a powered industrial hub — PC and phone, serving entirely off the SSD.
+The router's internal flash caps the basemap at a few hundred MB. To hold a whole region's Z20 imagery, put the map on an **external SSD** and serve tiles straight off it. **Proven live 2026-11-15** on a Samsung T5 (465 GB), with the radio and the SSD sharing the router's one port through a powered industrial hub — PC and phone, serving entirely off the SSD. The high-water test: a **46 GB Z20 `.tpkx`** (one 1° county) served flawlessly — full Z20 detail *and* a smooth regional zoom-out — straight off the T5.
+
+**Storage math (measured / estimated, honest).** At JPEG q75 these run roughly: **~46 GB per 1° county at Z20** (measured); a 2°×2° area (≈4 counties) ≈ **~100–150 GB at Z19**, ≈ **~600 GB at Z20** (needs a 1 TB drive), ≈ **~40 GB at Z18**. Z19 over the whole area fits the 465 GB T5 with room; Z20 over the whole area does not.
 
 **Hardware**
 - **Powered USB hub** on the router's single USB 3.0 port (a USB 2.0 hub is fine — serving map tiles is thousands of tiny random reads, nowhere near USB 2.0's ceiling). It **must be externally powered** — the router's port can't reliably feed a radio *and* a drive. An industrial hub with a 7–24 V terminal block (e.g. StarTech ST4200USBM, ~500 mA/port, 10 W total) lets the whole rig — router, hub, radio, SSD — run off **12 V vehicle power**.
