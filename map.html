@@ -26,19 +26,28 @@ html,body{height:100%;background:#0b0f14;color:#e6eef6;font-family:-apple-system
 <div id="banner"></div>
 <script src="/leaflet.js"></script>
 <script>
-var map, markers={}, first=true;
+var map = L.map("map",{zoomControl:true, attributionControl:false});
+map.setView([30.40,-81.93], 12);   // sane default; re-centers on first units / basemap
+var markers={}, first=true, tilesAdded=false;
 var GREEN="#2ecc71", AMBER="#f1c40f";
-fetch("/meta.json").then(function(r){return r.json()}).then(function(meta){
-  map = L.map("map",{zoomControl:true, attributionControl:false});
+
+function setupTiles(meta){
+  if(tilesAdded || !meta.has_tiles) return;
+  tilesAdded=true;
   var b=meta.bounds, sw=[b[1],b[0]], ne=[b[3],b[2]];
-  if(meta.has_tiles){
-    L.tileLayer("/tiles/{z}/{x}/{y}",{minZoom:meta.minzoom, maxZoom:22, maxNativeZoom:meta.maxzoom, bounds:[sw,ne],
-      errorTileUrl:"data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="}).addTo(map);
-    map.setMaxBounds([[sw[0]-0.08,sw[1]-0.08],[ne[0]+0.08,ne[1]+0.08]]);
-  }
-  map.fitBounds([sw,ne]);
-  tick(); setInterval(tick,3000);
-}).catch(function(){ document.getElementById("clock").textContent="map error"; });
+  L.tileLayer("/tiles/{z}/{x}/{y}",{minZoom:meta.minzoom, maxZoom:22, maxNativeZoom:meta.maxzoom, bounds:[sw,ne],
+    errorTileUrl:"data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="}).addTo(map);
+  map.setMaxBounds([[sw[0]-0.08,sw[1]-0.08],[ne[0]+0.08,ne[1]+0.08]]);
+  if(first && Object.keys(markers).length===0){ map.fitBounds([sw,ne]); }
+}
+// Keep asking for the basemap until the SSD/MBTiles is ready. This survives a cold boot
+// where GL's USB auto-mount finishes a moment AFTER this service starts: the map simply
+// appears the instant the drive is mounted, with no restart needed.
+function pollMeta(){
+  fetch("/meta.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(meta){
+    if(meta.has_tiles) setupTiles(meta); else setTimeout(pollMeta,4000);
+  }).catch(function(){ setTimeout(pollMeta,4000); });
+}
 function tick(){
   fetch("/units.json",{cache:"no-store"}).then(function(r){return r.json()}).then(update)
   .catch(function(){ document.getElementById("dot").className="bad";
@@ -51,7 +60,6 @@ function update(d){
   var ban=document.getElementById("banner");
   if(d.alarm&&d.alarm.down){ban.style.display="block";ban.textContent="⚠ RADIO LINK DOWN — "+d.alarm.why;}
   else ban.style.display="none";
-  if(!map) return;
   var seen={}, pts=[];
   d.units.forEach(function(u){
     seen[u.id]=1; var ll=[u.lat,u.lon], col=u.stale?AMBER:GREEN, lab=u.name+" · "+u.age+(u.stale?" (stale)":"");
@@ -63,4 +71,6 @@ function update(d){
   Object.keys(markers).forEach(function(id){ if(!seen[id]){ map.removeLayer(markers[id]); delete markers[id]; }});
   if(first && pts.length){ first=false; if(pts.length>1){ map.fitBounds(pts,{padding:[70,70],maxZoom:17}); } else { map.setView(pts[0],16); } }
 }
+pollMeta();
+tick(); setInterval(tick,3000);
 </script></body></html>

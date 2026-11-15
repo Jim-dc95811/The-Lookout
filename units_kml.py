@@ -42,7 +42,7 @@ import os, sqlite3
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-VERSION = "1.7"
+VERSION = "1.8"
 
 # ---- where we read from / serve to ----
 BRIDGE_HOST = "127.0.0.1"     # the bridge's NMEA feed (same box)
@@ -81,7 +81,8 @@ def _mbtiles_meta():
         c.close()
     except Exception:
         pass
-    _meta_cache.update(m)
+    if m["has_tiles"]:       # cache ONLY a good read; if the SSD isn't mounted yet (cold boot),
+        _meta_cache.update(m)  # keep returning "no tiles" and retry until the drive appears
     return m
 
 def _get_tile(z, x, y):

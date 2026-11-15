@@ -82,7 +82,7 @@ Type the `http://` on purpose (see gotcha below). You'll see your tiles with the
 
 ## 6. Status and what's left
 
-**Status:** `units_kml.py` v1.7 is LIVE-PROVEN on the GL-MT6000 (2026-11-15) on PC and phone with real units on Bryceville imagery. Code committed and pushed to `browser-map-wip`. Reboot-survival services already in place, so it stays up across power cycles.
+**Status:** `units_kml.py` v1.8 is LIVE-PROVEN on the GL-MT6000 (2026-11-15) on PC and phone with real units on Bryceville imagery — served both from the router's internal flash *and* from an external SSD (see §7). Code committed and pushed to `browser-map-wip`. Reboot-survival services are in place, and v1.8 adds basemap boot-ordering safety (§7).
 
 **Polish / next (none urgent):**
 - Zoom control sits partly under the top header bar — nudge it down.
@@ -91,6 +91,25 @@ Type the `http://` on purpose (see gotcha below). You'll see your tiles with the
 - Fold the basemap step into the setup flow / Lookout Manager so any router is built this way in one shot.
 - Bigger / multiple basemaps for wider coverage; a way to pick which map file is active.
 - Decide whether to merge `browser-map-wip` into `main` and document it in the main README (this is the "make it official" step).
+
+## 7. Big storage: external SSD on a powered hub (statewide)
+
+The router's internal flash caps the basemap at a few hundred MB. To hold a whole state's Z20 imagery, put the map on an **external SSD** and serve tiles straight off it. **Proven live 2026-11-15** on a Samsung T5 (465 GB), with the radio and the SSD sharing the router's one port through a powered industrial hub — PC and phone, serving entirely off the SSD.
+
+**Hardware**
+- **Powered USB hub** on the router's single USB 3.0 port (a USB 2.0 hub is fine — serving map tiles is thousands of tiny random reads, nowhere near USB 2.0's ceiling). It **must be externally powered** — the router's port can't reliably feed a radio *and* a drive. An industrial hub with a 7–24 V terminal block (e.g. StarTech ST4200USBM, ~500 mA/port, 10 W total) lets the whole rig — router, hub, radio, SSD — run off **12 V vehicle power**.
+- Radio and SSD both plug into the hub. The radio re-enumerates behind the hub on its own (the `usb0` hotplug handler re-addresses it to `10.250.46.100`).
+- Use an **SSD, not a spinning HDD** (spin-up current); a low-power USB SSD (Samsung T5/T7) fits the per-port budget with room.
+
+**Filesystem:** format the SSD **NTFS** (officially supported by GL firmware, handles multi-GB single files — avoid FAT32's 4 GB file limit). exFAT also works on the Flint 2.
+
+**Point the map at the SSD.** GL firmware auto-mounts USB storage under `/tmp/mountd/disk1_part1/` (confirm with `find /tmp/mountd /mnt -iname '*.mbtiles'`). Replace the default basemap path with a symlink to the file on the SSD, then restart:
+```
+ssh root@192.168.8.1 "rm -f /root/basemap.mbtiles && ln -s '/tmp/mountd/disk1_part1/<your map>.mbtiles' /root/basemap.mbtiles && /etc/init.d/units-kml restart"
+```
+Nothing else changes — the server just reads a bigger file. Drop your full statewide `.mbtiles` on the SSD and it serves the same way.
+
+**Reboot safety (v1.8).** On a cold boot the map service can start a moment before GL's USB auto-mount finishes. v1.8 handles it: the server never caches a "no basemap" result, and the page keeps polling `/meta.json`, so the map appears the instant the SSD is mounted — no restart, no blank map. Survives a power-cycle in a truck.
 
 ---
 
