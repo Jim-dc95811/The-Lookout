@@ -75,6 +75,10 @@ python3 units_kml.py --demo     # 3 moving synthetic units — watch it work wit
 
 On any viewer, open **[`Live_Units.kml`](Live_Units.kml)** once in ArcGIS Earth (set `PI-IP` in it to your Pi's address). ArcGIS Earth pulls `units.kml` every few seconds and the units move on their own — no install. Name units by dropping an `aliases.json` beside the script: `{"7101": "Engine 7", "7102": "Tanker 2"}`. Install it to start on boot alongside the bridge with [`units-kml.service`](units-kml.service).
 
+![Three live units pulled from the Pi into ArcGIS Earth](images/live_units_arcgis_earth.jpg)
+
+*Confirmed live on ArcGIS Earth, 2026-11-14 — three named units served by the Pi and moving on their own, nothing installed on the viewing PC (demo feed).*
+
 ## Status — what's proven
 
 Straight about where this stands (measured, not assumed):
@@ -83,7 +87,7 @@ Straight about where this stands (measured, not assumed):
 |---|---|
 | Radio → clean NMEA on the network (`:10110`) | **Built and running** as a boot service; proven on the bench through connect → subscribe → serve, holding the radio steady. |
 | ArcGIS Earth pulls a refreshing KML from the Pi (`:8080`) | **Delivery proven live** — ArcGIS Earth 3.0.1 re-fetches a NetworkLink from the Pi every 2 seconds on its own, across the LAN. |
-| `units.kml` generated from the live feed (`:8080`) | **Built — pipeline proven.** Fake radio → bridge → `units_kml.py` → a correct `units.kml` was verified end to end; `--demo` mode shows it live on a real ArcGIS Earth with no radio. |
+| `units.kml` generated from the live feed (`:8080`) | **Built and confirmed live on ArcGIS Earth (2026-11-14).** Pipeline verified end to end (fake radio → bridge → `units_kml.py` → correct `units.kml`), then three named units served from the Pi appeared and moved in ArcGIS Earth with nothing installed on the PC (screenshot above). |
 | End-to-end with a transmitting field unit | **Pending** — needs a unit keying up in the field (bench has only the base relay). |
 
 ## Credits — a human–AI engineering collaboration
