@@ -1,0 +1,118 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1680px;font-family:"Segoe UI",system-ui,Arial,sans-serif;color:#17324a;
+ background:linear-gradient(170deg,#eaf4ff 0%,#f6fbff 42%,#ffffff 100%);padding:52px 56px}
+.head{text-align:center;margin-bottom:10px}
+.kick{font-size:19px;letter-spacing:3px;font-weight:700;color:#2e86de;text-transform:uppercase}
+h1{font-size:52px;font-weight:800;line-height:1.05;margin:8px 0 10px}
+.sub{font-size:24px;color:#4a6a86;font-weight:500;max-width:1180px;margin:0 auto}
+.flow{display:flex;align-items:stretch;justify-content:center;gap:0;margin:40px 0 20px}
+.card{background:#fff;border:2px solid #d6e6f5;border-radius:20px;padding:24px 22px;width:252px;
+ box-shadow:0 10px 26px rgba(32,86,140,.09);display:flex;flex-direction:column;align-items:center;text-align:center}
+.card .ic{width:84px;height:84px;margin-bottom:12px}
+.card h3{font-size:22px;font-weight:800;margin-bottom:6px}
+.card p{font-size:16px;color:#5a7690;line-height:1.35}
+.hub{width:340px;border:3px solid #f0b429;background:linear-gradient(180deg,#fffdf6,#fff8e6);
+ box-shadow:0 14px 34px rgba(240,180,41,.28)}
+.hub h3{font-size:26px;color:#9a6b00}
+.hub .tag{display:inline-block;background:#f0b429;color:#5a3d00;font-weight:800;font-size:13px;
+ letter-spacing:1px;padding:4px 12px;border-radius:20px;margin-bottom:12px;text-transform:uppercase}
+.serves{margin-top:14px;width:100%;display:flex;flex-direction:column;gap:8px}
+.serves div{background:#eef7ee;border:1.6px dashed #4caf6a;border-radius:11px;padding:9px 12px;
+ font-size:15px;font-weight:600;color:#276b3c;line-height:1.25}
+.arrow{display:flex;flex-direction:column;align-items:center;justify-content:center;width:120px;color:#2e86de}
+.arrow svg{width:66px;height:30px}
+.arrow span{font-size:13px;font-weight:700;color:#39618a;margin-top:4px;text-align:center;line-height:1.2}
+.devrow{display:flex;justify-content:center;gap:26px;margin-top:8px}
+.dev{background:#fff;border:2px solid #d6e6f5;border-radius:18px;padding:22px 24px;width:330px;
+ box-shadow:0 10px 24px rgba(32,86,140,.09);display:flex;align-items:center;gap:18px}
+.dev .ic{width:60px;height:60px;flex:0 0 60px}
+.dev h4{font-size:20px;font-weight:800;margin-bottom:3px}
+.dev p{font-size:15px;color:#5a7690;line-height:1.3}
+.down{display:flex;justify-content:center;margin:18px 0 6px}
+.down svg{width:40px;height:40px;color:#2e86de}
+.foot{margin-top:30px;background:#0f2b45;color:#eaf4ff;border-radius:20px;padding:26px 34px;text-align:center}
+.foot b{color:#ffd45e}
+.foot .big{font-size:26px;font-weight:800;margin-bottom:8px}
+.foot .small{font-size:18px;color:#bcd6ef;line-height:1.4}
+.pill{display:inline-block;background:#1c3f61;color:#9fd0ff;font-weight:700;font-size:14px;
+ padding:5px 14px;border-radius:20px;margin:0 5px}
+</style></head><body>
+
+<div class="head">
+  <div class="kick">The Lookout</div>
+  <h1>Your map. Your trucks. Any browser.</h1>
+  <div class="sub">One $170 router reads the radio, holds your offline map, and serves a live map to every screen on the network — <b>no app, no install, no internet.</b></div>
+</div>
+
+<div class="flow">
+  <div class="card">
+    <svg class="ic" viewBox="0 0 64 64" fill="none" stroke="#2e86de" stroke-width="3.2" stroke-linecap="round">
+      <circle cx="32" cy="20" r="5" fill="#2e86de" stroke="none"/>
+      <path d="M20 8 A20 20 0 0 0 20 32 M44 8 A20 20 0 0 1 44 32" stroke="#9cc4e8"/>
+      <path d="M26 10 A12 12 0 0 0 26 30 M38 10 A12 12 0 0 1 38 30" stroke="#5aa0dd"/>
+      <path d="M32 25 L25 56 L39 56 Z" fill="#dcebff" stroke="#2e86de"/>
+      <path d="M22 56 H42" />
+    </svg>
+    <h3>Field units</h3>
+    <p>Trucks send GPS over the P25 radio — the positions you already have.</p>
+  </div>
+
+  <div class="arrow"><svg viewBox="0 0 66 30"><path d="M2 15 H56 M48 7 L58 15 L48 23" fill="none" stroke="#2e86de" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>over the air</span></div>
+
+  <div class="card">
+    <svg class="ic" viewBox="0 0 64 64" fill="none" stroke="#2e86de" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="18" y="26" width="28" height="30" rx="4" fill="#eaf3fc"/>
+      <path d="M32 26 V14 M32 14 h-3 a3 3 0 0 0 0 6 h6 a3 3 0 0 1 0 6 h-3"/>
+      <circle cx="32" cy="48" r="4" fill="#2e86de" stroke="none"/>
+      <path d="M24 36 h16"/>
+    </svg>
+    <h3>Base radio</h3>
+    <p>The BK M150 relays every position over a plain USB cable.</p>
+  </div>
+
+  <div class="arrow"><svg viewBox="0 0 66 30"><path d="M2 15 H56 M48 7 L58 15 L48 23" fill="none" stroke="#2e86de" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>USB</span></div>
+
+  <div class="card hub">
+    <span class="tag">The whole engine</span>
+    <svg class="ic" viewBox="0 0 64 64" fill="none" stroke="#b5851d" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="8" y="30" width="48" height="20" rx="5" fill="#fff4d6"/>
+      <circle cx="18" cy="40" r="2.6" fill="#f0b429" stroke="none"/>
+      <circle cx="27" cy="40" r="2.6" fill="#f0b429" stroke="none"/>
+      <path d="M40 40 h10"/>
+      <path d="M20 30 V20 M32 30 V14 M44 30 V20"/>
+      <path d="M14 18 a9 9 0 0 1 12 0 M38 18 a9 9 0 0 1 12 0"/>
+    </svg>
+    <h3>The router</h3>
+    <div class="serves">
+      <div>🗺️ Holds your offline map tiles (the pyramid you build in QGIS)</div>
+      <div>📍 Reads the radio → live unit positions</div>
+      <div>🌐 Serves it all as a web page to the LAN</div>
+    </div>
+  </div>
+</div>
+
+<div class="down"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4 V32 M10 23 L20 33 L30 23"/></svg></div>
+
+<div class="devrow">
+  <div class="dev">
+    <svg class="ic" viewBox="0 0 48 48" fill="none" stroke="#2e86de" stroke-width="3" stroke-linejoin="round"><rect x="14" y="4" width="20" height="40" rx="4" fill="#eaf3fc"/><path d="M21 8 h6" stroke-width="2.4"/><circle cx="24" cy="38" r="1.8" fill="#2e86de" stroke="none"/></svg>
+    <div><h4>Phone / tablet</h4><p>Open a link. Live map, moving units.</p></div>
+  </div>
+  <div class="dev">
+    <svg class="ic" viewBox="0 0 48 48" fill="none" stroke="#2e86de" stroke-width="3" stroke-linejoin="round"><rect x="6" y="9" width="36" height="24" rx="3" fill="#eaf3fc"/><path d="M18 40 h12 M24 33 v7"/></svg>
+    <div><h4>Locked-down PC</h4><p>No admin, no install — it just opens a web page.</p></div>
+  </div>
+  <div class="dev">
+    <svg class="ic" viewBox="0 0 48 48" fill="none" stroke="#2e86de" stroke-width="3" stroke-linejoin="round"><path d="M24 7 C15 7 8 15 8 24 C8 34 24 42 24 42 C24 42 40 34 40 24 C40 15 33 7 24 7 Z" fill="#eaf3fc"/><circle cx="24" cy="22" r="6"/></svg>
+    <div><h4>Any screen</h4><p>Same source, same units, every map in sync.</p></div>
+  </div>
+</div>
+
+<div class="foot">
+  <div class="big">Nothing installed on the viewing device but a <b>browser.</b></div>
+  <div class="small">Your offline map tiles <span class="pill">pan &amp; zoom</span> + your live units <span class="pill">refresh on their own</span><br>
+  — the 2D heart of ArcGIS Earth, running in a browser, with no ArcGIS Earth and no internet.</div>
+</div>
+
+</body></html>

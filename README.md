@@ -42,6 +42,16 @@ The Lookout exists to reach the people a normal install can't:
 
 That second row is the whole point: a machine that can't install a thing still gets live positions, because the Pi does all the work and the PC just opens a map file.
 
+## 🌐 Live map in any browser — no app, no internet (NEW, 2026-11-15)
+
+![The Lookout — your map, your trucks, any browser](docs/graphics/browser_map_pictogram.png)
+
+The router now serves a full **slippy map straight to any web browser** — your own offline map tiles (the `.mbtiles` pyramid you build in QGIS) with the live units drawn on top. A locked-down PC, a phone, a tablet — each just opens **`http://<router>:8080/`**. Nothing installed, no internet. Functionally this is the 2D heart of ArcGIS Earth (an offline tile pyramid you pan and zoom, with a live overlay) running in a plain browser, with no ArcGIS Earth.
+
+**Proven live** on a GL-MT6000, on a PC and an Android phone, with real P25 units riding on Bryceville aerial imagery — nothing on the viewing device but a browser.
+
+👉 Full build + how-to-reproduce record: **[docs/BROWSER_MAP.md](docs/BROWSER_MAP.md)** · **[printable PDF](docs/The_Lookout_Browser_Map.pdf)**
+
 ## What you need
 
 1. **A Raspberry Pi** — any model with USB and networking; a [Raspberry Pi 4](https://www.raspberrypi.com/products/) is more than enough.
