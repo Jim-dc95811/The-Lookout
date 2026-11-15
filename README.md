@@ -87,8 +87,17 @@ Straight about where this stands (measured, not assumed):
 |---|---|
 | Radio → clean NMEA on the network (`:10110`) | **Built and running** as a boot service; proven on the bench through connect → subscribe → serve, holding the radio steady. |
 | ArcGIS Earth pulls a refreshing KML from the Pi (`:8080`) | **Delivery proven live** — ArcGIS Earth 3.0.1 re-fetches a NetworkLink from the Pi every 2 seconds on its own, across the LAN. |
-| `units.kml` generated from the live feed (`:8080`) | **Built and confirmed live on ArcGIS Earth (2026-11-14).** Pipeline verified end to end (fake radio → bridge → `units_kml.py` → correct `units.kml`), then three named units served from the Pi appeared and moved in ArcGIS Earth with nothing installed on the PC (screenshot above). |
-| End-to-end with a transmitting field unit | **Pending** — needs a unit keying up in the field (bench has only the base relay). |
+| `units.kml` generated from the live feed (`:8080`) | **Built and confirmed live on ArcGIS Earth (2026-11-14).** Pipeline verified end to end (fake radio → bridge → `units_kml.py` → correct `units.kml`), then three named units served appeared and moved in ArcGIS Earth with nothing installed on the PC (screenshot above). |
+| End-to-end with a live transmitting unit | **Proven live, 2026-11-15.** A real unit (ID `9076803`) keyed up and landed on ArcGIS Earth in Bryceville, FL — read off the radio, served over the LAN, consumed by a PC that had only a KML file. |
+| Whole stack on a travel router instead of a Pi | **Proven live, 2026-11-15.** The bridge and the KML server both run on a **GL-MT6000** (OpenWrt); the router reads the radio over USB and serves the live unit to the LAN. |
+
+## Also proven on a travel router
+
+The Lookout is not Pi-only. The same two scripts run **unchanged** on a **GL-MT6000** travel router (OpenWrt): install Python (`opkg install python3`), pull the two scripts, and the router reads the radio over USB and serves the LAN — no separate computer, no monitor, a built-in web admin page. A router cures the Pi's hardest part (headless networking and silent failures) because it already *is* a reachable network appliance. It also never needs the open internet after setup, so it can be frozen on a fixed firmware.
+
+![A live unit served by the router, on ArcGIS Earth](images/the_lookout_router_live.jpg)
+
+*A live P25 unit (`9076803`) served entirely by a GL-MT6000 router and shown in ArcGIS Earth, 2026-11-15 — Bryceville, FL. Nothing installed on the viewing PC but a KML file.*
 
 ## Credits — a human–AI engineering collaboration
 
