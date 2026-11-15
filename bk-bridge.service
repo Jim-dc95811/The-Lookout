@@ -1,0 +1,14 @@
+[Unit]
+Description=The Lookout - radio GPS to NMEA network bridge
+After=network.target
+
+[Service]
+# Bring the radio's USB link up with an address on its subnet, then run the bridge.
+# Edit the IP/interface here if your radio uses a different subnet.
+ExecStartPre=/bin/sh -c 'ip addr add 10.250.46.100/24 dev usb0 2>/dev/null; ip link set usb0 up 2>/dev/null; true'
+ExecStart=/usr/bin/python3 /home/pi/bk_bridge.py
+Restart=always
+RestartSec=4
+
+[Install]
+WantedBy=multi-user.target
