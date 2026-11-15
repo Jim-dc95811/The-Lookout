@@ -110,6 +110,16 @@ The field build has been hardened and live-proven on the router:
 - **No single viewer can stall the feed.** A frozen or sleeping viewer is dropped instead of blocking everyone else.
 - **Starts on boot, survives a power cut.** Installed as OpenWrt `procd` services (`openwrt/`), both come back on their own after a cold power cycle.
 
+## Naming units — the Alias Manager
+
+Units show their raw radio ID by default. **Alias Manager** (`alias_manager/`) is a small Windows app that names them from any PC on the LAN — no SSH, no restart:
+
+1. Run `Start Alias Manager.bat`.
+2. Enter the box's IP, and the token (default `lookout`; change it with an `admin_token.txt` next to `units_kml.py`).
+3. Click **Load from router**, edit the **Unit ID → Name** grid, click **Save to router**.
+
+The names land in `aliases.json`, which the KML server already reads on every refresh, so the map shows the new names within a few seconds. Standard library only — nothing to install. The app talks to a token-guarded `GET/POST /admin/aliases` endpoint on the KML server (`:8080`).
+
 ## Credits — a human–AI engineering collaboration
 
 - **Jim Gaddy** — conceived it, directed it, and bench-tested every step. 37 years of radio and electronics; the one who knew the hardware inside out.
