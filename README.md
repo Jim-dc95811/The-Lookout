@@ -100,6 +100,16 @@ The Lookout is not Pi-only. The same two scripts run **unchanged** on a **GL-MT6
 
 *A live P25 unit (`9076803`) served entirely by a GL-MT6000 router and shown in ArcGIS Earth, 2026-11-15 — Bryceville, FL. Nothing installed on the viewing PC but a KML file.*
 
+## Hardening (v1.2)
+
+The field build has been hardened and live-proven on the router:
+
+- **Radio-link alarm.** The bridge watches its own link to the radio; the instant the USB cable is pulled (or the radio drops), a red **⚠ RADIO LINK DOWN** banner drops on the map in about a second — no waiting for units to go stale. A recovered map whose pins are still red is a *lingering alarm*: it tells the operator the link flickered. Reload the layer to clear it.
+- **Plug-in after boot.** A hotplug handler re-addresses the radio's USB link whenever it appears, so the box tracks even if the radio is connected *after* power-on, not just during boot.
+- **Daily track log.** Every fix is appended to `logs/track_YYYY-MM-DD.csv`, timestamped from the GPS fix itself when the radio sends `$..RMC` (accurate even if the box's own clock has drifted offline), otherwise from the box clock.
+- **No single viewer can stall the feed.** A frozen or sleeping viewer is dropped instead of blocking everyone else.
+- **Starts on boot, survives a power cut.** Installed as OpenWrt `procd` services (`openwrt/`), both come back on their own after a cold power cycle.
+
 ## Credits — a human–AI engineering collaboration
 
 - **Jim Gaddy** — conceived it, directed it, and bench-tested every step. 37 years of radio and electronics; the one who knew the hardware inside out.
