@@ -55,6 +55,12 @@ The router now serves a full **slippy map straight to any web browser** — your
 
 *A smartphone with nothing installed but a browser, showing the live map served off the router — the box's own GPS (LOOKOUT) and a live field unit (9076801), both "now", on offline imagery. This is the whole point: a device that can't install a thing still sees live positions.*
 
+**One mega map, no limit.** The Lookout serves a **single giant `.tpkx`** straight off the SSD — no splitting, no conversion. The example below is **50 GB of Zoom-18 imagery covering four 1° squares** (a full 2° × 2° area of NE Florida — Jacksonville, Gainesville, Ocala and the coast). It's the exact Compact Cache V2 package ArcGIS Earth opens (shown here in ArcGIS Earth), and the same file the browser map serves to every screen.
+
+![A 50 GB Zoom-18 TPKX — four 1° squares of NE Florida imagery — open in ArcGIS Earth, the same single file The Lookout serves to every browser](images/the_lookout_mega_tpkx.jpg)
+
+*A single 50 GB Z18 `.tpkx` (four 1° cells, ~2° × 2°) in ArcGIS Earth. Drop one file like this on the SSD root and the Lookout serves it — plus your live units — to any phone or PC with nothing installed.*
+
 **Many maps, one tap.** Drop several map files on the SSD and each gets its own link with a **Maps** menu to switch between them — your whole-area map, a county at Z20, a special incident map — live units riding on all of them, and units never move your view. Open `http://<router>:8080/`, hit **🗺 Maps**.
 
 👉 Full build + how-to-reproduce record: **[docs/BROWSER_MAP.md](docs/BROWSER_MAP.md)** · **[printable PDF](docs/The_Lookout_Browser_Map.pdf)**
