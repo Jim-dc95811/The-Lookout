@@ -34,6 +34,13 @@ v1.3 (2026-11-15): token-guarded /admin/aliases endpoint so the Alias Manager PC
 read and replace the unit id -> name table over the LAN. Names take effect within one map
 refresh (aliases.json is already read live). Token default "lookout"; override with
 admin_token.txt beside this file.
+
+v1.10 (2026-11-15): MANY MAPS, one per link. Every .tpkx/.mbtiles found beside the default
+basemap (e.g. dropped on the SSD) is served at its own URL /m/<slug>/ with the live units on
+top; /maps.json lists them and the page has a Maps menu to jump between them. The default
+basemap still loads at / unchanged. Two viewers can be on different maps at once; drop a new
+map file on the drive and it appears within ~10 s, no restart. (v1.4-1.9: the in-browser live
+slippy map - Leaflet over offline MBTiles, then Esri .tpkx too, reboot-safe; see git history.)
 """
 import re, time, math, json, socket, threading, sys, argparse
 from collections import deque
@@ -42,7 +49,7 @@ import os, sqlite3, struct, zipfile
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-VERSION = "1.9"
+VERSION = "1.10"
 
 # ---- where we read from / serve to ----
 BRIDGE_HOST = "127.0.0.1"     # the bridge's NMEA feed (same box)
@@ -70,9 +77,11 @@ def _default_basemap():
 
 MBTILES_PATH = os.environ.get("LOOKOUT_MBTILES") or _default_basemap()
 _ASSET_DIR   = Path(__file__).resolve().parent
-_meta_cache  = {}
-_tpkx_reader = None
-_tpkx_lock   = threading.Lock()
+_meta_cache  = {}          # realpath -> meta dict (cached on a good read only)
+_readers     = {}          # realpath -> _Tpkx instance (tpkx only; mbtiles open per request)
+_maps_cache  = {}          # slug -> {path, real, name, tpkx, default}
+_maps_ts     = [0.0]       # last discovery time (monotonic)
+_maps_lock   = threading.Lock()
 
 def _is_tpkx():
     return MBTILES_PATH.lower().endswith(".tpkx")
@@ -115,34 +124,43 @@ class _Tpkx:
     def meta(self):
         return {"has_tiles": True, "minzoom": self.minzoom, "maxzoom": self.maxzoom, "bounds": self.bounds}
 
-def _get_tpkx():
-    global _tpkx_reader
-    if _tpkx_reader is not None:
-        return _tpkx_reader
-    with _tpkx_lock:
-        if _tpkx_reader is None:
+def _tpkx_path(p):
+    return p.lower().endswith(".tpkx")
+
+def _reader_for(path):
+    """Cached _Tpkx reader per file (keyed by realpath). Returns None when a .tpkx can't be
+    opened yet (e.g. the SSD isn't mounted) so callers keep retrying; MBTiles -> "mbtiles"."""
+    if not _tpkx_path(path):
+        return "mbtiles"
+    key = os.path.realpath(path)
+    r = _readers.get(key)
+    if r is not None:
+        return r
+    with _maps_lock:
+        r = _readers.get(key)
+        if r is None:
             try:
-                _tpkx_reader = _Tpkx(MBTILES_PATH)   # fails if the SSD isn't mounted yet - retry later
+                r = _readers[key] = _Tpkx(path)
             except Exception:
                 return None
-    return _tpkx_reader
+    return r
 
-def _mb_conn():
-    return sqlite3.connect("file:%s?mode=ro" % MBTILES_PATH, uri=True, timeout=5)
-
-def _mbtiles_meta():
-    if _meta_cache:
-        return _meta_cache
+def meta_for(path):
+    """Bounds + zoom range for one map file, cached per file on a good read only (so a map
+    whose drive isn't mounted yet keeps being retried instead of cached empty)."""
+    key = os.path.realpath(path)
+    cached = _meta_cache.get(key)
+    if cached:
+        return cached
     blank = {"has_tiles": False, "minzoom": 0, "maxzoom": 20, "bounds": [-180.0, -85.0, 180.0, 85.0]}
-    if _is_tpkx():
-        r = _get_tpkx()
-        if r:
-            _meta_cache.update(r.meta())
-            return _meta_cache
-        return blank                      # not mounted yet - keep retrying, don't cache
+    if _tpkx_path(path):
+        r = _reader_for(path)
+        if r and r != "mbtiles":
+            m = r.meta(); _meta_cache[key] = m; return m
+        return blank
     m = dict(blank)
     try:
-        c = _mb_conn()
+        c = sqlite3.connect("file:%s?mode=ro" % path, uri=True, timeout=5)
         md = dict(c.execute("select name, value from metadata").fetchall())
         if md.get("bounds"):
             m["bounds"] = [float(x) for x in md["bounds"].split(",")][:4]
@@ -152,23 +170,103 @@ def _mbtiles_meta():
         c.close()
     except Exception:
         pass
-    if m["has_tiles"]:       # cache ONLY a good read; if the SSD isn't mounted yet (cold boot),
-        _meta_cache.update(m)  # keep returning "no tiles" and retry until the drive appears
+    if m["has_tiles"]:
+        _meta_cache[key] = m
     return m
 
-def _get_tile(z, x, y):
-    if _is_tpkx():
-        r = _get_tpkx()
-        return r.tile(z, x, y) if r else None
+def tile_for(path, z, x, y):
+    if _tpkx_path(path):
+        r = _reader_for(path)
+        return r.tile(z, x, y) if (r and r != "mbtiles") else None
     # MBTiles: Leaflet asks XYZ (y=0 at north); MBTiles stores TMS (row 0 at south) -> flip.
     try:
-        c = _mb_conn()
-        r = c.execute("select tile_data from tiles where zoom_level=? and tile_column=? and tile_row=?",
-                      (z, x, (1 << z) - 1 - y)).fetchone()
+        c = sqlite3.connect("file:%s?mode=ro" % path, uri=True, timeout=5)
+        row = c.execute("select tile_data from tiles where zoom_level=? and tile_column=? and tile_row=?",
+                        (z, x, (1 << z) - 1 - y)).fetchone()
         c.close()
-        return r[0] if r else None
+        return row[0] if row else None
     except Exception:
         return None
+
+# the default basemap (served at "/") - thin wrappers over the per-file helpers
+def _mbtiles_meta():
+    return meta_for(MBTILES_PATH)
+
+def _get_tile(z, x, y):
+    return tile_for(MBTILES_PATH, z, x, y)
+
+# ---------- many maps: every .tpkx/.mbtiles beside the default map gets its own URL ----------
+def _maps_dir():
+    env = os.environ.get("LOOKOUT_MAPS")
+    if env:
+        return Path(env)
+    try:
+        real = Path(os.path.realpath(MBTILES_PATH))   # follow the symlink to its real folder (the SSD)
+        if real.parent.exists():
+            return real.parent
+    except OSError:
+        pass
+    return _ASSET_DIR
+
+def _slugify(stem):
+    s = re.sub(r"[^a-z0-9]+", "-", stem.lower()).strip("-")
+    return s or "map"
+
+def _discover_maps():
+    """slug -> {path, real, name, tpkx, default}. The default basemap is always included and
+    marked; a 'basemap.*' symlink is listed under its REAL target's name, not 'basemap'."""
+    found = {}; seen = {}
+    def add(path, default=False):
+        try:
+            real = os.path.realpath(path)
+        except OSError:
+            return
+        if real in seen:
+            if default:
+                found[seen[real]]["default"] = True
+            return
+        name = Path(real).stem
+        base = _slugify(name); slug = base; n = 2
+        while slug in found:
+            slug = "%s-%d" % (base, n); n += 1
+        found[slug] = {"path": str(path), "real": real, "name": name,
+                       "tpkx": _tpkx_path(str(path)), "default": default}
+        seen[real] = slug
+    if os.path.lexists(MBTILES_PATH):
+        add(MBTILES_PATH, default=True)
+    dirs = [_maps_dir()]
+    if _ASSET_DIR not in dirs:
+        dirs.append(_ASSET_DIR)              # also pick up basemap.* / extra maps on internal flash
+    for d in dirs:
+        try:
+            entries = sorted(d.glob("*.tpkx")) + sorted(d.glob("*.mbtiles"))
+        except OSError:
+            entries = []
+        for p in entries:
+            if p.name.startswith("basemap."):    # the default symlink, already added above
+                continue
+            add(str(p))
+    return found
+
+def _maps(force=False):
+    now = time.monotonic()
+    if force or not _maps_cache or now - _maps_ts[0] > 10:   # re-scan ~every 10s: drop a file, it appears
+        with _maps_lock:
+            if force or not _maps_cache or now - _maps_ts[0] > 10:
+                fresh = _discover_maps()
+                _maps_cache.clear(); _maps_cache.update(fresh)
+                _maps_ts[0] = now
+    return _maps_cache
+
+def _maps_list():
+    out = []
+    for slug, info in _maps().items():
+        m = meta_for(info["path"])
+        out.append({"slug": slug, "name": info["name"], "default": info["default"],
+                    "base": "/" if info["default"] else "/m/%s/" % slug,
+                    "has_tiles": m.get("has_tiles", False), "bounds": m.get("bounds")})
+    out.sort(key=lambda e: (not e["default"], e["name"].lower()))
+    return out
 
 _CTYPE = {".js": "application/javascript", ".css": "text/css", ".html": "text/html; charset=utf-8"}
 def _serve_asset(h, name):
@@ -480,6 +578,25 @@ class _H(BaseHTTPRequestHandler):
             return _serve_asset(self, "map.html")
         if path in ("/leaflet.js", "/leaflet.css"):
             return _serve_asset(self, path.lstrip("/"))
+        if path == "/maps.json":
+            return self._json(200, {"maps": _maps_list()})
+        if path.startswith("/m/"):
+            slug, _, tail = path[3:].partition("/")
+            info = _maps().get(slug) or _maps(force=True).get(slug)   # re-scan once for a just-added map
+            if not info:
+                self.send_error(404); return
+            if tail in ("", "map", "index.html"):
+                return _serve_asset(self, "map.html")
+            if tail == "meta.json":
+                return self._json(200, meta_for(info["path"]))
+            if tail.startswith("tiles/"):
+                try:
+                    z, x, y = tail[len("tiles/"):].split("/")[:3]
+                    z, x, y = int(z), int(x), int(y.split(".")[0])
+                except ValueError:
+                    self.send_error(400); return
+                return self._tile(tile_for(info["path"], z, x, y))
+            self.send_error(404); return
         if path == "/meta.json":
             body = json.dumps(_mbtiles_meta()).encode("utf-8")
             self.send_response(200)
@@ -524,6 +641,16 @@ class _H(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
         self.end_headers()
         self.wfile.write(body)
+
+    def _tile(self, data):
+        if data is None:
+            self.send_response(204); self.end_headers(); return
+        ctype = "image/png" if data[:4] == b"\x89PNG" else "image/jpeg"   # .tpkx is MIXED
+        self.send_response(200)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "max-age=86400")
+        self.end_headers(); self.wfile.write(data)
 
     def _serve_opener(self):
         # A NetworkLink opener that points back at THIS box (whatever address the device used
