@@ -2,7 +2,7 @@
 
 **Proven live 2026-11-15** on a GL-MT6000 router, on a PC and an Android phone, with real P25 units (9076801, 9076803) riding on Bryceville aerial imagery — nothing installed on the viewing devices but a web browser. The same day it went further: the router served a **46 GB Z20 Esri `.tpkx`** — the exact tile package ArcGIS Earth opens, with no conversion — straight off an external SSD, at full Z20 detail and smooth zoom, to a PC and a phone.
 
-This document is the permanent record of what was built, why it matters, and exactly how to stand it up again. Code lives on **`main`** (`units_kml.py` **v1.9** + `map.html` + `leaflet.js` + `leaflet.css`) — merged from `browser-map-wip` and made official 2026-11-15.
+This document is the permanent record of what was built, why it matters, and exactly how to stand it up again. Code lives on **`main`** (`units_kml.py` **v1.10** + `map.html` + `leaflet.js` + `leaflet.css`) — made official 2026-11-15. v1.10 adds **many maps, one per link** (§3).
 
 ---
 
@@ -47,6 +47,7 @@ The browser loads `map.html`, which starts a Leaflet map, adds a raster tile lay
 - **Graceful with no basemap:** if `basemap.mbtiles` is missing, tiles 404 and the units simply draw on a blank background (older behavior).
 - **Config:** the basemap defaults to `basemap.tpkx` then `basemap.mbtiles` beside `units_kml.py` (i.e. `/root/…` on the router); override with the `LOOKOUT_MBTILES` environment variable.
 - **TPKX is supported too (v1.9).** The server reads tiles straight out of an Esri **`.tpkx`** (Compact Cache V2 — exactly what `mb2tpkx` writes), so it serves the **same tile packages ArcGIS Earth uses, with no conversion**. Backend chosen by extension. Bundle path `tile/L{zz}/R{row:hex}C{col:hex}.bundle`; 8-byte index record = offset (low 40 bits) + size (high bits); row-major; **no TMS flip** (TPKX stores rows north-down already); MIXED JPEG/PNG sniffed per tile. Direct-seek reader, thread-safe, reboot-safe. To use one: put a `.tpkx` on the SSD and symlink `/root/basemap.tpkx` to it.
+- **Many maps, one per link (v1.10).** Every `.tpkx`/`.mbtiles` found beside the default basemap — i.e. all of them on the SSD — is served at its own URL `/m/<slug>/` with the live units on top; `/maps.json` lists them and the page carries a **Maps** menu to jump between them. The default basemap still loads at `/`. Two viewers can be on different maps at once, and a new map file dropped on the drive shows up in the menu within ~10 s (no restart). Each map is named after its file; whichever `basemap` points at is the default. **Units never move the view** — IDs key up from all over, so the map stays exactly where you put it. LIVE-PROVEN on the router 2026-11-15 (tap to switch county maps; a unit keying up never hijacks the view).
 
 ## 4. How to reproduce it (deploy to a router)
 
@@ -61,7 +62,7 @@ There's no progress bar; it goes quiet, then returns to the prompt. Verify the s
 ssh root@192.168.8.1 "ls -l /root/basemap.mbtiles"
 ```
 
-**Step 2 — pull the v1.9 code and restart.**
+**Step 2 — pull the v1.10 code and restart.**
 ```
 ssh root@192.168.8.1 "cd /root && \
   wget -O units_kml.py https://raw.githubusercontent.com/Jim-dc95811/The-Lookout/main/units_kml.py && \
@@ -86,7 +87,7 @@ Type the `http://` on purpose (see gotcha below). You'll see your tiles with the
 
 ## 6. Status and what's left
 
-**Status:** `units_kml.py` **v1.9** is LIVE-PROVEN on the GL-MT6000 (2026-11-15) on PC and phone — served from the router's internal flash, from an external SSD, and from both basemap formats: an **MBTiles** pyramid *and* an Esri **`.tpkx`** (the same package ArcGIS Earth opens, no conversion). High-water mark: a **46 GB Z20 `.tpkx`** served off the SSD at full detail and smooth zoom. Merged to **`main`** and made official 2026-11-15. Reboot-survival services are in place (v1.8 boot-ordering safety, §7).
+**Status:** `units_kml.py` **v1.10** is LIVE-PROVEN on the GL-MT6000 (2026-11-15) on PC and phone — served from the router's internal flash, from an external SSD, and from both basemap formats: an **MBTiles** pyramid *and* an Esri **`.tpkx`** (the same package ArcGIS Earth opens, no conversion). High-water mark: a **46 GB Z20 `.tpkx`** served off the SSD at full detail and smooth zoom. **v1.10 adds the Maps menu** — every map file on the SSD served at its own link, units never moving the view — live-proven on the router 2026-11-15. Merged to **`main`** and made official. Reboot-survival services are in place (v1.8 boot-ordering safety, §7).
 
 **In progress (2026-11-15):** a single whole-area **Z19** package covering a 2°×2° box (≈4 counties) building in QGIS — expected on the order of **100–150 GB**, to be served the same way. When it lands, verify the total file size and that all four corners of the box actually carry imagery (a long, slow basemap fetch can leave edges blank).
 
@@ -95,7 +96,7 @@ Type the `http://` on purpose (see gotcha below). You'll see your tiles with the
 - Unit labels overlap/clip when two units are very close — offset or collision-handle them.
 - **QR code** that opens `http://<router>:8080/` — the right crew-onboarding tool (and it kills the `http://` typing gotcha).
 - Fold the basemap step into the setup flow / Lookout Manager so any router is built this way in one shot.
-- Bigger / multiple basemaps for wider coverage; a way to pick which map file is active.
+- ~~Bigger / multiple basemaps for wider coverage; a way to pick which map file is active.~~ — **done 2026-11-15 (v1.10): every map on the SSD at its own `/m/<slug>/` link + a Maps menu (§3).** Next: fold "pick a map / set the default" into Lookout Manager for a one-click rig.
 - ~~Merge `browser-map-wip` into `main`~~ — **done 2026-11-15; v1.9 is on `main`.** The `browser-map-wip` branch is now redundant and can be deleted.
 
 ## 7. Big storage: external SSD on a powered hub (statewide)
