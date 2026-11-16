@@ -67,6 +67,12 @@ The router now serves a full **slippy map straight to any web browser** — your
 
 ## Build it
 
+**New to this? Follow the picture.** A box-to-live-map visual walkthrough — power up, set a password, one click, plug in the kit, open the map:
+
+![The Lookout — from the box to a live map, step by step](docs/graphics/lookout_install_pictogram.png)
+
+👉 **[Printable PDF of the steps](docs/graphics/lookout_install_pictogram.pdf)**
+
 **Easiest — one click.** Use **Lookout Manager** (the Windows app, below): type the router's IP and admin password, click once, and it installs everything over SSH. See **[DEPLOY.md](DEPLOY.md)**.
 
 **By hand on a GL-MT6000 (OpenWrt), radio plugged into USB:**
