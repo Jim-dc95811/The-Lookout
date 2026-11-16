@@ -43,8 +43,14 @@ var BASE = location.pathname.replace(/\/(map|index\.html)\/?$/,"").replace(/\/+$
 var isDefault = (BASE === "");
 var map = L.map("map",{zoomControl:true, attributionControl:false});
 map.setView([30.40,-81.93], 12);   // sane default; re-centers on the map / units once loaded
-var markers={}, first=true, tilesAdded=false;
+var markers={}, tilesAdded=false, userMoved=false;
 var GREEN="#2ecc71", AMBER="#f1c40f";
+// The map frames itself once on load; after that the user owns the view. Units are drawn where
+// they are but NEVER move the display - IDs key up from all over and must not drag it around.
+// Track any user pan/zoom so even the one-time load-framing never yanks a view they've grabbed.
+function markMoved(){ userMoved=true; }
+map.on("dragstart", markMoved);
+map.getContainer().addEventListener("wheel", markMoved, {passive:true});
 function esc(s){return (s+"").replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 
 function setupTiles(meta){
@@ -54,9 +60,9 @@ function setupTiles(meta){
   L.tileLayer(BASE+"/tiles/{z}/{x}/{y}",{minZoom:meta.minzoom, maxZoom:22, maxNativeZoom:meta.maxzoom, bounds:[sw,ne],
     errorTileUrl:"data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="}).addTo(map);
   map.setMaxBounds([[sw[0]-0.08,sw[1]-0.08],[ne[0]+0.08,ne[1]+0.08]]);
-  // A named map: show that map's own area. The default map: prefer the trucks if we have them.
-  if(!isDefault){ first=false; map.fitBounds([sw,ne]); }
-  else if(first && Object.keys(markers).length===0){ map.fitBounds([sw,ne]); }
+  // Frame the whole map on load (named or default). There is no auto-fit to units: IDs pop in
+  // from all over, so they must never move the display. Skip even this if the user already moved.
+  if(!userMoved){ map.fitBounds([sw,ne]); }
 }
 // Keep asking for the basemap until the drive/MBTiles is ready (survives a cold boot where the
 // USB auto-mount finishes AFTER this service starts: the map appears the instant it mounts).
@@ -107,8 +113,7 @@ function update(d){
            m.bindTooltip(lab,{permanent:true,direction:"right",className:"ulbl",offset:[8,0]}); markers[u.id]=m; }
   });
   Object.keys(markers).forEach(function(id){ if(!seen[id]){ map.removeLayer(markers[id]); delete markers[id]; }});
-  // Auto-fit to the trucks only on the default map, so a named map keeps showing its own area.
-  if(isDefault && first && pts.length){ first=false; if(pts.length>1){ map.fitBounds(pts,{padding:[70,70],maxZoom:17}); } else { map.setView(pts[0],16); } }
+  // (No auto-pan to units: they key up from everywhere and must never move the display.)
 }
 loadMaps();
 pollMeta();
