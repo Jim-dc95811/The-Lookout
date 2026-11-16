@@ -1,10 +1,10 @@
 # The Lookout
 
-**Using a Raspberry Pi as a GPS coordinate server — one quiet box reads the radios and lights up every screen on the network.**
+**A pocket travel router turns P25 radio GPS into a live map on every screen — a browser, a phone, or ArcGIS Earth. Offline, no install, no cloud.**
 
 🤖 **Using AI assistance?** Have the agent read the [CLAUDE.md](https://github.com/Jim-dc95811/ArcGIS-Earth-Unlocked/blob/main/CLAUDE.md) file first.
 
-A GPS-telemetry radio already knows where your field units are — but that position is usually trapped: one cable, one PC, one program that has to be installed and allowed to run. **The Lookout** sets it free. A $35 Raspberry Pi reads the radio, pulls the position stream out, and re-serves it on your LAN so **any** device can watch — many ArcGIS Earth PCs, phones, tablets — all seeing the same units move, with nothing installed on the consuming machines.
+A GPS-telemetry radio already knows where your field units are — but that position is usually trapped: one cable, one PC, one program that has to be installed and allowed to run. **The Lookout** sets it free. A pocket travel router — a ~$170 **GL-MT6000** — reads the radio, pulls the position stream out, and re-serves it on your LAN so **any** device can watch — a plain browser, many ArcGIS Earth PCs, phones, tablets — all seeing the same units move, with nothing installed on the consuming machines.
 
 ![The Lookout — architecture](images/the_lookout.png)
 
@@ -12,23 +12,23 @@ A GPS-telemetry radio already knows where your field units are — but that posi
 
 ## What it does
 
-- **Reads the radio.** A GPS-telemetry base radio presents its received positions over a USB network link (RNDIS/CDC-Ethernet). The Pi connects, subscribes, and reads the stream.
+- **Reads the radio.** A GPS-telemetry base radio presents its received positions over a USB network link (RNDIS/CDC-Ethernet). The Lookout connects, subscribes, and reads the stream.
 - **Cleans it up.** It pulls the standard NMEA sentences (`$GNGGA` position + a per-unit ID sentence) out of the radio's framing. The parser is frame-agnostic — it just finds and checksums the NMEA, so it works with any source that emits NMEA.
 - **Serves it to everyone.** It re-broadcasts the clean feed on the network so many devices read one source at once:
   - **`:10110` — NMEA over TCP.** A plain NMEA-0183 stream any maps/NMEA app (phone, tablet, chart plotter, Windows tracker) can connect to.
   - **`:8080` — a live KML layer** (`units.kml`) that **ArcGIS Earth pulls on a timer** via a NetworkLink. This is the part that matters for locked-down PCs: it needs **no Python, no install, no admin** — you open one small map file once and the units move on their own.
-- **Runs itself.** Installed as a boot service, the Lookout comes up on its own every time the Pi powers on. Plug the radio in, power on, done.
+- **Runs itself.** Installed as a boot service, the Lookout comes up on its own every time the box powers on. Plug the radio in, power on, done.
 
 ## How it works (the picture above, left to right)
 
 ```
-Field units  ──P25 GPS over the air──▶  Base radio  ──USB (RNDIS)──▶  THE LOOKOUT (Pi)  ──LAN──▶  every screen
+Field units  ──P25 GPS over the air──▶  Base radio  ──USB (RNDIS)──▶  THE LOOKOUT (router)  ──LAN──▶  every screen
                                                                          │ bk_bridge.py
                                                                          ├─ :8080  units.kml   → ArcGIS Earth (pull)
                                                                          └─ :10110 NMEA/TCP     → phones & apps
 ```
 
-The Pi is the single source of truth; every ArcGIS Earth on the LAN is just a window into it. Each screen pulls on its own timer — **one source, many windows, same units on every map.** Scales from one PC to dozens without any special network setup: it's plain HTTP and TCP, nothing to enable, routes across subnets like any web request.
+The router is the single source of truth; every ArcGIS Earth on the LAN is just a window into it. Each screen pulls on its own timer — **one source, many windows, same units on every map.** Scales from one PC to dozens without any special network setup: it's plain HTTP and TCP, nothing to enable, routes across subnets like any web request.
 
 ## Who it's for
 
@@ -40,7 +40,7 @@ The Lookout exists to reach the people a normal install can't:
 | **Locked-down PC** (managed by Group Policy, no Python/admin) | ArcGIS Earth opens one NetworkLink KML → live units | **nothing** |
 | **Smartphone / tablet** | ArcGIS Earth Mobile (KML) or an NMEA app (TCP) | a free app |
 
-That second row is the whole point: a machine that can't install a thing still gets live positions, because the Pi does all the work and the PC just opens a map file.
+That second row is the whole point: a machine that can't install a thing still gets live positions, because the Lookout does all the work and the PC just opens a map file.
 
 ## 🌐 Live map in any browser — no app, no internet (NEW, 2026-11-15)
 
@@ -56,23 +56,27 @@ The router now serves a full **slippy map straight to any web browser** — your
 
 ## What you need
 
-1. **A Raspberry Pi** — any model with USB and networking; a [Raspberry Pi 4](https://www.raspberrypi.com/products/) is more than enough.
+1. **A travel router** (or any small Linux box) — the proven build is a **[GL-MT6000](https://www.gl-inet.com/products/gl-mt6000/)** (~$170); any OpenWrt router works, and a Raspberry Pi does too if you'd rather.
 2. **A GPS-telemetry radio** that emits received positions as NMEA over a network or serial link. This was built and proven against a **BK M150** P25 base relay, but the NMEA parser is generic — any NMEA source works.
 3. **[ArcGIS Earth](https://www.esri.com/en-us/arcgis/products/arcgis-earth/downloads)** (free) on the viewing machines, and/or a phone NMEA/maps app.
 
 ## Build it
 
-The full step-by-step — flash the Pi, enable SSH, bring up the radio link, install the boot service, and verify — is in **[docs/SETUP.md](docs/SETUP.md)**. The short version:
+**Easiest — one click.** Use **Lookout Manager** (the Windows app, below): type the router's IP and admin password, click once, and it installs everything over SSH. See **[DEPLOY.md](DEPLOY.md)**.
 
-```bash
-# on the Pi, with the radio plugged into USB:
-scp bk_bridge.py  pi@<your-pi>:~          # copy the bridge over (run from your PC)
-sudo cp bk-bridge.service /etc/systemd/system/
-sudo systemctl enable --now bk-bridge     # install + start the boot service
-journalctl -u bk-bridge -f                # watch it hold the radio
+**By hand on a GL-MT6000 (OpenWrt), radio plugged into USB:**
+
+```sh
+ssh root@192.168.8.1
+opkg update && opkg install python3
+cd /root
+for f in bk_bridge.py units_kml.py; do wget -O $f https://raw.githubusercontent.com/Jim-dc95811/The-Lookout/main/$f; done
+# install the procd boot services from openwrt/, then enable + start them:
+/etc/init.d/bk-bridge enable && /etc/init.d/bk-bridge start
+/etc/init.d/units-kml enable && /etc/init.d/units-kml start
 ```
 
-Then on any viewer, read the feed at **`<your-pi>:10110`** (NMEA) or point ArcGIS Earth at the Pi's `units.kml` (KML pull).
+Then on any viewer, read the feed at **`<router>:10110`** (NMEA), open **`http://<router>:8080/`** in a browser, or point ArcGIS Earth at the router's `units.kml`. Prefer a Raspberry Pi or another small Linux box? The same two scripts run there too — see **[docs/SETUP.md](docs/SETUP.md)**.
 
 **Configure:** the radio's address, port, and the subscribe handshake live as plain constants at the top of [`bk_bridge.py`](bk_bridge.py) — edit them there for your setup.
 
@@ -85,11 +89,11 @@ python3 units_kml.py            # reads the bridge, serves units.kml on :8080
 python3 units_kml.py --demo     # 3 moving synthetic units — watch it work with no radio
 ```
 
-On any viewer, open **[`Live_Units.kml`](Live_Units.kml)** once in ArcGIS Earth (set `PI-IP` in it to your Pi's address). ArcGIS Earth pulls `units.kml` every few seconds and the units move on their own — no install. Name units by dropping an `aliases.json` beside the script: `{"7101": "Engine 7", "7102": "Tanker 2"}`. Install it to start on boot alongside the bridge with [`units-kml.service`](units-kml.service).
+On any viewer, open **[`Live_Units.kml`](Live_Units.kml)** once in ArcGIS Earth (set the address in it to your Lookout's IP). ArcGIS Earth pulls `units.kml` every few seconds and the units move on their own — no install. Name units by dropping an `aliases.json` beside the script: `{"7101": "Engine 7", "7102": "Tanker 2"}`. Install it to start on boot alongside the bridge with [`units-kml.service`](units-kml.service).
 
-![Three live units pulled from the Pi into ArcGIS Earth](images/live_units_arcgis_earth.jpg)
+![Three live units pulled from the Lookout into ArcGIS Earth](images/live_units_arcgis_earth.jpg)
 
-*Confirmed live on ArcGIS Earth, 2026-11-14 — three named units served by the Pi and moving on their own, nothing installed on the viewing PC (demo feed).*
+*Confirmed live on ArcGIS Earth, 2026-11-14 — three named units served by the Lookout and moving on their own, nothing installed on the viewing PC (demo feed).*
 
 ## Status — what's proven
 
@@ -98,15 +102,15 @@ Straight about where this stands (measured, not assumed):
 | Piece | State |
 |---|---|
 | Radio → clean NMEA on the network (`:10110`) | **Built and running** as a boot service; proven on the bench through connect → subscribe → serve, holding the radio steady. |
-| ArcGIS Earth pulls a refreshing KML from the Pi (`:8080`) | **Delivery proven live** — ArcGIS Earth 3.0.1 re-fetches a NetworkLink from the Pi every 2 seconds on its own, across the LAN. |
+| ArcGIS Earth pulls a refreshing KML from the Lookout (`:8080`) | **Delivery proven live** — ArcGIS Earth 3.0.1 re-fetches a NetworkLink from the Lookout every 2 seconds on its own, across the LAN. |
 | `units.kml` generated from the live feed (`:8080`) | **Built and confirmed live on ArcGIS Earth (2026-11-14).** Pipeline verified end to end (fake radio → bridge → `units_kml.py` → correct `units.kml`), then three named units served appeared and moved in ArcGIS Earth with nothing installed on the PC (screenshot above). |
 | End-to-end with a live transmitting unit | **Proven live, 2026-11-15.** A real unit (ID `9076803`) keyed up and landed on ArcGIS Earth in Bryceville, FL — read off the radio, served over the LAN, consumed by a PC that had only a KML file. |
-| Whole stack on a travel router instead of a Pi | **Proven live, 2026-11-15.** The bridge and the KML server both run on a **GL-MT6000** (OpenWrt); the router reads the radio over USB and serves the live unit to the LAN. |
+| Whole stack on a **GL-MT6000** travel router | **Proven live, 2026-11-15.** The bridge and the KML server both run on the router (OpenWrt); it reads the radio over USB and serves the live units to the LAN — no separate computer. |
 | Comes back on its own after a power cut (router) | **Proven live, 2026-11-15.** Installed as OpenWrt `procd` boot services (`openwrt/`); a cold power-pull brought both services back with new PIDs and the unit reappeared on the map, nothing touched by hand. |
 
-## Also proven on a travel router
+## Why a travel router
 
-The Lookout is not Pi-only. The same two scripts run **unchanged** on a **GL-MT6000** travel router (OpenWrt): install Python (`opkg install python3`), pull the two scripts, and the router reads the radio over USB and serves the LAN — no separate computer, no monitor, a built-in web admin page. A router cures the Pi's hardest part (headless networking and silent failures) because it already *is* a reachable network appliance. It also never needs the open internet after setup, so it can be frozen on a fixed firmware.
+The whole Lookout runs on a single **GL-MT6000** travel router (OpenWrt): install Python (`opkg install python3`), pull the two scripts, and it reads the radio over USB and serves the LAN — no separate computer, no monitor, a built-in web admin page, and it runs off 12 V in a truck. A router already *is* a reachable network appliance, so there's no headless-networking headache, and it never needs the open internet after setup — so it can be frozen on a fixed firmware.
 
 ![A live unit served by the router, on ArcGIS Earth](images/the_lookout_router_live.jpg)
 
@@ -134,7 +138,7 @@ The field build has been hardened and live-proven on the router:
 - **Jim Gaddy** — conceived it, directed it, and bench-tested every step. 37 years of radio and electronics; the one who knew the hardware inside out.
 - **Claude** (Anthropic) — reverse-engineered the radio link, wrote the bridge, and built this out.
 
-Built in the open so anyone can do the same with their own radio and their own Pi.
+Built in the open so anyone can do the same with their own radio and their own router.
 
 ---
 
