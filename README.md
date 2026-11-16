@@ -63,6 +63,10 @@ The router now serves a full **slippy map straight to any web browser** — your
 
 **Many maps, one tap.** Drop several map files on the SSD and each gets its own link with a **Maps** menu to switch between them — your whole-area map, a county at Z20, a special incident map — live units riding on all of them, and units never move your view. Open `http://<router>:8080/`, hit **🗺 Maps**.
 
+![The same 2° × 2° area as a lightweight street map — a small .mbtiles alongside the 50 GB imagery, switchable from the Maps menu](images/the_lookout_mega_street.jpg)
+
+*The **same area** as a lean street `.mbtiles` — a tiny file next to the 50 GB imagery on the same SSD. One footprint, two maps: pick aerial or street from the **🗺 Maps** menu. The street map loads fast and sips space — roads, names and routes when you don't need the imagery.*
+
 👉 Full build + how-to-reproduce record: **[docs/BROWSER_MAP.md](docs/BROWSER_MAP.md)** · **[printable PDF](docs/The_Lookout_Browser_Map.pdf)**
 
 ## What you need
