@@ -96,6 +96,7 @@ Type the `http://` on purpose (see gotcha below). You'll see your tiles with the
 - Unit labels overlap/clip when two units are very close — offset or collision-handle them.
 - **QR code** that opens `http://<router>:8080/` — the right crew-onboarding tool (and it kills the `http://` typing gotcha).
 - Fold the basemap step into the setup flow / Lookout Manager so any router is built this way in one shot.
+- **Explore other router makes/models.** The core is stdlib Python + OpenWrt `procd` services; the GL.iNet bits (USB auto-mount, admin page, one-click Lookout Manager) are conveniences, not dependencies. A candidate just needs OpenWrt/`python3`, a USB port (radio + SSD) and a little RAM. Tiers: (1) other **GL.iNet** models — same firmware, Lookout Manager works unchanged; pick by price/ports/CPU. (2) a **cellular** model (Spitz-class) — the box becomes radio→map *and* the crew's internet uplink + a remote-reachable node (a real capability jump). (3) any **OpenWrt** router — doable, but we'd handle the USB mount + radio link + init scripts ourselves, and the one-click setup would need a per-model path.
 - ~~Bigger / multiple basemaps for wider coverage; a way to pick which map file is active.~~ — **done 2026-11-15 (v1.10): every map on the SSD at its own `/m/<slug>/` link + a Maps menu (§3).** Next: fold "pick a map / set the default" into Lookout Manager for a one-click rig.
 - ~~Merge `browser-map-wip` into `main`~~ — **done 2026-11-15; v1.9 is on `main`.** The `browser-map-wip` branch is now redundant and can be deleted.
 
