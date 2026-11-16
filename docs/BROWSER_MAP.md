@@ -1,5 +1,7 @@
 # The Lookout — Live Map in Any Browser (no app, no internet)
 
+![The Lookout — the hardware: a BK radio, a GPS, and an SSD on a USB hub into a Wi-Fi travel router, serving the live map to any screen](../images/the_lookout_hardware.png)
+
 **Proven live 2026-11-15** on a GL-MT6000 router, on a PC and an Android phone, with real P25 units (9076801, 9076803) riding on Bryceville aerial imagery — nothing installed on the viewing devices but a web browser. The same day it went further: the router served a **46 GB Z20 Esri `.tpkx`** — the exact tile package ArcGIS Earth opens, with no conversion — straight off an external SSD, at full Z20 detail and smooth zoom, to a PC and a phone.
 
 This document is the permanent record of what was built, why it matters, and exactly how to stand it up again. Code lives on **`main`** (`units_kml.py` **v1.10** + `map.html` + `leaflet.js` + `leaflet.css`) — made official 2026-11-15. v1.10 adds **many maps, one per link** (§3).
