@@ -65,6 +65,8 @@ The router now serves a full **slippy map straight to any web browser** — your
 2. **A GPS-telemetry radio** that emits received positions as NMEA over a network or serial link. This was built and proven against a **BK M150** P25 base relay, but the NMEA parser is generic — any NMEA source works.
 3. **[ArcGIS Earth](https://www.esri.com/en-us/arcgis/products/arcgis-earth/downloads)** (free) on the viewing machines, and/or a phone NMEA/maps app.
 
+📋 **Full parts list + specs** (setup PC, SSD format, GPS, router, hub, and the browser/http notes): **[docs/graphics/lookout_hardware_requirements.pdf](docs/graphics/lookout_hardware_requirements.pdf)** (printable).
+
 ## Build it
 
 **New to this? Follow the picture.** A box-to-live-map visual walkthrough — power up, set a password, one click, plug in the kit, open the map:
