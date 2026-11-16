@@ -6,7 +6,7 @@
 
 A GPS-telemetry radio already knows where your field units are — but that position is usually trapped: one cable, one PC, one program that has to be installed and allowed to run. **The Lookout** sets it free. A pocket travel router — a ~$170 **GL-MT6000** — reads the radio, pulls the position stream out, and re-serves it on your LAN so **any** device can watch — a plain browser, many ArcGIS Earth PCs, phones, tablets — all seeing the same units move, with nothing installed on the consuming machines.
 
-![The Lookout — architecture](images/the_lookout.png)
+![The Lookout — the hardware: a BK radio, a GPS, and an SSD on a USB hub into a Wi-Fi travel router, serving the live map to any screen](images/the_lookout_hardware.png)
 
 ---
 
