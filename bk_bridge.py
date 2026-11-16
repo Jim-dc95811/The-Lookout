@@ -21,12 +21,24 @@ quietly go stale. It emits a $PLKT,LINK,UP / $PLKT,LINK,DOWN heartbeat every few
 (and instantly on any change). This is a proprietary NMEA sentence; other NMEA apps
 ignore it. All sends still come from this one thread, so nothing interleaves on a socket.
 
+v1.3 (2026-11-16): the box can now report its OWN position. A local USB GPS plugged into
+the hub (a Garmin GPS 18 USB via gpsd or libusb, or any plain serial NMEA puck) is read by
+gps_source.py in a separate daemon thread, and the box's fix is broadcast into the SAME
+:10110 feed tagged as one reserved unit (SELF_ID) - so "you are here" shows on the map next
+to the radio fleet, with NO change to the map. The radio reader is byte-for-byte unchanged;
+if there is no GPS (or gps_source can't load), the bridge behaves exactly as v1.2.
+
 Run:   python3 bk_bridge.py
 Stop:  Ctrl+C
 """
 import re, socket, threading, time, sys
 
-VERSION = "1.2"
+try:
+    import gps_source                            # the box's own-position reader (optional)
+except Exception:
+    gps_source = None
+
+VERSION = "1.3"
 
 # ---- upstream: the BK base relay ----
 RADIO_IP    = "10.250.46.6"
@@ -43,6 +55,12 @@ SERVE_PORT     = 10110                        # the standard NMEA-0183-over-TCP 
 HEARTBEAT_S    = 15                           # print an "alive, no fixes yet" line this often
 SEND_TIMEOUT_S = 5                            # drop a viewer that can't accept data within this
 STATUS_EVERY_S = 5                            # broadcast the LINK UP/DOWN heartbeat this often
+
+# ---- the box's own position (a local USB GPS plugged into the hub) ----
+GPS_ENABLE   = True                           # read a local GPS and show the box as a unit
+SELF_ID      = "LOOKOUT"                       # the box appears as this unit (alias it in the
+                                              # Alias Manager, e.g. 9076801 -> "Jax 24" style)
+GPS_RESCAN_S = 20                             # no GPS yet, or GPS dropped -> look again this often
 
 # ---- NMEA extraction (verbatim from p25_core.py) ----
 _SENTENCE = re.compile(r"\$[^*$\r\n]{2,88}\*[0-9A-Fa-f]{2}")
@@ -214,9 +232,44 @@ def _radio_loop():
         _set_link("down", time.monotonic())             # radio is gone -> raise the alarm
         _wait(RECONNECT_S)
 
+# ---- local GPS reader (the box's own position) ----
+def _gps_loop():
+    """Read a local USB GPS and broadcast the box's own fix as unit SELF_ID. Runs in its own
+    daemon thread and swallows every error, so it can never disturb the radio feed."""
+    if not (GPS_ENABLE and gps_source):
+        return
+    announced_absent = False
+    while True:
+        try:
+            src, stream = gps_source.open_source(SELF_ID, log=lambda m: print(m, flush=True))
+        except Exception as e:
+            src, stream = None, None
+            print(f"[gps] reader error: {e} - will look again", flush=True)
+        if not src:
+            if not announced_absent:
+                print("[gps] no local GPS found yet - the box won't show its own position "
+                      "(radio feed is unaffected). Still looking.", flush=True)
+                announced_absent = True
+            time.sleep(GPS_RESCAN_S)
+            continue
+        announced_absent = False
+        print(f"[gps] local GPS live on {src.name} - adding this box as unit '{SELF_ID}'",
+              flush=True)
+        try:
+            for sen in stream:
+                _broadcast(sen)
+        except Exception as e:
+            print(f"[gps] {getattr(src, 'name', 'GPS')} stopped: {e} - will look again", flush=True)
+        finally:
+            try: src.close()
+            except Exception: pass
+        time.sleep(GPS_RESCAN_S)
+
 if __name__ == "__main__":
     print(f"=== BK radio -> NMEA network bridge  v{VERSION} ===", flush=True)
     threading.Thread(target=_serve_clients, daemon=True).start()
+    if GPS_ENABLE and gps_source:
+        threading.Thread(target=_gps_loop, daemon=True).start()
     try:
         _radio_loop()
     except KeyboardInterrupt:
