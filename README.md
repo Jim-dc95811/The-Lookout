@@ -51,6 +51,10 @@ The router now serves a full **slippy map straight to any web browser** — your
 
 **Proven live** on a GL-MT6000, on a PC and an Android phone, with real P25 units riding on offline aerial imagery — nothing on the viewing device but a browser. Stress-tested at **46 GB of Z20** served off an external SSD.
 
+![A phone, nothing installed, showing the Lookout's live map — the box's own position (LOOKOUT) and a live P25 field unit (9076801), on offline aerial imagery](images/the_lookout_phone.jpg)
+
+*A smartphone with nothing installed but a browser, showing the live map served off the router — the box's own GPS (LOOKOUT) and a live field unit (9076801), both "now", on offline imagery. This is the whole point: a device that can't install a thing still sees live positions.*
+
 **Many maps, one tap.** Drop several map files on the SSD and each gets its own link with a **Maps** menu to switch between them — your whole-area map, a county at Z20, a special incident map — live units riding on all of them, and units never move your view. Open `http://<router>:8080/`, hit **🗺 Maps**.
 
 👉 Full build + how-to-reproduce record: **[docs/BROWSER_MAP.md](docs/BROWSER_MAP.md)** · **[printable PDF](docs/The_Lookout_Browser_Map.pdf)**
