@@ -34,7 +34,21 @@ The interesting part is the first arrow. A Garmin USB puck is not what it looks 
 
 ---
 
-## 2. The trap: a Garmin USB GPS is not a serial NMEA device
+## 2. A note on ease — the real design constraint
+
+Before the protocol, the *why*. Every choice in this system optimizes for one thing: **the least possible effort for a human**, pushed as far upstream as it will go. The hard engineering exists so that the person in the field — and every device they hand the map to — does almost nothing.
+
+That principle is why the Garmin GPS 18x is here at all. It wasn't picked for accuracy, or timing, or ruggedness — it was picked because **you take it out of the box and plug it in.** No COM port to find, no baud rate, no NMEA sentence to enable, no driver to chase. For the operator it is the laziest possible GPS. The irony this paper documents is that *the very thing that makes it effortless for a human makes it miserable for a machine*: Garmin hides every setting behind its own binary protocol and its own driver, which is exactly the wall that gpsd, GPSBabel, and a plain serial read all hit. We paid that cost once, in code, so that nobody ever has to configure a GPS again.
+
+The same ease runs through the whole build:
+
+- **Off-the-shelf everything.** A consumer travel router, a Garmin puck, a USB hub, an external SSD — all of it ships from a retailer, nothing is fabricated, nothing is soldered. The "supply chain" is *add to cart*. (As this was written, two more identical routers were already out for delivery that same night.) Anyone can reproduce the exact hardware with no parts list more exotic than a shopping cart.
+- **Exactly one machine ever needs Python.** The box runs the Python the clients can't — so the dividing line stops being "can you install Python?" and becomes "can you open a map?" A locked-down, Group-Policy-managed PC, a phone, a tablet: each needs nothing but a browser or a single KML file. The capability that used to require an install now requires a URL.
+- **As close to one button as we can get.** A companion app (Lookout Manager) turns a factory-fresh router into a working box over SSH in a single click — Python, libusb, the programs, the boot services, and now the GPS, all installed, started, and verified without the operator ever opening a terminal. After that it is plug-and-forget: it survives a power cut and comes back on its own.
+
+None of this is where the cleverness *feels* like it should sit. The satisfying engineering is the binary-protocol reverse-engineering in the sections that follow. But that protocol only matters because it buys the ease — **one hard thing, solved once, so the field never has to be hard again.** That is the whole project in a sentence.
+
+## 3. The trap: a Garmin USB GPS is not a serial NMEA device
 
 Plug a generic USB GPS into a Linux box and you usually get a `/dev/ttyUSB0` that spits `$GPGGA`/`$GPRMC` at 4800 or 9600 baud. Point anything at it and you're done.
 
@@ -46,11 +60,11 @@ So the real task is: **speak Garmin's binary protocol to a `091E:0003` device, o
 
 ---
 
-## 3. The dead ends — and exactly why each one failed
+## 4. The dead ends — and exactly why each one failed
 
 We tried the known-good tools first (search before science-lab). Here is each, and why it did not survive contact with a GL-MT6000.
 
-### 3.1 gpsd — recognizes the device, reads nothing
+### 4.1 gpsd — recognizes the device, reads nothing
 
 gpsd is *the* Linux GPS daemon and it has a mature Garmin-binary driver. On the router it even **identifies the device correctly**:
 
@@ -62,7 +76,7 @@ gpsd: DEVICES → {"class":"DEVICE","driver":"Garmin USB binary", ...}
 
 > **⚠ BTW — don't trust "driver: Garmin USB binary" from gpsd on a stock OpenWrt image.** Naming the driver and reading the device are two different capabilities. If `gpspipe` is empty while the device is "recognized," the gpsd build is missing the USB read path. On a general-purpose distro gpsd is the right answer; on a trimmed router image it is a decoy.
 
-### 3.2 GPSBabel — the canonical fix, not packaged
+### 4.2 GPSBabel — the canonical fix, not packaged
 
 The textbook way to talk to a Garmin USB on Linux is **GPSBabel** (`garmin` format, `usb:` device). Its `jeeps`/`gpsusb` layer does exactly the USB protocol we need. But:
 
@@ -74,13 +88,13 @@ It simply isn't in the OpenWrt/`fw.gl-inet.com` feeds for this target, and cross
 
 > **⚠ BTW — don't plan a router deployment around GPSBabel.** It's the correct tool on a workstation, but it is not in the OpenWrt package feeds for ARM targets like the MT7986. If your plan's success depends on `opkg install gpsbabel`, your plan has already failed — check the feed first.
 
-### 3.3 pyusb — also not packaged, also fragile
+### 4.3 pyusb — also not packaged, also fragile
 
 The clean Python route would be **pyusb** (`usb.core.find(...)`). But `python3-pyusb` isn't in the feed either, and `pip install pyusb` on a router with a trimmed Python is a coin-flip that adds a moving part to a box you want frozen.
 
 > **⚠ BTW — on a field router, "`pip install` it" is not a plan.** Every PyPI dependency is something that has to resolve, compile, and keep working offline forever. Prefer what `opkg` already carries.
 
-### 3.4 What *is* installable
+### 4.4 What *is* installable
 
 One thing that matters **is** in the feed:
 
@@ -92,11 +106,11 @@ And `ctypes` is in the Python standard library, always. That pairing — **a C l
 
 ---
 
-## 4. The Garmin GPS 18x USB protocol, in full
+## 5. The Garmin GPS 18x USB protocol, in full
 
 This is the part worth keeping. The protocol below was first reverse-engineered on Windows (via `DeviceIoControl` IOCTLs) for a separate tool and is **cross-platform** — only the USB transport changes. Here it runs on Linux over `libusb_bulk_transfer` / `libusb_interrupt_transfer`. References at the end.
 
-### 4.1 Open and claim
+### 5.1 Open and claim
 
 1. `libusb_init`, then `libusb_open_device_with_vid_pid(ctx, 0x091E, 0x0003)`.
 2. If the kernel `garmin_gps` driver is attached, **detach it** (`libusb_detach_kernel_driver`) — or `rmmod garmin_gps` first (what we do at boot). You cannot claim an interface the kernel still owns.
@@ -104,7 +118,7 @@ This is the part worth keeping. The protocol below was first reverse-engineered 
 
 > **⚠ BTW — don't leave `garmin_gps` bound and expect libusb to work.** If the kernel driver holds interface 0, your claim fails (or the first transfer does). `rmmod garmin_gps` (persisted at boot) is the clean fix; auto-detach alone is not always enough on OpenWrt.
 
-### 4.2 Find the endpoints — **do not hardcode them**
+### 5.2 Find the endpoints — **do not hardcode them**
 
 Every Garmin-USB example hardcodes bulk-OUT `0x02` / interrupt-IN `0x81`. We did too, at first. On our GPS 18x the very first bulk write to `0x02` failed:
 
@@ -129,7 +143,7 @@ With discovery in place, the same code that failed on `0x02` worked on the first
 
 > **⚠ BTW — never hardcode USB endpoint addresses or transfer types for a HID-ish device.** `0x02`/`0x81` is folklore, not a contract. Units, revisions, and interfaces differ; a wrong address or a bulk-vs-interrupt mismatch returns `LIBUSB_ERROR_IO (-1)` with no hint. Discovery is ~15 lines and it is the difference between "works on my puck" and "works."
 
-### 4.3 Packet framing
+### 5.3 Packet framing
 
 Every Garmin packet is a **12-byte header + payload**:
 
@@ -144,7 +158,7 @@ Every Garmin packet is a **12-byte header + payload**:
 
 In Python: `struct.pack("<B3xH2xI", ptype, pid, len(data)) + data`.
 
-### 4.4 Handshake and "start streaming"
+### 5.4 Handshake and "start streaming"
 
 ```
 →  (type 0  transport,   id 5  Start_Session)
@@ -155,7 +169,7 @@ In Python: `struct.pack("<B3xH2xI", ptype, pid, len(data)) + data`.
 
 To stop, send `Command_Data` with `50` (`Stop_Pvt_Data`).
 
-### 4.5 The reassembly trap (this one is silent and nasty)
+### 5.5 The reassembly trap (this one is silent and nasty)
 
 The PVT record arrives on the **interrupt pipe as a 64-byte chunk followed by a shorter (<64) chunk** — classic USB max-packet-size framing. You **must loop reads of 64 bytes and concatenate until a read returns fewer than 64**:
 
@@ -172,7 +186,7 @@ A single 64-byte read returns a **truncated record** — and because latitude si
 
 > **⚠ BTW — don't do one fixed-size read for a Garmin PVT record.** It spans multiple USB packets. Reassemble until a short packet. The truncation is silent and it eats longitude first. (A record that is an exact multiple of 64 is terminated by a zero-length packet — the same loop handles it.)
 
-### 4.6 Decoding the D800 PVT record (64 bytes)
+### 5.6 Decoding the D800 PVT record (64 bytes)
 
 ```
 struct "<ffffhdddffffhi>"  →
@@ -204,7 +218,7 @@ On our unit the standalone reader printed, within a second of `Start_Pvt`:
 
 ---
 
-## 5. Making it a field appliance (the GL-MT6000 / OpenWrt side)
+## 6. Making it a field appliance (the GL-MT6000 / OpenWrt side)
 
 The reader is `garmin_linux.py` — pure ctypes, no third-party Python. It is tried **first** by an auto-detector (`gps_source.py`) that also knows how to fall back to gpsd or a plain serial NMEA puck; the Garmin path fails instantly when no Garmin is present, so it costs nothing on other rigs. The bridge (`bk_bridge.py`) reads the box's own GPS in a daemon thread and broadcasts its fix into the same NMEA-over-TCP feed as the radio fleet, tagged as one reserved unit (`LOOKOUT`). The radio path is byte-for-byte unchanged; with no GPS the whole feature is a no-op.
 
@@ -219,7 +233,7 @@ We proved the whole thing with a **true cold power-pull**: both services came ba
 
 ---
 
-## 6. Why this matters for GIS
+## 7. Why this matters for GIS
 
 The payoff is mundane and large: **a viewer that can't install anything still sees live positions on an offline map.** A locked-down, Group-Policy-managed PC, a phone, a tablet — each just opens `http://<router>:8080/`. The router holds the offline tiles (an `.mbtiles` pyramid *or* an Esri `.tpkx` — the exact Compact Cache V2 package ArcGIS Earth opens) and draws the live units on top, with the viewer's own GPS now among them.
 
@@ -227,7 +241,7 @@ A practical note for anyone building the same thing: **deploy your basemaps as `
 
 ---
 
-## 7. For future Claudes: the method, not just the answer
+## 8. For future Claudes: the method, not just the answer
 
 Five things did the real work here, and they generalize:
 
@@ -241,7 +255,7 @@ The anti-lesson is worth stating too: **don't accept "the standard tool recogniz
 
 ---
 
-## 8. Reference
+## 9. Reference
 
 - **Code:** `garmin_linux.py` (the ctypes/libusb reader + a standalone verbose test), `gps_source.py` (auto-detect + the shared D800 decode and NMEA builders), `bk_bridge.py` (the feed). In the [The-Lookout](https://github.com/Jim-dc95811/The-Lookout) repo, MIT.
 - **Setup:** [docs/GPS_SOURCE.md](GPS_SOURCE.md) — install, the gpsd gotcha, and how the reader works.
