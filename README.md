@@ -17,7 +17,7 @@ A GPS-telemetry radio already knows where your field units are — but that posi
 - **Serves it to everyone.** It re-broadcasts the clean feed on the network so many devices read one source at once:
   - **`:10110` — NMEA over TCP.** A plain NMEA-0183 stream any maps/NMEA app (phone, tablet, chart plotter, Windows tracker) can connect to.
   - **`:8080` — a live KML layer** (`units.kml`) that **ArcGIS Earth pulls on a timer** via a NetworkLink. This is the part that matters for locked-down PCs: it needs **no Python, no install, no admin** — you open one small map file once and the units move on their own.
-- **Shows itself, too ("you are here").** Plug a USB GPS into the hub and the box plots its *own* position on the map alongside the fleet — read directly over libusb, no extra software. The radio feed is untouched; with no GPS it's simply radio-only. See **[docs/GPS_SOURCE.md](docs/GPS_SOURCE.md)**.
+- **Shows itself, too ("you are here").** Plug a USB GPS into the hub and the box plots its *own* position on the map alongside the fleet — read directly over libusb, no extra software. The radio feed is untouched; with no GPS it's simply radio-only. Setup: **[docs/GPS_SOURCE.md](docs/GPS_SOURCE.md)**. The full engineering story (reading a Garmin's binary USB protocol over libusb when gpsd and GPSBabel can't, on an OpenWrt router): **[docs/GARMIN_ON_OPENWRT.md](docs/GARMIN_ON_OPENWRT.md)** · **[printable PDF](docs/The_Lookout_Garmin_on_OpenWrt.pdf)**.
 - **Runs itself.** Installed as a boot service, the Lookout comes up on its own every time the box powers on. Plug the radio in, power on, done.
 
 ## How it works (the picture above, left to right)
