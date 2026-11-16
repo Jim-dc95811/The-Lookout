@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  :root{
+    --sky1:#e9f3fb; --sky2:#ffffff;
+    --navy:#0e355d; --blue:#1269b0; --ink:#17212b; --muted:#5d6b78;
+    --gold:#f4b400; --goldline:#e0a500;
+    --green:#1f9d55; --greenbg:#eaf7ef;
+    --amber:#b9770e; --amberbg:#fdf3e2;
+    --purple:#6b4fbb;
+    --card:#ffffff; --line:#d9e2ea;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    width:1180px;
+    font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif;
+    color:var(--ink);
+    background:linear-gradient(170deg,var(--sky1) 0%, var(--sky2) 40%);
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{padding:40px 48px 34px;}
+  header{display:flex;align-items:center;gap:22px;margin-bottom:6px;}
+  .htext h1{font-size:36px;line-height:1;margin:0;color:var(--navy);letter-spacing:.3px;font-weight:800;}
+  .htext .sub{font-size:18px;color:var(--blue);font-weight:650;margin-top:7px;}
+  .htext .tag{font-size:13.5px;color:var(--muted);margin-top:4px;max-width:760px;}
+  /* two-machines banner */
+  .banner{display:flex;gap:16px;margin:22px 0 6px;}
+  .bcard{flex:1;border-radius:12px;padding:13px 18px;font-size:14px;}
+  .bcard b{display:block;font-size:15px;margin-bottom:2px;}
+  .bcard.one{background:#eaf2fb;border:1px solid #bcd6ef;color:#17364f;}
+  .bcard.many{background:var(--greenbg);border:1px solid #bfe4cd;color:#15502f;}
+  /* section */
+  section.req{margin-top:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;
+    box-shadow:0 2px 5px rgba(20,50,80,.05);overflow:hidden;page-break-inside:avoid;}
+  .sh{display:flex;align-items:center;gap:12px;padding:12px 20px;border-left:7px solid var(--blue);}
+  .req.box .sh{border-left-color:var(--amber);}
+  .req.view .sh{border-left-color:var(--green);}
+  .req.brow .sh{border-left-color:var(--purple);}
+  .sh .stag{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#fff;background:var(--blue);padding:4px 12px;border-radius:14px;}
+  .req.box .sh .stag{background:var(--amber);}
+  .req.view .sh .stag{background:var(--green);}
+  .req.brow .sh .stag{background:var(--purple);}
+  .sh h2{margin:0;font-size:18px;color:var(--navy);font-weight:750;}
+  .sh .smeta{margin-left:auto;font-size:12.5px;color:var(--muted);font-weight:600;}
+  dl.spec{margin:0;padding:6px 20px 16px;display:grid;grid-template-columns:168px 1fr;gap:3px 16px;}
+  dl.spec dt{font-weight:700;color:var(--navy);font-size:13.6px;padding-top:7px;}
+  dl.spec dd{margin:0;font-size:13.6px;line-height:1.45;padding-top:7px;border-top:1px solid #eef2f6;}
+  dl.spec dt:first-of-type,dl.spec dd:first-of-type{border-top:none;}
+  .mono{font-family:Consolas,"DejaVu Sans Mono",monospace;font-size:12.6px;background:#eef2f6;border-radius:4px;padding:1px 5px;color:var(--navy);}
+  .good{color:var(--green);font-weight:650;}
+  .warnw{color:var(--amber);font-weight:650;}
+  .small{font-size:12.3px;color:var(--muted);}
+  /* browser callout */
+  .httpnote{margin:6px 20px 16px;background:#fff8e1;border:1px solid var(--gold);border-left:6px solid var(--gold);
+    border-radius:9px;padding:11px 15px;font-size:13.2px;color:#5a4600;line-height:1.5;}
+  .httpnote b{color:#4a3900;}
+  ul.tight{margin:6px 0 0;padding-left:20px;}
+  ul.tight li{font-size:13.2px;line-height:1.5;margin:2px 0;}
+  footer{margin-top:26px;border-top:2px solid var(--line);padding-top:13px;font-size:12.6px;color:var(--muted);}
+  footer b{color:var(--navy);}
+  svg{display:block;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <svg width="66" height="66" viewBox="0 0 74 74">
+      <circle cx="37" cy="37" r="36" fill="#0e355d"/>
+      <rect x="16" y="40" width="42" height="15" rx="3.5" fill="#fff"/>
+      <circle cx="23" cy="47.5" r="2.4" fill="#1f9d55"/><circle cx="30" cy="47.5" r="2.4" fill="#f4b400"/>
+      <rect x="47" y="45.5" width="7" height="4" rx="1" fill="#1269b0"/>
+      <line x1="37" y1="40" x2="37" y2="30" stroke="#fff" stroke-width="2.4"/>
+      <path d="M30 29 a10 10 0 0 1 14 0" fill="none" stroke="#f4b400" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M26 25 a16 16 0 0 1 22 0" fill="none" stroke="#9fd3ff" stroke-width="2.6" stroke-linecap="round"/>
+    </svg>
+    <div class="htext">
+      <h1>THE LOOKOUT — Hardware Requirements</h1>
+      <div class="sub">What you need to build and run one</div>
+      <div class="tag">Everything is off-the-shelf. You need <b>one</b> regular computer to make the maps and set the box up — then every screen that <i>views</i> the map needs nothing but a browser.</div>
+    </div>
+  </header>
+
+  <div class="banner">
+    <div class="bcard one"><b>① One setup computer — has requirements</b>Makes the maps and provisions the router. Used once, then set aside. Specs in section&nbsp;A.</div>
+    <div class="bcard many"><b>Every viewer — needs nothing</b>Any phone, tablet or PC with a browser, on the router's Wi-Fi. No install, no admin, no internet. Section&nbsp;C.</div>
+  </div>
+
+  <!-- A -->
+  <section class="req pc">
+    <div class="sh"><span class="stag">A</span><h2>The setup &amp; map-making computer</h2><span class="smeta">you need one · used once</span></div>
+    <dl class="spec">
+      <dt>Operating system</dt><dd>Windows 10 or 11 (64-bit). The map tools and Lookout Manager are Windows programs.</dd>
+      <dt>Python</dt><dd>Python 3.9 or newer — free from <span class="mono">python.org</span> (tick <i>Add to PATH</i>). Runs the map tools and Lookout Manager.</dd>
+      <dt>Memory (RAM)</dt><dd><b>8 GB minimum</b>, <span class="good">16 GB recommended</span>. Building large map tiles is memory-hungry.</dd>
+      <dt>Free disk space</dt><dd>A few GB for small maps; <b>tens of GB</b> if you build large areas. An SSD makes map builds much faster.</dd>
+      <dt>Its job</dt><dd>Make the <span class="mono">.tpkx</span> maps, then run Lookout Manager once to set up the router. After that the box runs on its own — this computer isn't needed in the field.</dd>
+    </dl>
+  </section>
+
+  <!-- B -->
+  <section class="req box">
+    <div class="sh"><span class="stag">B</span><h2>The Lookout box — the field appliance</h2><span class="smeta">off-the-shelf parts · runs on 12&nbsp;V</span></div>
+    <dl class="spec">
+      <dt>Router</dt><dd><b>GL-MT6000 "Flint 2"</b> (OpenWrt) — the proven build, about $170. Any OpenWrt router <i>can</i> work, but this is the tested one. Needs the open internet only once, for setup.</dd>
+      <dt>Powered USB hub</dt><dd>A <b>powered</b> USB 3 hub with its own <b>12 V</b> input and a dedicated host port (<span class="mono">Port 0</span>). It powers the SSD, GPS and radio together — a metal/industrial hub (e.g. Waveshare) suits the field.</dd>
+      <dt>GPS</dt><dd><b>Garmin GPS 18x USB</b> (USB id <span class="mono">091E:0003</span>) — the proven "you are here" unit, read directly, no drivers. <span class="small">A plain USB-serial NMEA GPS puck also works as an alternative.</span></dd>
+      <dt>Telemetry radio</dt><dd>A base radio that outputs its received unit positions as NMEA over a USB/network link (built and proven on a <b>BK&nbsp;M150</b> P25 relay). Any NMEA position source works.</dd>
+      <dt>SSD (your maps)</dt><dd>A USB 3 portable SSD. <b>Format it exFAT or ext4</b> — <span class="warnw">not FAT32</span> (its 4 GB per-file limit breaks big maps). Size to your maps: <b>256 GB minimum</b>, 500 GB–1 TB for several large areas. Copy <span class="mono">.tpkx</span> files to the drive's <b>root</b>.</dd>
+      <dt>Power</dt><dd>12 V (a truck) for the router and the hub. Plug it in and it comes up on its own; it survives a power cut.</dd>
+    </dl>
+  </section>
+
+  <!-- C -->
+  <section class="req view">
+    <div class="sh"><span class="stag">C</span><h2>Viewing devices — nothing to install</h2><span class="smeta">any device · offline</span></div>
+    <dl class="spec">
+      <dt>What works</dt><dd>Any device on the router's Wi-Fi or LAN with a modern web browser: a Windows / Mac / Linux PC, an iPhone or Android phone, a tablet. <span class="good">Nothing is installed on it.</span></dd>
+      <dt>How they view</dt><dd>Open <span class="mono">http://192.168.8.1:8080</span> in the browser — the live map with the fleet and "you are here." Locked-down, Group-Policy PCs are fine: it's just a web page.</dd>
+      <dt>Optional</dt><dd>ArcGIS Earth (free) on a PC, if you'd rather consume the units as a live KML layer there instead of the browser map.</dd>
+    </dl>
+  </section>
+
+  <!-- D -->
+  <section class="req brow">
+    <div class="sh"><span class="stag">D</span><h2>Browsers &amp; the "not secure" notice</h2><span class="smeta">read this — it's normal</span></div>
+    <div class="httpnote">
+      The Lookout serves a plain <b>http</b> page on your own private network — on purpose. It's a local, offline appliance with no internet and no certificate, so there's nothing to secure a connection <i>to</i>. Nothing you open leaves the box.
+    </div>
+    <dl class="spec">
+      <dt>Works in</dt><dd>Chrome, Edge, Firefox and Safari — desktop and mobile.</dd>
+      <dt>The 2026 change</dt><dd>Chrome and Edge now warn before plain <b>http</b> sites by default (Chrome 147, Oct 2026). <span class="good">Local addresses like <span class="mono">192.168.8.1</span> are exempt</span>, so the Lookout map normally opens with no warning.</dd>
+      <dt>If you see "Not secure"</dt><dd>It's safe — it's <b>your own box, offline</b>. Choose <i>continue to site</i> / <i>proceed</i>. Nothing is at risk; no data goes anywhere.</dd>
+      <dt>Open it this way</dt><dd>Type the address in full with <span class="mono">http://</span> — <span class="mono">http://192.168.8.1:8080/</span> — so the bar doesn't auto-upgrade to <span class="mono">https</span> (phones especially do this).</dd>
+      <dt>Avoid</dt><dd>Don't turn on a strict "HTTPS-Only mode." If one is on, add <span class="mono">192.168.8.1</span> as an allowed site, or turn it off while using the map.</dd>
+    </dl>
+  </section>
+
+  <footer>
+    <b>The Lookout</b> · part of the ArcGIS Earth Unlocked project family · free &amp; open-source (MIT) · github.com/Jim-dc95811/The-Lookout &nbsp;·&nbsp; Pair with the install pictogram (box-to-live-map) and <span class="mono">DEPLOY.md</span>.
+  </footer>
+
+</div>
+</body>
+</html>
