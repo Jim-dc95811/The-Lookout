@@ -16,6 +16,10 @@ start_service() {
     ip addr add 10.250.46.100/24 dev usb0 2>/dev/null
     ip link set usb0 up 2>/dev/null
 
+    # Free a Garmin GPS 18 USB from the kernel serial driver so the bridge's libusb
+    # reader can claim it (the box's own "you are here" position). No-op if absent.
+    rmmod garmin_gps 2>/dev/null
+
     procd_open_instance
     procd_set_param command /usr/bin/python3 /root/bk_bridge.py
     procd_set_param respawn

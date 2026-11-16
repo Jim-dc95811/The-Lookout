@@ -17,6 +17,7 @@ A GPS-telemetry radio already knows where your field units are — but that posi
 - **Serves it to everyone.** It re-broadcasts the clean feed on the network so many devices read one source at once:
   - **`:10110` — NMEA over TCP.** A plain NMEA-0183 stream any maps/NMEA app (phone, tablet, chart plotter, Windows tracker) can connect to.
   - **`:8080` — a live KML layer** (`units.kml`) that **ArcGIS Earth pulls on a timer** via a NetworkLink. This is the part that matters for locked-down PCs: it needs **no Python, no install, no admin** — you open one small map file once and the units move on their own.
+- **Shows itself, too ("you are here").** Plug a USB GPS into the hub and the box plots its *own* position on the map alongside the fleet — read directly over libusb, no extra software. The radio feed is untouched; with no GPS it's simply radio-only. See **[docs/GPS_SOURCE.md](docs/GPS_SOURCE.md)**.
 - **Runs itself.** Installed as a boot service, the Lookout comes up on its own every time the box powers on. Plug the radio in, power on, done.
 
 ## How it works (the picture above, left to right)
@@ -68,9 +69,9 @@ The router now serves a full **slippy map straight to any web browser** — your
 
 ```sh
 ssh root@192.168.8.1
-opkg update && opkg install python3
+opkg update && opkg install python3 libusb-1.0-0
 cd /root
-for f in bk_bridge.py units_kml.py; do wget -O $f https://raw.githubusercontent.com/Jim-dc95811/The-Lookout/main/$f; done
+for f in bk_bridge.py gps_source.py garmin_linux.py units_kml.py; do wget -O $f https://raw.githubusercontent.com/Jim-dc95811/The-Lookout/main/$f; done
 # install the procd boot services from openwrt/, then enable + start them:
 /etc/init.d/bk-bridge enable && /etc/init.d/bk-bridge start
 /etc/init.d/units-kml enable && /etc/init.d/units-kml start
@@ -107,6 +108,7 @@ Straight about where this stands (measured, not assumed):
 | End-to-end with a live transmitting unit | **Proven live, 2026-11-15.** A real unit (ID `9076803`) keyed up and landed on ArcGIS Earth in Bryceville, FL — read off the radio, served over the LAN, consumed by a PC that had only a KML file. |
 | Whole stack on a **GL-MT6000** travel router | **Proven live, 2026-11-15.** The bridge and the KML server both run on the router (OpenWrt); it reads the radio over USB and serves the live units to the LAN — no separate computer. |
 | Comes back on its own after a power cut (router) | **Proven live, 2026-11-15.** Installed as OpenWrt `procd` boot services (`openwrt/`); a cold power-pull brought both services back with new PIDs and the unit reappeared on the map, nothing touched by hand. |
+| The box plots its **own** position ("you are here") | **Proven live, 2026-11-16.** A Garmin GPS 18 USB on the router's hub, read directly over libusb (ctypes), put a `LOOKOUT` dot on the browser map in Bryceville, FL — on the same map as a live P25 field unit (`9076801`). 2 units, offline, nothing on the viewer. |
 
 ## Why a travel router
 
