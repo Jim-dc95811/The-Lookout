@@ -228,18 +228,35 @@ the *real* radio capture — both confirmed live above.
    Z20 pan **+** a live transmission, all at once, watching `cat /proc/loadavg`,
    free RAM, and `dmesg` for ALSA xruns. This tells us the true headroom, not my
    estimate.
-2. **Boot-service wrap — BUILT + LIVE-PROVEN on the bench 2026-11-17** (`openwrt/lookout-audio`,
-   `START=97`, `respawn`, same shape as `bk-bridge`/`units-kml`), after the hand-run
-   streamer was found to die with its SSH window (no box can keep a PC attached).
-   Proven: `enable` + `start` → `pgrep -f lookout_audio` = PID 30742, Listen played on
-   PC + phone with **no python window and the SSH window closed**. **Still to prove:** a
-   **cold power-pull** confirming it respawns on boot (as the other two services did).
-   Install on the box:
+2. **Boot-service wrap — BUILT 2026-11-17** (`openwrt/lookout-audio`, `START=97`,
+   `respawn`, same shape as `bk-bridge`/`units-kml`), after the hand-run streamer was
+   found to die with its SSH window (no box can keep a PC attached). `enable` + `start`
+   → PID 30742, Listen played on PC + phone with no python window and the SSH window
+   closed.
+
+   **⚠ FLASH-DURABILITY GOTCHA — the big lesson of this build (2026-11-17).** The first
+   cold power-pull did NOT bring audio back, and investigation showed the box had
+   **reverted to its on-flash state from ~12:22**: `/etc/init.d/lookout-audio` was gone
+   (`not found`), the `S97` boot symlink was gone, and `/root/map.html` had rolled back
+   to the pre-reconnect build (`scheduleRetry` = 0). The bridge and map survived only
+   because their files were installed in **earlier sessions** and long since committed.
+   Cause: on this GL/OpenWrt box, writes land in the overlay's page cache and are only
+   periodically committed to flash; a **hard power-pull reverts every write made since
+   the last commit**. `enable` "succeeding" in the shell is not enough. **FIX / STANDING
+   RULE: end every deploy with `sync`** to force the overlay to flash before the box can
+   be power-cycled. This matters for the whole appliance (truck power-cycles), not just
+   audio — fold a `sync` into Lookout Manager's install and into any by-hand deploy.
+   After redeploying map.html + the init script, `enable`, `start`, **`sync`**: verified
+   `scheduleRetry`=4, `S97lookout-audio`+`K10lookout-audio` present, PID running. Cold
+   power-pull **re-proof pending** (the sync should make it stick this time).
+
+   Install on the box (note the closing `sync`):
    ```
    wget -O /etc/init.d/lookout-audio https://raw.githubusercontent.com/Jim-dc95811/The-Lookout/<audio-bench-SHA>/openwrt/lookout-audio
    chmod +x /etc/init.d/lookout-audio
    /etc/init.d/lookout-audio enable
    /etc/init.d/lookout-audio start
+   sync          # REQUIRED - flush to flash or a power-pull reverts it (see gotcha above)
    ```
    Confirm: `pgrep -f lookout_audio` prints a PID; `logread -e lookout_audio` or
    `logread | grep audio` shows the `[audio] WebSocket PCM server on 0.0.0.0:8081` line
