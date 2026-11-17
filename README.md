@@ -61,7 +61,7 @@ The router now serves a full **slippy map straight to any web browser** — your
 
 *A single 50 GB Z18 `.tpkx` (four 1° cells, ~2° × 2°) in ArcGIS Earth. Drop one file like this on the SSD root and the Lookout serves it — plus your live units — to any phone or PC with nothing installed.*
 
-**Many maps, one tap.** Drop several map files on the SSD and each gets its own link with a **Maps** menu to switch between them — your whole-area map, a county at Z20, a special incident map — live units riding on all of them, and units never move your view. Open `http://<router>:8080/`, hit **🗺 Maps**.
+**Many maps, one tap.** Drop several map files on the SSD and each gets its own link with a **Maps** menu to switch between them — your whole-area map, a county at Z20, a special incident map — live units riding on all of them, and units never move your view. Open `http://<router>:8080/`, hit **🗺 Maps**. The router keeps **no default map** — it carries no map of its own and serves whatever's on the SSD, listed alphabetically, so name a file `a_…` or `1_…` to make it the one the bare address opens first.
 
 ![The same 2° × 2° area as a lightweight street map — a small .mbtiles alongside the 50 GB imagery, switchable from the Maps menu](images/the_lookout_mega_street.jpg)
 

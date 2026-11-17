@@ -33,36 +33,36 @@ Field units ──P25 GPS over the air──▶ BK M150 base ──USB (RNDIS)�
                                                                       │ units_kml.py  (:8080):
                                                                       │   /                → map.html (Leaflet page)
                                                                       │   /leaflet.js /leaflet.css  (bundled, local — no CDN)
-                                                                      │   /meta.json       → basemap bounds + zoom range
-                                                                      │   /tiles/{z}/{x}/{y} → JPEG tiles out of basemap.mbtiles
+                                                                      │   /maps.json       → every map on the SSD (alphabetical)
+                                                                      │   /m/<slug>/meta.json         → that map's bounds + zoom range
+                                                                      │   /m/<slug>/tiles/{z}/{x}/{y} → tiles out of that map
                                                                       │   /units.json      → live unit positions (polled every 3s)
-                                                                      └   basemap.mbtiles  (your QGIS tile pyramid)
+                                                                      └   maps live on the SSD  (.tpkx / .mbtiles from QGIS)
 ```
 
-The browser loads `map.html`, which starts a Leaflet map, adds a raster tile layer pointing at `/tiles/{z}/{x}/{y}` (so Leaflet pulls the right pyramid level as you zoom), and every 3 seconds re-fetches `/units.json` and moves the unit markers. All of it is served by the router; the browser reaches nothing else.
+The browser loads `map.html`, which starts a Leaflet map, reads `/maps.json` to learn which map this page shows (at `/` that's the first one alphabetically), adds a raster tile layer pointing at that map's `/m/<slug>/tiles/{z}/{x}/{y}` (so Leaflet pulls the right pyramid level as you zoom), and every 3 seconds re-fetches `/units.json` and moves the unit markers. All of it is served by the router; the browser reaches nothing else.
 
 ### Key technical facts (don't lose these)
 - **The basemap is an MBTiles file** — a SQLite database of pre-rendered map tiles at many zoom levels (a multiresolution pyramid). This is exactly what QGIS exports and what feeds `mb2tpkx`. The router reads tiles out of it directly; no conversion needed.
 - **TMS → XYZ row flip.** MBTiles stores tile rows TMS-style (row 0 at the south); Leaflet/XYZ asks with row 0 at the north. The server flips: `tms_row = (2^z − 1) − y`. (This is the same flip `mb2tpkx` already does.)
 - **Leaflet 1.9.4 is bundled on the router** (`/leaflet.js`, `/leaflet.css`) and served locally, so the page needs no internet and no CDN.
-- **`/meta.json`** hands the page the basemap's `bounds`, `minzoom`, `maxzoom` so the map fits the right area and zoom range automatically.
-- **Graceful with no basemap:** if `basemap.mbtiles` is missing, tiles 404 and the units simply draw on a blank background (older behavior).
-- **Config:** the basemap defaults to `basemap.tpkx` then `basemap.mbtiles` beside `units_kml.py` (i.e. `/root/…` on the router); override with the `LOOKOUT_MBTILES` environment variable.
-- **TPKX is supported too (v1.9).** The server reads tiles straight out of an Esri **`.tpkx`** (Compact Cache V2 — exactly what `mb2tpkx` writes), so it serves the **same tile packages ArcGIS Earth uses, with no conversion**. Backend chosen by extension. Bundle path `tile/L{zz}/R{row:hex}C{col:hex}.bundle`; 8-byte index record = offset (low 40 bits) + size (high bits); row-major; **no TMS flip** (TPKX stores rows north-down already); MIXED JPEG/PNG sniffed per tile. Direct-seek reader, thread-safe, reboot-safe. To use one: put a `.tpkx` on the SSD and symlink `/root/basemap.tpkx` to it.
-- **Many maps, one per link (v1.10).** Every `.tpkx`/`.mbtiles` found beside the default basemap — i.e. all of them on the SSD — is served at its own URL `/m/<slug>/` with the live units on top; `/maps.json` lists them and the page carries a **Maps** menu to jump between them. The default basemap still loads at `/`. Two viewers can be on different maps at once, and a new map file dropped on the drive shows up in the menu within ~10 s (no restart). Each map is named after its file; whichever `basemap` points at is the default. **Units never move the view** — IDs key up from all over, so the map stays exactly where you put it. LIVE-PROVEN on the router 2026-11-15 (tap to switch county maps; a unit keying up never hijacks the view).
+- **`/m/<slug>/meta.json`** hands the page each map's `bounds`, `minzoom`, `maxzoom` so the map fits the right area and zoom range automatically.
+- **No default map — the router holds none (v1.12).** The box stores **no** map and has no "default" or privileged basemap: no symlink, nothing read from internal flash. It scans whatever removable drive is mounted (`/tmp/mountd/*`; override/extend with `LOOKOUT_MAP_ROOTS`) and serves every `.tpkx`/`.mbtiles` it finds, all equal, each at `/m/<slug>/`, **sorted alphabetically by file name**. The bare URL `/` just shows whichever map sorts first — crews control that by naming (prefix a file `1_`/`a_`). Swap drives freely; the box stays generic.
+- **Graceful with no map:** if the drive is empty or out, `/maps.json` is empty, the menu says "No maps found · insert an SSD," and the units simply draw on a blank background — no crash.
+- **TPKX is supported too (v1.9).** The server reads tiles straight out of an Esri **`.tpkx`** (Compact Cache V2 — exactly what `mb2tpkx` writes), so it serves the **same tile packages ArcGIS Earth uses, with no conversion**. Backend chosen by extension. Bundle path `tile/L{zz}/R{row:hex}C{col:hex}.bundle`; 8-byte index record = offset (low 40 bits) + size (high bits); row-major; **no TMS flip** (TPKX stores rows north-down already); MIXED JPEG/PNG sniffed per tile. Direct-seek reader, thread-safe, reboot-safe. Just drop it on the SSD — no symlink, no config.
+- **Many maps, one per link (v1.10; all equal since v1.12).** Every `.tpkx`/`.mbtiles` on the SSD is served at its own URL `/m/<slug>/` with the live units on top; `/maps.json` lists them and the page carries a **Maps** menu to jump between them. Two viewers can be on different maps at once, and a new map file dropped on the drive shows up in the menu within ~10 s (no restart). Each map is named after its file. **Units never move the view** — IDs key up from all over, so the map stays exactly where you put it. LIVE-PROVEN on the router 2026-11-15 (tap to switch county maps; a unit keying up never hijacks the view).
 
 ## 4. How to reproduce it (deploy to a router)
 
 Assumes The Lookout is already installed on the router (bk-bridge + units-kml boot services) and you can `ssh root@192.168.8.1`.
 
-**Step 1 — put a basemap on the router.** Any MBTiles that covers your units' area (made in QGIS). `scp` does **not** work on this router (OpenWrt/dropbear has no sftp-server), so stream it over ssh with `cat`:
+**Step 1 — put your maps on the SSD.** Any `.tpkx` or `.mbtiles` covering your units' area (made in QGIS / `mb2tpkx`). Drop them on the **root of the SSD** — nothing goes on the router, and there's no "default" to set. The menu order and which map the bare URL opens first are plain alphabetical by file name, so name them to taste (prefix `a_`/`b_` or `1_`/`2_`):
 ```
-ssh root@192.168.8.1 "cat > /root/basemap.mbtiles" < "C:\path\to\your map.mbtiles"
+<SSD>:\a_Nassau_Z20.tpkx     ← sorts first, so "/" opens this one
+<SSD>:\b_Area_Z18.tpkx
+<SSD>:\c_Streets.mbtiles
 ```
-There's no progress bar; it goes quiet, then returns to the prompt. Verify the size matches the source:
-```
-ssh root@192.168.8.1 "ls -l /root/basemap.mbtiles"
-```
+Insert the SSD into the (powered) hub; the router auto-mounts it and the maps appear in the **🗺 Maps** menu within ~10 s — no symlink, no restart.
 
 **Step 2 — pull the v1.10 code and restart.**
 ```
@@ -89,7 +89,7 @@ Type the `http://` on purpose (see gotcha below). You'll see your tiles with the
 
 ## 6. Status and what's left
 
-**Status:** `units_kml.py` **v1.10** is LIVE-PROVEN on the GL-MT6000 (2026-11-15) on PC and phone — served from the router's internal flash, from an external SSD, and from both basemap formats: an **MBTiles** pyramid *and* an Esri **`.tpkx`** (the same package ArcGIS Earth opens, no conversion). High-water mark: a **46 GB Z20 `.tpkx`** served off the SSD at full detail and smooth zoom. **v1.10 adds the Maps menu** — every map file on the SSD served at its own link, units never moving the view — live-proven on the router 2026-11-15. Merged to **`main`** and made official. Reboot-survival services are in place (v1.8 boot-ordering safety, §7).
+**Status:** `units_kml.py` **v1.10** is LIVE-PROVEN on the GL-MT6000 (2026-11-15) on PC and phone — served from the router's internal flash, from an external SSD, and from both basemap formats: an **MBTiles** pyramid *and* an Esri **`.tpkx`** (the same package ArcGIS Earth opens, no conversion). High-water mark: a **46 GB Z20 `.tpkx`** served off the SSD at full detail and smooth zoom. **v1.10 adds the Maps menu** — every map file on the SSD served at its own link, units never moving the view — live-proven on the router 2026-11-15. Merged to **`main`** and made official. Reboot-survival services are in place (v1.8 boot-ordering safety, §7). **v1.12 (2026-11-16): no default map** — the router carries none and serves whatever maps are on the SSD, all equal, alphabetical (name `a_`/`1_` to order); the `basemap` symlink is retired. Shipped with field hardening (bridge v1.4 idle-safe link alarm; units v1.11 SSD-removal resilience). LIVE-PROVEN on the router 2026-11-16.
 
 **In progress (2026-11-15):** a single whole-area **Z19** package covering a 2°×2° box (≈4 counties) building in QGIS — expected on the order of **100–150 GB**, to be served the same way. When it lands, verify the total file size and that all four corners of the box actually carry imagery (a long, slow basemap fetch can leave edges blank).
 
@@ -97,9 +97,9 @@ Type the `http://` on purpose (see gotcha below). You'll see your tiles with the
 - Zoom control sits partly under the top header bar — nudge it down.
 - Unit labels overlap/clip when two units are very close — offset or collision-handle them.
 - **QR code** that opens `http://<router>:8080/` — the right crew-onboarding tool (and it kills the `http://` typing gotcha).
-- Fold the basemap step into the setup flow / Lookout Manager so any router is built this way in one shot.
+- ~~Fold the basemap step into the setup flow / Lookout Manager.~~ — **moot (v1.12): there is no basemap step.** Maps just go on the SSD root; the router finds them, orders them by name, and needs no symlink or config.
 - **Explore other router makes/models.** The core is stdlib Python + OpenWrt `procd` services; the GL.iNet bits (USB auto-mount, admin page, one-click Lookout Manager) are conveniences, not dependencies. A candidate just needs OpenWrt/`python3`, a USB port (radio + SSD) and a little RAM. Tiers: (1) other **GL.iNet** models — same firmware, Lookout Manager works unchanged; pick by price/ports/CPU. (2) a **cellular** model (Spitz-class) — the box becomes radio→map *and* the crew's internet uplink + a remote-reachable node (a real capability jump). (3) any **OpenWrt** router — doable, but we'd handle the USB mount + radio link + init scripts ourselves, and the one-click setup would need a per-model path.
-- ~~Bigger / multiple basemaps for wider coverage; a way to pick which map file is active.~~ — **done 2026-11-15 (v1.10): every map on the SSD at its own `/m/<slug>/` link + a Maps menu (§3).** Next: fold "pick a map / set the default" into Lookout Manager for a one-click rig.
+- ~~Bigger / multiple basemaps for wider coverage; a way to pick which map file is active.~~ — **done 2026-11-15 (v1.10): every map on the SSD at its own `/m/<slug>/` link + a Maps menu (§3); v1.12 made them all equal — no default, ordered by file name.**
 - ~~Merge `browser-map-wip` into `main`~~ — **done 2026-11-15; v1.9 is on `main`.** The `browser-map-wip` branch is now redundant and can be deleted.
 
 ## 7. Big storage: external SSD on a powered hub (statewide)
@@ -115,11 +115,7 @@ The router's internal flash caps the basemap at a few hundred MB. To hold a whol
 
 **Filesystem:** format the SSD **NTFS** (officially supported by GL firmware, handles multi-GB single files — avoid FAT32's 4 GB file limit). exFAT also works on the Flint 2.
 
-**Point the map at the SSD.** GL firmware auto-mounts USB storage under `/tmp/mountd/disk1_part1/` (confirm with `find /tmp/mountd /mnt -iname '*.mbtiles'`). Replace the default basemap path with a symlink to the file on the SSD, then restart:
-```
-ssh root@192.168.8.1 "rm -f /root/basemap.mbtiles && ln -s '/tmp/mountd/disk1_part1/<your map>.mbtiles' /root/basemap.mbtiles && /etc/init.d/units-kml restart"
-```
-Nothing else changes — the server just reads a bigger file. Drop your full statewide `.mbtiles` on the SSD and it serves the same way.
+**Nothing to point at it (v1.12).** GL firmware auto-mounts USB storage under `/tmp/mountd/disk1_part1/`, and the server scans there on its own — no symlink, no config, no restart. Drop your maps on the SSD root and they appear in the **🗺 Maps** menu within ~10 s. (Confirm what's mounted with `find /tmp/mountd -iname '*.tpkx' -o -iname '*.mbtiles'`.) Drop your full statewide `.tpkx` on the SSD and it serves the same way — the box just reads a bigger file.
 
 **Reboot safety (v1.8).** On a cold boot the map service can start a moment before GL's USB auto-mount finishes. v1.8 handles it: the server never caches a "no basemap" result, and the page keeps polling `/meta.json`, so the map appears the instant the SSD is mounted — no restart, no blank map. Survives a power-cycle in a truck.
 
