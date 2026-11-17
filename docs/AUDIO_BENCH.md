@@ -1,8 +1,10 @@
 # The Lookout — radio audio over the browser (bench record)
 
-**Status: BENCH-PROVEN LIVE on 2026-11-17, not released.** Lives on branch
-`audio-bench` only — NOT on `main`, NOT in the montage/all-tools/storefront.
-Nothing public until the capacity test + boot-service wrap are done and Jim says go.
+**Status: BENCH-PROVEN LIVE + REBOOT-SURVIVING on 2026-11-17, not released.** Lives on
+branch `audio-bench` only — NOT on `main`, NOT in the montage/all-tools/storefront.
+Live audio, auto-reconnect, and a procd boot service are all proven (a cold power-pull
+brings all three services back on their own). **The one gate left before anything public
+is the worst-case capacity test (§11–12), then Jim's go.**
 
 This is the complete engineering record of adding **live radio audio** to the
 Lookout's in-browser map: a crew member opens `http://<router>:8080/`, taps a
@@ -168,24 +170,51 @@ the button back to "Listen" after ~2 s. Fix (map.html only, streamer untouched):
   blocks it, add a LAN-zone traffic rule allowing TCP 8081.
 - **Phone gotcha (unchanged):** type `http://<router>:8080/` — phones force https.
 
-## 9. Deploy to a box (bench procedure used 2026-11-17)
+## 9. Deploy to a box (permanent install — proven 2026-11-17)
 
-1. `opkg update && opkg install kmod-usb-audio alsa-utils`  (§4)
-2. Patch the radio audio into the card's input jack; confirm with §5.
-3. Get the two files onto the box next to `units_kml.py` (i.e. `/root`):
-   - `lookout_audio.py` → `/root/lookout_audio.py`
-   - the audio-enabled `map.html` → `/root/map.html` (**back up the old one first:**
-     `cp /root/map.html /root/map.html.bak`).
-   - Delivery used this session: `wget -O <path> <branch raw URL>` (first fetch of
-     brand-new files, so no CDN-cache issue). For a **re-fetch after an edit**, use
-     the **commit-SHA** URL (raw.githubusercontent caches branch URLs ~5 min and
-     ignores `?v=`), and always name each file explicitly in the wget (the `$f`
-     gremlin). The desktop bridge (scp from Downloads) was offline this session.
-4. `python3 /root/lookout_audio.py` (foreground to watch logs).
-5. Open the map, **hard-refresh (Ctrl+F5)** to pull the new page, tap **🔊 Listen**.
+> **⚠ READ THIS FIRST — the rule that cost us the first reboot:** on this GL/OpenWrt
+> box, file writes sit in the overlay's page cache and only reach flash on a periodic
+> commit. **A hard power-pull reverts every write made since the last commit** — a
+> command "succeeding" at the shell is not enough. So **every deploy MUST end with
+> `sync`**, or a truck power-cycle silently rolls the box back (see §12 for the full
+> post-mortem). This applies to *all* Lookout deploys, not just audio.
 
-**Undo:** `cp /root/map.html.bak /root/map.html` restores the original page
-instantly (units_kml serves it live, no restart); stop the streamer with Ctrl+C.
+1. **Driver + recorder** (one time, GL feed, no firmware rebuild — §4):
+   `opkg update && opkg install kmod-usb-audio alsa-utils`
+2. **Patch** the radio audio into the card's input jack; confirm the level with §5.
+3. **Three files onto the box** next to `units_kml.py` (i.e. `/root`), each `wget`'d by
+   **commit-SHA URL** (raw.githubusercontent caches branch URLs ~5 min and ignores
+   `?v=`; name each file explicitly — the `$f` gremlin). Back up the live page first:
+   ```
+   cp /root/map.html /root/map.html.bak
+   wget -O /root/lookout_audio.py   https://raw.githubusercontent.com/Jim-dc95811/The-Lookout/<audio-bench-SHA>/lookout_audio.py
+   wget -O /root/map.html           https://raw.githubusercontent.com/Jim-dc95811/The-Lookout/<audio-bench-SHA>/map.html
+   wget -O /etc/init.d/lookout-audio https://raw.githubusercontent.com/Jim-dc95811/The-Lookout/<audio-bench-SHA>/openwrt/lookout-audio
+   chmod +x /etc/init.d/lookout-audio
+   ```
+4. **Enable as a boot service, start it, and flush to flash:**
+   ```
+   /etc/init.d/lookout-audio enable
+   /etc/init.d/lookout-audio start
+   sync
+   ```
+5. **Verify (don't assume):**
+   ```
+   grep -c scheduleRetry /root/map.html   # expect 4 (the reconnect build)
+   ls /etc/rc.d/ | grep lookout           # expect S97lookout-audio + K10lookout-audio
+   pgrep -f lookout_audio                 # expect a PID
+   ```
+   Then open `http://<router>:8080/`, **hard-refresh (Ctrl+F5 / reopen on a phone)**,
+   tap **🔊 Listen**. To prove durability, power-cycle and re-run the `pgrep` check.
+
+**Quick test before committing to the boot service:** you can just run
+`python3 /root/lookout_audio.py` in the foreground to watch its logs live; Ctrl+C
+stops it. The boot service is the permanent form.
+
+**Undo:** `cp /root/map.html.bak /root/map.html` restores the original page instantly
+(units_kml serves it live, no restart); `/etc/init.d/lookout-audio disable; /etc/init.d/lookout-audio stop; sync`
+removes the service; `opkg remove kmod-usb-audio alsa-utils` removes the driver.
+Fully reversible — and end the undo with `sync` too.
 
 ## 10. Proofs
 
@@ -200,6 +229,14 @@ instantly (units_kml serves it live, no restart); stop the streamer with Ctrl+C.
   phone** browsers, map showing "2 units" + the green 🔊 On button, over Z20 aerial
   imagery, **nothing installed on either device**. Capture measured clean (idle 3%,
   transmission 54%). This is the proof Jim required before anything public.
+- **Auto-reconnect (headless Chromium / Playwright), 2026-11-17 pm:** a stand-in
+  streamer that drops connection #1 mid-play → the page reconnects on its own as
+  connection #2 and keeps playing, button stays "🔊 On", **0 JS errors**. Confirms the
+  phone-dim drop self-heals. PASS. (Live-confirmed on Jim's PC + phone the same day.)
+- **Boot service + reboot-survival (live, 2026-11-17 pm):** after `enable`/`start`/`sync`,
+  a **cold power-pull** brought **all three services back on their own** — fresh boot
+  PIDs `bk_bridge` 12204, `units_kml` 13816, `lookout_audio` 14266 — with nobody at a
+  keyboard. Audio is now a true plug-in-appliance feature. PASS.
 
 The only things the sandbox can't prove are *audible* sound (needs a speaker) and
 the *real* radio capture — both confirmed live above.
@@ -252,20 +289,11 @@ the *real* radio capture — both confirmed live above.
    fresh boot PIDs (`bk_bridge` 12204, `units_kml` 13816, `lookout_audio` 14266). The
    `sync` made it durable; **reboot-survival confirmed 2026-11-17.**
 
-   Install on the box (note the closing `sync`):
-   ```
-   wget -O /etc/init.d/lookout-audio https://raw.githubusercontent.com/Jim-dc95811/The-Lookout/<audio-bench-SHA>/openwrt/lookout-audio
-   chmod +x /etc/init.d/lookout-audio
-   /etc/init.d/lookout-audio enable
-   /etc/init.d/lookout-audio start
-   sync          # REQUIRED - flush to flash or a power-pull reverts it (see gotcha above)
-   ```
-   Confirm: `pgrep -f lookout_audio` prints a PID; `logread -e lookout_audio` or
-   `logread | grep audio` shows the `[audio] WebSocket PCM server on 0.0.0.0:8081` line
-   (procd routes stdout/stderr to the system log, not a terminal). Disable/undo:
-   `/etc/init.d/lookout-audio disable; /etc/init.d/lookout-audio stop; sync`.
-   **Reboot-survival PROVEN 2026-11-17** (cold power-pull; all three services returned
-   with fresh PIDs).
+   The canonical install (3 files + enable/start/**sync** + verify) is in **§9** —
+   follow that, not a copy here. `logread | grep audio` shows the service's
+   `[audio] WebSocket PCM server on 0.0.0.0:8081` line (procd routes its stdout to the
+   system log, not a terminal). **Reboot-survival PROVEN 2026-11-17** (cold power-pull;
+   all three services returned with fresh PIDs).
 3. **Merge `audio-bench` → `main` + Lookout Manager one-click (install the two
    packages + fetch the files + the init script, ending in `sync`) + README/montage** —
    now gated only on item 1 (capacity test) and Jim's go; item 2 is done. NOTE: whatever
@@ -282,12 +310,16 @@ opkg update && opkg install kmod-usb-audio alsa-utils
 # 2. plug the sound card into the hub, radio audio -> card input jack
 arecord -l                                   # expect card 0: Sound Blaster...
 arecord -D plughw:0,0 -f S16_LE -c 1 -r 16000 -V mono /dev/null   # Ctrl+C; expect the bar to move on a transmission
-# 3. files next to units_kml.py (/root), back up map.html first
+# 3. files onto /root (next to units_kml.py) + the boot service; back up map.html first
 cp /root/map.html /root/map.html.bak
-#   put lookout_audio.py and the audio-enabled map.html in /root
-# 4. run it
-python3 /root/lookout_audio.py
-# 5. open http://<router>:8080/ , hard-refresh, tap 🔊 Listen
+#   wget lookout_audio.py + map.html -> /root, and openwrt/lookout-audio -> /etc/init.d/ (see §9 for the SHA URLs)
+chmod +x /etc/init.d/lookout-audio
+# 4. enable as a boot service, start, and FLUSH TO FLASH (or a power-pull reverts it)
+/etc/init.d/lookout-audio enable
+/etc/init.d/lookout-audio start
+sync
+# 5. verify, then open http://<router>:8080/ , hard-refresh, tap 🔊 Listen
+pgrep -f lookout_audio        # expect a PID
 ```
 
 ---
