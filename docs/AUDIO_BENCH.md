@@ -1,10 +1,13 @@
 # The Lookout — radio audio over the browser (bench record)
 
-**Status: BENCH-PROVEN LIVE + REBOOT-SURVIVING on 2026-11-17, not released.** Lives on
-branch `audio-bench` only — NOT on `main`, NOT in the montage/all-tools/storefront.
-Live audio, auto-reconnect, and a procd boot service are all proven (a cold power-pull
-brings all three services back on their own). **The one gate left before anything public
-is the worst-case capacity test (§11–12), then Jim's go.**
+**Status: FULLY PROVEN on 2026-11-17 (live + auto-reconnect + reboot-surviving +
+capacity-clean), awaiting Jim's go to merge.** Lives on branch `audio-bench` — not yet
+on `main`/montage/storefront. All technical gates are cleared: live audio on PC+phone,
+the Listen button auto-reconnects and holds a wake-lock, the procd boot service survives
+a cold power-pull, and the **worst-case capacity test passed** (several listeners + a
+hard Z20 pan + a transmission at once, nothing flinched). **Only step left: merge
+`audio-bench` → `main` + fold the install (ending in `sync`) into Lookout Manager, on
+Jim's go.**
 
 This is the complete engineering record of adding **live radio audio** to the
 Lookout's in-browser map: a crew member opens `http://<router>:8080/`, taps a
@@ -258,13 +261,16 @@ the *real* radio capture — both confirmed live above.
      shrug, not an outage.
 - The capacity number is not what threatens integrity — the isolation is what
   protects it. Keep audio walled off from the core.
+- **Field-confirmed 2026-11-17:** the worst case (several listeners + a hard Z20 pan +
+  a live transmission at once) ran with **nothing flinching** — the estimate held.
 
 ## 12. OPEN — what's left before this is ever public
 
-1. **Worst-case capacity test (the integrity gate):** several listeners **+** a hard
-   Z20 pan **+** a live transmission, all at once, watching `cat /proc/loadavg`,
-   free RAM, and `dmesg` for ALSA xruns. This tells us the true headroom, not my
-   estimate.
+1. **Worst-case capacity test (the integrity gate) — PASSED 2026-11-17.** Jim ran the
+   honest worst case — several listeners **+** a hard Z20 pan **+** a live transmission
+   all at once — and **nothing flinched** (no audio glitch, no map stall, box stayed
+   composed). Confirms the §11 read: PCM passthrough is cheap and the isolation holds
+   under load. This was the last technical gate before public.
 2. **Boot-service wrap — BUILT + REBOOT-PROVEN 2026-11-17** (`openwrt/lookout-audio`,
    `START=97`, `respawn`, same shape as `bk-bridge`/`units-kml`), after the hand-run
    streamer was found to die with its SSH window (no box can keep a PC attached).
