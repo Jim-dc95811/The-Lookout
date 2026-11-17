@@ -157,6 +157,16 @@ The field build has been hardened and live-proven on the router:
 - **Set up a router** — turn a brand-new GL-MT6000 into a Lookout in **one click**. Enter the router's IP and its admin password; the app logs in over SSH and installs everything — Python, both programs, the boot services, the hotplug handler — then starts and verifies them. The router needs internet for this one-time setup. *Proven from a full factory reset: blank router → set an admin password → one button → tracking, with nobody at a terminal.* See **[DEPLOY.md](DEPLOY.md)**.
 - **Name units** — load the current unit-ID → name table, edit it, save it back. Names appear on the map within a few seconds, via a token-guarded `GET/POST /admin/aliases` endpoint on the KML server (`:8080`).
 
+## QR card maker — point, tap, you're on the map (NEW, 2026-11-17)
+
+**⬇️ [Download Lookout QR Maker v1.1](Lookout_QR_Maker_v1.1.zip)** · **📖 [User manual (PDF)](lookout_qr_maker/Lookout%20QR%20Maker.pdf)**
+
+Phones force **https** when you *type* an address, so a crew that types the router's address lands on nothing. A QR code carries the `http://` part explicitly — so a crew member points their phone camera at a printed card, taps the banner, and the live map opens. **No app, no typing, no login, no GIS.** A sticker on the box is the whole onboarding.
+
+`lookout_qr_maker/` is a tiny Windows app (standard library + Pillow): type the router address — just `192.168.8.1` works, or paste a full deep link to one named map — and it makes a print-ready card you tape to the box or inside the truck. The QR encoder is pure Python (no external QR library), everything runs offline, and the card always shows the exact address it encodes so you can verify it before printing.
+
+![A printable Lookout QR card — point a phone camera at it and tap to open the live map](images/lookout_qr_card.png)
+
 ## Credits — a human–AI engineering collaboration
 
 - **Jim Gaddy** — conceived it, directed it, and bench-tested every step. 37 years of radio and electronics; the one who knew the hardware inside out.
