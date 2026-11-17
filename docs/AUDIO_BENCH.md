@@ -228,9 +228,13 @@ the *real* radio capture — both confirmed live above.
    Z20 pan **+** a live transmission, all at once, watching `cat /proc/loadavg`,
    free RAM, and `dmesg` for ALSA xruns. This tells us the true headroom, not my
    estimate.
-2. **Boot-service wrap — BUILT 2026-11-17** (`openwrt/lookout-audio`, `START=97`,
-   `respawn`, same shape as `bk-bridge`/`units-kml`), after the hand-run streamer was
-   found to die with its SSH window (no box can keep a PC attached). Install on the box:
+2. **Boot-service wrap — BUILT + LIVE-PROVEN on the bench 2026-11-17** (`openwrt/lookout-audio`,
+   `START=97`, `respawn`, same shape as `bk-bridge`/`units-kml`), after the hand-run
+   streamer was found to die with its SSH window (no box can keep a PC attached).
+   Proven: `enable` + `start` → `pgrep -f lookout_audio` = PID 30742, Listen played on
+   PC + phone with **no python window and the SSH window closed**. **Still to prove:** a
+   **cold power-pull** confirming it respawns on boot (as the other two services did).
+   Install on the box:
    ```
    wget -O /etc/init.d/lookout-audio https://raw.githubusercontent.com/Jim-dc95811/The-Lookout/<audio-bench-SHA>/openwrt/lookout-audio
    chmod +x /etc/init.d/lookout-audio
