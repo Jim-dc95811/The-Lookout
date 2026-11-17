@@ -35,6 +35,11 @@ read and replace the unit id -> name table over the LAN. Names take effect withi
 refresh (aliases.json is already read live). Token default "lookout"; override with
 admin_token.txt beside this file.
 
+v1.11 (2026-11-16): field hardening - a .tpkx read that fails because its SSD vanished mid-
+serve (cable jostled / drive unplugged) no longer errors the request; it drops the stale
+reader, serves a blank tile, and rebuilds the reader when the drive remounts. The feed and
+the units keep flowing throughout.
+
 v1.10 (2026-11-15): MANY MAPS, one per link. Every .tpkx/.mbtiles found beside the default
 basemap (e.g. dropped on the SSD) is served at its own URL /m/<slug>/ with the live units on
 top; /maps.json lists them and the page has a Maps menu to jump between them. The default
@@ -49,7 +54,7 @@ import os, sqlite3, struct, zipfile
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-VERSION = "1.10"
+VERSION = "1.11"
 
 # ---- where we read from / serve to ----
 BRIDGE_HOST = "127.0.0.1"     # the bridge's NMEA feed (same box)
@@ -177,7 +182,16 @@ def meta_for(path):
 def tile_for(path, z, x, y):
     if _tpkx_path(path):
         r = _reader_for(path)
-        return r.tile(z, x, y) if (r and r != "mbtiles") else None
+        if not r or r == "mbtiles":
+            return None
+        try:
+            return r.tile(z, x, y)
+        except Exception:
+            # the SSD vanished mid-read (cable jostled / unplugged). Drop the stale reader so
+            # it rebuilds when the drive remounts; serve a blank tile meanwhile, never crash.
+            with _maps_lock:
+                _readers.pop(os.path.realpath(path), None)
+            return None
     # MBTiles: Leaflet asks XYZ (y=0 at north); MBTiles stores TMS (row 0 at south) -> flip.
     try:
         c = sqlite3.connect("file:%s?mode=ro" % path, uri=True, timeout=5)

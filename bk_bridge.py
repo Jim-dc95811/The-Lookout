@@ -28,6 +28,13 @@ gps_source.py in a separate daemon thread, and the box's fix is broadcast into t
 to the radio fleet, with NO change to the map. The radio reader is byte-for-byte unchanged;
 if there is no GPS (or gps_source can't load), the bridge behaves exactly as v1.2.
 
+v1.4 (2026-11-16): field hardening. (1) A quiet fleet no longer raises a false RADIO LINK
+DOWN alarm - the link is held UP as long as the 20 s keepalive keeps succeeding (and usb0 is
+up), so an idle fleet (no units transmitting for 90 s - normal) no longer triggers a
+reconnect/alarm flap. SO_KEEPALIVE is set so the OS still catches a truly dead peer. (2) The
+box's own GPS fix is coordinate-validated (in gps_source) before it's broadcast, so a glitchy
+Garmin fix can't put the box at (0,0) or fling it.
+
 Run:   python3 bk_bridge.py
 Stop:  Ctrl+C
 """
@@ -38,7 +45,7 @@ try:
 except Exception:
     gps_source = None
 
-VERSION = "1.3"
+VERSION = "1.4"
 
 # ---- upstream: the BK base relay ----
 RADIO_IP    = "10.250.46.6"
@@ -176,11 +183,12 @@ def _radio_loop():
         try:
             print(f"[radio] connecting to {RADIO_IP}:{RADIO_PORT} ...", flush=True)
             s = socket.create_connection((RADIO_IP, RADIO_PORT), timeout=6)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)   # OS detects a dead peer
             s.sendall(SUBSCRIBE)
             s.settimeout(0.5)
             print("[radio] connected + subscribed - listening for GPS", flush=True)
             _set_link("up", time.monotonic())
-            last_keep = last_data = last_beat = time.monotonic()
+            last_keep = last_data = last_beat = last_alive = time.monotonic()
             got_any = False
             while True:
                 try:
@@ -189,7 +197,7 @@ def _radio_loop():
                     data = b""
                 now = time.monotonic()
                 if data:
-                    last_data = now
+                    last_data = last_alive = now
                     buf.extend(data)
                     text = buf.decode("latin-1")
                     last_end = 0
@@ -214,14 +222,16 @@ def _radio_loop():
                     except OSError:
                         print("[radio] keepalive failed - radio lost", flush=True)
                         break
-                    last_keep = now
+                    last_keep = last_alive = now        # a successful keepalive = link alive
                 _emit_status(now)                       # LINK UP heartbeat
                 if not got_any and now - last_beat > HEARTBEAT_S:
                     print("[radio] alive - subscribed and waiting (no units transmitting yet)",
                           flush=True)
                     last_beat = now
-                if now - last_data > WATCHDOG_S:
-                    print("[radio] no bytes for a while - reconnecting", flush=True)
+                if now - last_alive > WATCHDOG_S:
+                    # a quiet fleet (no units transmitting) is NOT a lost link - the keepalive
+                    # above refreshes last_alive every 20 s, so this only fires on a real stall.
+                    print("[radio] link stalled (no data AND no keepalive) - reconnecting", flush=True)
                     break
         except OSError as e:
             print(f"[radio] connection problem: {e} - retrying", flush=True)

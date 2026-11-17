@@ -81,6 +81,44 @@ def tag(self_id):
     # the id field, so units_kml reads f[1] clean.
     return _cs(f"PP25,{self_id},")
 
+
+# ---------------- coordinate sanity (don't broadcast a glitchy self-fix) ----------------
+def _coords_ok(lat, lon):
+    """Reject NaN, out-of-range, and the (0,0) 'null island' a cold-start can emit."""
+    try:
+        if lat != lat or lon != lon:          # NaN
+            return False
+        if not (-90.0 <= lat <= 90.0) or not (-180.0 <= lon <= 180.0):
+            return False
+        if abs(lat) < 1e-6 and abs(lon) < 1e-6:
+            return False
+    except TypeError:
+        return False
+    return True
+
+def _ddm_to_deg(tok, hemi):
+    """ddmm.mmmm / dddmm.mmmm + hemisphere -> signed decimal degrees, or None."""
+    try:
+        v = float(tok)
+    except (TypeError, ValueError):
+        return None
+    deg = int(v // 100); dd = deg + (v - deg * 100) / 60.0
+    return -dd if hemi in ("S", "W") else dd
+
+def _nmea_coords_ok(line):
+    """Validate the lat/lon carried by a GGA or RMC sentence (field layout differs)."""
+    f = line.split(",")
+    t = f[0][1:] if f and f[0] else ""
+    if t.endswith("GGA") and len(f) > 5:
+        lat = _ddm_to_deg(f[2], f[3]); lon = _ddm_to_deg(f[4], f[5])
+    elif t.endswith("RMC") and len(f) > 6:
+        lat = _ddm_to_deg(f[3], f[4]); lon = _ddm_to_deg(f[5], f[6])
+    else:
+        return False
+    if lat is None or lon is None:
+        return False
+    return _coords_ok(lat, lon)
+
 _SENTENCE_START = "$"
 
 def _looks_valid(line):
@@ -133,10 +171,12 @@ class GpsdSource:
                 continue
             t = line.split(",")[0][1:]
             if t.endswith("GGA"):
-                yield line
-                yield tag(self_id)
+                if _nmea_coords_ok(line):
+                    yield line
+                    yield tag(self_id)
             elif t.endswith("RMC"):
-                yield line
+                if _nmea_coords_ok(line):
+                    yield line
 
     def close(self):
         try:
@@ -173,10 +213,12 @@ class SerialSource:
                     continue
                 t = line.split(",")[0][1:]
                 if t.endswith("GGA"):
-                    yield line
-                    yield tag(self_id)
+                    if _nmea_coords_ok(line):
+                        yield line
+                        yield tag(self_id)
                 elif t.endswith("RMC"):
-                    yield line
+                    if _nmea_coords_ok(line):
+                        yield line
 
     def close(self):
         try:
@@ -299,7 +341,7 @@ class GarminUsbSource:
                 if not d:
                     continue
                 lat, lon, alt, fix, utc, date, spd = d
-                if fix < 2:                      # 0/1 = no fix
+                if fix < 2 or not _coords_ok(lat, lon):   # 0/1 = no fix; reject NaN/(0,0)/range
                     continue
                 yield build_gga(lat, lon, alt, 8, utc)
                 yield tag(self_id)
