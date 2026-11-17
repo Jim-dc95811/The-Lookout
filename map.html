@@ -13,8 +13,9 @@ html,body{height:100%;background:#0b0f14;color:#e6eef6;font-family:-apple-system
 #title{font-weight:700;letter-spacing:.5px;color:#7fd1ff;white-space:nowrap}
 #mapname{color:#9fb3c8;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:32vw}
 #status{margin-left:auto;display:flex;align-items:center;gap:8px;color:#9fb3c8}
-#maps{pointer-events:auto;cursor:pointer;background:#17344a;color:#bfe0ff;border:1px solid #255277;border-radius:7px;
+#maps,#listen{pointer-events:auto;cursor:pointer;background:#17344a;color:#bfe0ff;border:1px solid #255277;border-radius:7px;
  padding:5px 10px;font-size:13px;font-weight:600;white-space:nowrap}
+#listen.on{background:#1f6b3a;border-color:#3fae63;color:#eafff0}
 #dot{width:9px;height:9px;border-radius:50%;background:#2ecc71;box-shadow:0 0 7px #2ecc71}
 #dot.bad{background:#e74c3c;box-shadow:0 0 7px #e74c3c}
 #menu{position:fixed;z-index:650;top:calc(44px + env(safe-area-inset-top,0px));right:max(10px,env(safe-area-inset-right,0px));
@@ -33,7 +34,7 @@ html,body{height:100%;background:#0b0f14;color:#e6eef6;font-family:-apple-system
 </style></head><body>
 <div id="map"></div>
 <div id="bar"><span id="title">THE LOOKOUT</span><span id="mapname"></span>
-<span id="status"><button id="maps">&#128506; Maps</button><span id="clock">--:--:--</span><span id="count">0 units</span><i id="dot"></i></span></div>
+<span id="status"><button id="maps">&#128506; Maps</button><button id="listen">&#128266; Listen</button><span id="clock">--:--:--</span><span id="count">0 units</span><i id="dot"></i></span></div>
 <div id="menu"></div>
 <div id="banner"></div>
 <script src="/leaflet.js"></script>
@@ -124,4 +125,96 @@ function update(d){
 loadMaps();                    // resolves which map to show, then kicks pollMeta() for its tiles
 tick(); setInterval(tick,3000);
 setInterval(loadMaps,30000);   // pick up newly-added maps without a reload
+
+// ---- Listen: radio audio streamed from the box as PCM over a WebSocket (:8081) ----
+// Optional + fully isolated: if lookout_audio.py isn't running, the button just says
+// "no audio" and nothing else is affected. 16 kHz mono PCM -> Web Audio, small jitter buffer.
+// The box drops a listener that goes quiet for 2 s (e.g. a phone that dimmed), so the page
+// keeps the user's intent ("on") separate from the socket: a drop auto-reconnects and the
+// button stays "On", and a screen wake-lock keeps a phone awake while listening so it mostly
+// never happens. Only a never-connected socket (streamer down) falls back to "no audio".
+(function(){
+  var AUDIO_PORT=8081, SR=16000, actx=null, ws=null, nextT=0;
+  var on=false;        // the user wants to listen - stays true across reconnects
+  var everOpen=false;  // did we reach the box at least once this listening session?
+  var retry=null;      // pending reconnect timer
+  var wake=null;       // screen wake-lock
+  var btn=document.getElementById("listen");
+  function label(t){ btn.innerHTML=t; }
+
+  function requestWake(){
+    try{
+      if(navigator.wakeLock && !wake){
+        navigator.wakeLock.request("screen").then(function(w){
+          wake=w; w.addEventListener("release",function(){ if(wake===w) wake=null; });
+        }).catch(function(){});
+      }
+    }catch(e){}
+  }
+  function releaseWake(){ try{ if(wake){ wake.release(); wake=null; } }catch(e){} }
+
+  function ensureCtx(){
+    try{ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)(); actx.resume(); return true; }
+    catch(e){ return false; }
+  }
+
+  function connect(){
+    if(!on) return;
+    if(retry){ clearTimeout(retry); retry=null; }
+    nextT=0;
+    var sock;
+    try{ sock=new WebSocket("ws://"+location.hostname+":"+AUDIO_PORT); }
+    catch(e){ scheduleRetry(); return; }
+    sock.binaryType="arraybuffer"; ws=sock;
+    sock.onopen=function(){ everOpen=true; if(on && ws===sock) label("🔊 On"); };
+    sock.onmessage=function(ev){ if(!on || ws!==sock || !actx) return;
+      var i16=new Int16Array(ev.data), f32=new Float32Array(i16.length);
+      for(var i=0;i<i16.length;i++) f32[i]=i16[i]/32768;
+      var b=actx.createBuffer(1,f32.length,SR); b.copyToChannel(f32,0);
+      var s=actx.createBufferSource(); s.buffer=b; s.connect(actx.destination);
+      var now=actx.currentTime; if(nextT<now+0.05) nextT=now+0.15;  // (re)prime jitter buffer
+      s.start(nextT); nextT+=b.duration; };
+    sock.onerror=function(){ /* a close event follows; handled there */ };
+    sock.onclose=function(){
+      if(ws===sock) ws=null;
+      if(!on) return;
+      if(everOpen) scheduleRetry();   // was working, got dropped -> dial back in
+      else fail();                    // never reached the box -> streamer isn't running
+    };
+  }
+
+  function scheduleRetry(){
+    if(!on || retry) return;
+    label("🔊 …");                    // reconnecting - button stays active (green)
+    retry=setTimeout(function(){ retry=null; ensureCtx(); connect(); }, 1000);
+  }
+
+  function fail(){
+    on=false; btn.classList.remove("on");
+    if(retry){ clearTimeout(retry); retry=null; }
+    releaseWake(); label("no audio");
+  }
+
+  function start(){
+    if(!ensureCtx()){ label("no audio"); return; }
+    on=true; everOpen=false; btn.classList.add("on"); label("🔊 On");
+    requestWake(); connect();
+  }
+  function stop(){
+    on=false; btn.classList.remove("on"); label("🔊 Listen");
+    if(retry){ clearTimeout(retry); retry=null; }
+    releaseWake();
+    if(ws){ var s=ws; ws=null; try{ s.onclose=null; s.onerror=null; s.close(); }catch(e){} }
+  }
+
+  // Returning to a backgrounded tab: re-arm the audio context, wake-lock and socket.
+  document.addEventListener("visibilitychange",function(){
+    if(document.visibilityState==="visible" && on){
+      ensureCtx(); requestWake();
+      if(!ws) scheduleRetry();
+    }
+  });
+
+  btn.onclick=function(e){ e.stopPropagation(); on?stop():start(); };
+})();
 </script></body></html>
