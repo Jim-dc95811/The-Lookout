@@ -38,9 +38,11 @@ html,body{height:100%;background:#0b0f14;color:#e6eef6;font-family:-apple-system
 <div id="banner"></div>
 <script src="/leaflet.js"></script>
 <script>
-// Which map is this page? "" = the default map served at "/", else "/m/<slug>" for a named map.
-var BASE = location.pathname.replace(/\/(map|index\.html)\/?$/,"").replace(/\/+$/,"");
-var isDefault = (BASE === "");
+// This page shows ONE map. The router has no default: root ("/") shows whichever map sorts first
+// (crews order by file name, e.g. "1_" / "a_"); a named map lives at /m/<slug>. Every map is equal.
+var PATHBASE = location.pathname.replace(/\/(map|index\.html)\/?$/,"").replace(/\/+$/,"");
+var atRoot = (PATHBASE === "");
+var TILEBASE = null;              // "/m/<slug>" of the map actually shown; set once /maps.json loads
 var map = L.map("map",{zoomControl:true, attributionControl:false});
 map.setView([30.40,-81.93], 12);   // sane default; re-centers on the map / units once loaded
 var markers={}, tilesAdded=false, userMoved=false;
@@ -54,32 +56,36 @@ map.getContainer().addEventListener("wheel", markMoved, {passive:true});
 function esc(s){return (s+"").replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 
 function setupTiles(meta){
-  if(tilesAdded || !meta.has_tiles) return;
+  if(tilesAdded || !meta.has_tiles || TILEBASE===null) return;
   tilesAdded=true;
   var b=meta.bounds, sw=[b[1],b[0]], ne=[b[3],b[2]];
-  L.tileLayer(BASE+"/tiles/{z}/{x}/{y}",{minZoom:meta.minzoom, maxZoom:22, maxNativeZoom:meta.maxzoom, bounds:[sw,ne],
+  L.tileLayer(TILEBASE+"/tiles/{z}/{x}/{y}",{minZoom:meta.minzoom, maxZoom:22, maxNativeZoom:meta.maxzoom, bounds:[sw,ne],
     errorTileUrl:"data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="}).addTo(map);
   map.setMaxBounds([[sw[0]-0.08,sw[1]-0.08],[ne[0]+0.08,ne[1]+0.08]]);
-  // Frame the whole map on load (named or default). There is no auto-fit to units: IDs pop in
-  // from all over, so they must never move the display. Skip even this if the user already moved.
+  // Frame the whole map once on load. There is no auto-fit to units: IDs pop in from all over,
+  // so they must never move the display. Skip even this if the user already moved.
   if(!userMoved){ map.fitBounds([sw,ne]); }
 }
-// Keep asking for the basemap until the drive/MBTiles is ready (survives a cold boot where the
-// USB auto-mount finishes AFTER this service starts: the map appears the instant it mounts).
+// Keep asking for this map's tiles until its drive is ready (survives a cold boot where the USB
+// auto-mount finishes AFTER this service starts: the map appears the instant it mounts).
 function pollMeta(){
-  fetch(BASE+"/meta.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(meta){
+  if(TILEBASE===null) return;           // no map resolved yet (none on the drive) - loadMaps retries
+  fetch(TILEBASE+"/meta.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(meta){
     if(meta.has_tiles) setupTiles(meta); else setTimeout(pollMeta,4000);
   }).catch(function(){ setTimeout(pollMeta,4000); });
 }
-// Maps menu: every map this box serves, one tap to jump between them.
+// Maps menu + which map this page shows. No default: root shows whichever sorts first.
 function loadMaps(){
   fetch("/maps.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(d){
-    var cur=null, html='<h4>Maps on this box</h4>';
-    (d.maps||[]).forEach(function(mp){
-      var isCur = (mp.base.replace(/\/+$/,"") === BASE);
-      if(isCur){ cur=mp; }
-      html+='<a href="'+mp.base+'" class="'+(isCur?"cur":"")+'">'+esc(mp.name)
-          +(mp.default?' <span class="sub">default &middot; opens at /</span>':"")+'</a>';
+    var maps=d.maps||[], cur=null;
+    if(atRoot){ cur = maps[0] || null; }    // root -> first map alphabetically (named by the crew)
+    else { maps.forEach(function(mp){ if(mp.base.replace(/\/+$/,"")===PATHBASE) cur=mp; }); }
+    if(cur && TILEBASE===null){ TILEBASE = cur.base.replace(/\/+$/,""); pollMeta(); }  // first resolve
+    var html='<h4>Maps on this box</h4>';
+    if(maps.length===0){ html+='<a class="cur"><span class="sub">No maps found &middot; insert an SSD with .tpkx / .mbtiles</span></a>'; }
+    maps.forEach(function(mp){
+      var isCur = cur && (mp.base===cur.base);
+      html+='<a href="'+mp.base+'" class="'+(isCur?"cur":"")+'">'+esc(mp.name)+'</a>';
     });
     document.getElementById("menu").innerHTML=html;
     document.getElementById("mapname").textContent = cur ? "· "+cur.name : "";
@@ -115,8 +121,7 @@ function update(d){
   Object.keys(markers).forEach(function(id){ if(!seen[id]){ map.removeLayer(markers[id]); delete markers[id]; }});
   // (No auto-pan to units: they key up from everywhere and must never move the display.)
 }
-loadMaps();
-pollMeta();
+loadMaps();                    // resolves which map to show, then kicks pollMeta() for its tiles
 tick(); setInterval(tick,3000);
 setInterval(loadMaps,30000);   // pick up newly-added maps without a reload
 </script></body></html>

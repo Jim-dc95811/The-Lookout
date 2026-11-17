@@ -40,6 +40,13 @@ serve (cable jostled / drive unplugged) no longer errors the request; it drops t
 reader, serves a blank tile, and rebuilds the reader when the drive remounts. The feed and
 the units keep flowing throughout.
 
+v1.12 (2026-11-16): NO DEFAULT MAP. The router holds no map and has no concept of a "default"
+or privileged basemap - no basemap.* symlink, nothing served at "/" as special. It simply scans
+whatever removable drive is mounted (/tmp/mountd/*; override with LOOKOUT_MAP_ROOTS) and serves
+every .tpkx/.mbtiles it finds, all equal, each at /m/<slug>/, sorted ALPHABETICALLY by file name.
+The bare URL "/" just shows whichever map sorts first - crews control that by naming (prefix a
+file "1_" or "a_"). Swap drives freely; the box stays generic and carries no map of its own.
+
 v1.10 (2026-11-15): MANY MAPS, one per link. Every .tpkx/.mbtiles found beside the default
 basemap (e.g. dropped on the SSD) is served at its own URL /m/<slug>/ with the live units on
 top; /maps.json lists them and the page has a Maps menu to jump between them. The default
@@ -54,7 +61,7 @@ import os, sqlite3, struct, zipfile
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-VERSION = "1.11"
+VERSION = "1.12"
 
 # ---- where we read from / serve to ----
 BRIDGE_HOST = "127.0.0.1"     # the bridge's NMEA feed (same box)
@@ -70,26 +77,20 @@ ADMIN_TOKEN_DEFAULT = "lookout"   # shared token for the Alias Manager; override
 ALIASES_PATH  = Path(__file__).with_name("aliases.json")   # unit id -> name, read live every refresh
 LOG_DIR     = Path(__file__).with_name("logs")   # daily track CSVs land here
 
-# ---------- offline basemap: serve tiles out of an MBTiles file OR an Esri .tpkx ----------
-# .tpkx is Esri Compact Cache V2 (exactly what mb2tpkx writes), so this serves the SAME tile
-# packages ArcGIS Earth uses - no conversion. The backend is picked by file extension.
-def _default_basemap():
-    for name in ("basemap.tpkx", "basemap.mbtiles"):   # lexists: a symlink counts even before
-        p = str(Path(__file__).with_name(name))        # its SSD target is mounted (cold boot)
-        if os.path.lexists(p):
-            return p
-    return str(Path(__file__).with_name("basemap.mbtiles"))
-
-MBTILES_PATH = os.environ.get("LOOKOUT_MBTILES") or _default_basemap()
+# ---------- offline maps: served straight off whatever removable drive is plugged in ----------
+# .tpkx is Esri Compact Cache V2 (exactly what mb2tpkx / ArcGIS Earth use) and .mbtiles is SQLite;
+# the backend is picked by file extension. The router stores NO map and has NO "default": it just
+# serves every map found on the mounted USB drive(s), as equals. Crews order them by FILE NAME
+# (prefix a map "1_" or "a_" to make it the one the bare URL shows first).
+# Where removable drives mount: OpenWrt/GL mountd uses /tmp/mountd/<diskN_partM>/. Override or
+# extend for a Pi (e.g. "/mnt:/media") via LOOKOUT_MAP_ROOTS (os.pathsep-separated).
+MAP_ROOTS = [p for p in (os.environ.get("LOOKOUT_MAP_ROOTS") or "/tmp/mountd").split(os.pathsep) if p]
 _ASSET_DIR   = Path(__file__).resolve().parent
 _meta_cache  = {}          # realpath -> meta dict (cached on a good read only)
 _readers     = {}          # realpath -> _Tpkx instance (tpkx only; mbtiles open per request)
-_maps_cache  = {}          # slug -> {path, real, name, tpkx, default}
+_maps_cache  = {}          # slug -> {path, real, name, tpkx}
 _maps_ts     = [0.0]       # last discovery time (monotonic)
 _maps_lock   = threading.Lock()
-
-def _is_tpkx():
-    return MBTILES_PATH.lower().endswith(".tpkx")
 
 class _Tpkx:
     """Read tiles straight out of an Esri Compact Cache V2 .tpkx by direct seek (thread-safe)."""
@@ -202,63 +203,54 @@ def tile_for(path, z, x, y):
     except Exception:
         return None
 
-# the default basemap (served at "/") - thin wrappers over the per-file helpers
-def _mbtiles_meta():
-    return meta_for(MBTILES_PATH)
-
-def _get_tile(z, x, y):
-    return tile_for(MBTILES_PATH, z, x, y)
-
-# ---------- many maps: every .tpkx/.mbtiles beside the default map gets its own URL ----------
-def _maps_dir():
-    env = os.environ.get("LOOKOUT_MAPS")
-    if env:
-        return Path(env)
-    try:
-        real = Path(os.path.realpath(MBTILES_PATH))   # follow the symlink to its real folder (the SSD)
-        if real.parent.exists():
-            return real.parent
-    except OSError:
-        pass
-    return _ASSET_DIR
+# ---------- discover every map on the mounted drive(s): all equal, no default ----------
+def _scan_dirs():
+    """Each directory to look in for maps: every mounted partition under each map root, plus the
+    root itself (so LOOKOUT_MAP_ROOTS may point straight at a maps folder, e.g. on a Pi)."""
+    dirs = []
+    for root in MAP_ROOTS:
+        r = Path(root)
+        try:
+            if not r.is_dir():
+                continue
+            dirs.append(r)
+            for d in sorted(r.iterdir()):
+                try:
+                    if d.is_dir():
+                        dirs.append(d)
+                except OSError:
+                    pass
+        except OSError:
+            pass
+    return dirs
 
 def _slugify(stem):
     s = re.sub(r"[^a-z0-9]+", "-", stem.lower()).strip("-")
     return s or "map"
 
 def _discover_maps():
-    """slug -> {path, real, name, tpkx, default}. The default basemap is always included and
-    marked; a 'basemap.*' symlink is listed under its REAL target's name, not 'basemap'."""
+    """slug -> {path, real, name, tpkx}. Every .tpkx/.mbtiles on any mounted removable drive,
+    all equal - no default, and nothing from the router's own flash. The router holds no map."""
     found = {}; seen = {}
-    def add(path, default=False):
+    def add(path):
         try:
             real = os.path.realpath(path)
         except OSError:
             return
-        if real in seen:
-            if default:
-                found[seen[real]]["default"] = True
+        if real in seen or not os.path.exists(real):
             return
         name = Path(real).stem
         base = _slugify(name); slug = base; n = 2
         while slug in found:
             slug = "%s-%d" % (base, n); n += 1
-        found[slug] = {"path": str(path), "real": real, "name": name,
-                       "tpkx": _tpkx_path(str(path)), "default": default}
+        found[slug] = {"path": str(path), "real": real, "name": name, "tpkx": _tpkx_path(str(path))}
         seen[real] = slug
-    if os.path.lexists(MBTILES_PATH):
-        add(MBTILES_PATH, default=True)
-    dirs = [_maps_dir()]
-    if _ASSET_DIR not in dirs:
-        dirs.append(_ASSET_DIR)              # also pick up basemap.* / extra maps on internal flash
-    for d in dirs:
+    for d in _scan_dirs():
         try:
             entries = sorted(d.glob("*.tpkx")) + sorted(d.glob("*.mbtiles"))
         except OSError:
             entries = []
         for p in entries:
-            if p.name.startswith("basemap."):    # the default symlink, already added above
-                continue
             add(str(p))
     return found
 
@@ -276,10 +268,9 @@ def _maps_list():
     out = []
     for slug, info in _maps().items():
         m = meta_for(info["path"])
-        out.append({"slug": slug, "name": info["name"], "default": info["default"],
-                    "base": "/" if info["default"] else "/m/%s/" % slug,
+        out.append({"slug": slug, "name": info["name"], "base": "/m/%s/" % slug,
                     "has_tiles": m.get("has_tiles", False), "bounds": m.get("bounds")})
-    out.sort(key=lambda e: (not e["default"], e["name"].lower()))
+    out.sort(key=lambda e: e["name"].lower())   # name-ordered; prefix a file 1_/a_ to sort it first
     return out
 
 _CTYPE = {".js": "application/javascript", ".css": "text/css", ".html": "text/html; charset=utf-8"}
@@ -611,32 +602,7 @@ class _H(BaseHTTPRequestHandler):
                     self.send_error(400); return
                 return self._tile(tile_for(info["path"], z, x, y))
             self.send_error(404); return
-        if path == "/meta.json":
-            body = json.dumps(_mbtiles_meta()).encode("utf-8")
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Content-Length", str(len(body)))
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            self.wfile.write(body)
-            return
-        if path.startswith("/tiles/"):
-            try:
-                z, x, y = path[len("/tiles/"):].split("/")[:3]
-                z, x, y = int(z), int(x), int(y.split(".")[0])
-            except ValueError:
-                self.send_error(400); return
-            data = _get_tile(z, x, y)
-            if data is None:
-                self.send_response(204); self.end_headers(); return
-            ctype = "image/png" if data[:4] == b"\x89PNG" else "image/jpeg"   # .tpkx is MIXED
-            self.send_response(200)
-            self.send_header("Content-Type", ctype)
-            self.send_header("Content-Length", str(len(data)))
-            self.send_header("Cache-Control", "max-age=86400")
-            self.end_headers()
-            self.wfile.write(data)
-            return
+        # (no root "/tiles" or "/meta.json": there is no default map - every map serves at /m/<slug>/)
         if path == "/units.json":
             body = json.dumps(_units_payload()).encode("utf-8")
             self.send_response(200)
