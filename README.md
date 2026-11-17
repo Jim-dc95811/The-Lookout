@@ -32,6 +32,14 @@ Field units  ──P25 GPS over the air──▶  Base radio  ──USB (RNDIS)�
 
 The router is the single source of truth; every ArcGIS Earth on the LAN is just a window into it. Each screen pulls on its own timer — **one source, many windows, same units on every map.** Scales from one PC to dozens without any special network setup: it's plain HTTP and TCP, nothing to enable, routes across subnets like any web request.
 
+### Under the hood
+
+A systems view of the whole box — what plugs in over USB, the three small programs inside, and what comes out to every screen:
+
+![The Lookout — systems breakdown: four USB devices into a travel router running OpenWrt and three tiny Python programs, out to any screen](images/the_lookout_systems_breakdown.png)
+
+Everything the Lookout adds on top of a stock OpenWrt router — the drivers, the libraries, our Python programs, the boot services — each with a one-line job: **[docs/The_Lookout_Beyond_Factory.pdf](docs/The_Lookout_Beyond_Factory.pdf)** (printable). All of it installed through supported channels — no firmware rebuild, no custom kernel.
+
 ## Who it's for
 
 The Lookout exists to reach the people a normal install can't:

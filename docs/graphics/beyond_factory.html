@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  @page{ size:Letter; margin:14mm 15mm; }
+  :root{
+    --ink:#1e293b; --sub:#55657a; --line:#d4dce6;
+    --green:#16a34a; --greenbg:#eafaf0;
+    --amber:#b45309; --amberbg:#fdf4e6;
+    --blue:#1d4ed8; --bluebg:#eef3fe;
+    --slate:#334155; --mono:"Consolas","DejaVu Sans Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI",system-ui,Arial,sans-serif;color:var(--ink);font-size:12px;line-height:1.4}
+  .title{border-bottom:3px solid var(--green);padding-bottom:9px;margin-bottom:12px}
+  .title h1{font-size:25px;color:var(--slate);letter-spacing:.3px}
+  .title h1 b{color:var(--green)}
+  .title p{font-size:12.5px;color:var(--sub);margin-top:4px}
+  .lead{font-size:12px;color:var(--sub);margin-bottom:14px;line-height:1.5}
+  .lead b{color:var(--slate)}
+
+  .sec{margin-bottom:13px;break-inside:avoid}
+  .sec h2{font-size:12px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;
+    color:var(--green);margin-bottom:7px;display:flex;align-items:baseline;gap:8px}
+  .sec h2 small{font-weight:500;letter-spacing:.2px;text-transform:none;color:var(--sub);font-size:11px}
+
+  .item{display:flex;gap:12px;padding:6px 0;border-top:1px solid var(--line)}
+  .item:first-of-type{border-top:none}
+  .nm{font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--slate);
+    width:150px;flex:0 0 auto;padding-top:1px}
+  .ds{font-size:12px;color:#374656;flex:1}
+  .ds b{color:var(--slate)}
+
+  .note{background:var(--amberbg);border-left:4px solid var(--amber);border-radius:6px;
+    padding:7px 11px;font-size:11.5px;color:#7a4408;margin:9px 0 2px}
+
+  .foot{margin-top:14px;border-top:2px solid var(--green);padding-top:10px;
+    background:var(--greenbg);border-radius:8px;padding:11px 13px}
+  .foot b{color:var(--green)}
+  .foot .big{font-size:12.5px;color:var(--slate);font-weight:700;margin-bottom:3px}
+  .foot .sm{font-size:11.5px;color:#2f4a3a}
+</style>
+</head>
+<body>
+
+  <div class="title">
+    <h1>THE <b>LOOKOUT</b> &mdash; Beyond Factory</h1>
+    <p>Everything added on top of a stock OpenWrt travel router, and what each piece does.</p>
+  </div>
+
+  <div class="lead">
+    The router ships as a capable OpenWrt device, but it does not know how to read a radio, serve a map, or stream audio.
+    The Lookout adds a small, specific set of pieces to teach it &mdash; <b>all through supported channels, no firmware rebuild, no custom kernel.</b>
+    Here is each addition and its job.
+  </div>
+
+  <!-- DRIVERS -->
+  <div class="sec">
+    <h2>1 &nbsp; Driver packages <small>installed with opkg, from the vendor&rsquo;s own signed, kernel&#8209;matched feed</small></h2>
+    <div class="item"><div class="nm">kmod-usb-audio</div><div class="ds">The <b>USB audio driver</b>. Lets the router see the USB sound card as a recording device so it can hear the radio.</div></div>
+    <div class="item"><div class="nm">kmod-sound-core</div><div class="ds">Core sound support that the audio driver sits on. Pulled in automatically with it.</div></div>
+    <div class="note">The driver that reads the radio&rsquo;s GPS link (USB networking / RNDIS) was already built into the router &mdash; nothing to add there. Only audio needed a driver.</div>
+  </div>
+
+  <!-- SUPPORT PACKAGES -->
+  <div class="sec">
+    <h2>2 &nbsp; Support packages <small>the tools our programs lean on, also via opkg</small></h2>
+    <div class="item"><div class="nm">python3</div><div class="ds">The <b>Python 3 runtime and standard library</b>. Every Lookout program runs on it. The stock firmware carries no Python &mdash; this is what makes the box programmable.</div></div>
+    <div class="item"><div class="nm">libusb-1.0-0</div><div class="ds">User&#8209;space USB access. Lets us talk to the Garmin GPS puck directly, in plain code, with no special kernel driver.</div></div>
+    <div class="item"><div class="nm">alsa-utils <span style="font-weight:400">(+ alsa-lib)</span></div><div class="ds">The standard Linux sound toolkit. Gives us <b>arecord</b>, which captures the radio audio off the sound card.</div></div>
+  </div>
+
+  <!-- PROGRAMS -->
+  <div class="sec">
+    <h2>3 &nbsp; Programs we wrote <small>plain Python, standard library only &mdash; small, single&#8209;purpose</small></h2>
+    <div class="item"><div class="nm">bk_bridge.py</div><div class="ds">Reads the radio&rsquo;s received GPS over the USB link and re&#8209;serves it as a <b>clean position feed</b> on the network. Also folds in the box&rsquo;s own GPS as the &ldquo;you are here&rdquo; unit.</div></div>
+    <div class="item"><div class="nm">gps_source.py</div><div class="ds">Picks where the box&rsquo;s own position comes from &mdash; tries the Garmin first, then other sources &mdash; so the right one just works.</div></div>
+    <div class="item"><div class="nm">garmin_linux.py</div><div class="ds">Speaks the Garmin&rsquo;s binary GPS language over USB, in pure Python. Discovers the device&rsquo;s own data path instead of guessing it.</div></div>
+    <div class="item"><div class="nm">units_kml.py</div><div class="ds">The map server. Hands out the <b>browser map, the live units, and the map tiles</b> off the SSD, and lets you rename units on the fly.</div></div>
+    <div class="item"><div class="nm">lookout_audio.py</div><div class="ds">Captures the radio audio and <b>streams it to the browser</b> as raw sound &mdash; no codec, almost no CPU. Runs on its own, so audio can never disturb the map.</div></div>
+    <div class="item"><div class="nm">map.html</div><div class="ds">The map itself, as seen in any browser &mdash; the moving units, the Maps menu, and the &ldquo;Listen&rdquo; button. Carries its own map library (below), so it needs no internet.</div></div>
+  </div>
+
+  <!-- SERVICES -->
+  <div class="sec">
+    <h2>4 &nbsp; Boot services <small>what turns the programs into a plug&#8209;in appliance</small></h2>
+    <div class="item"><div class="nm">bk-bridge</div><div class="ds">Starts the position bridge at boot, brings up the radio link, and hands the Garmin to our code.</div></div>
+    <div class="item"><div class="nm">units-kml</div><div class="ds">Starts the map server at boot.</div></div>
+    <div class="item"><div class="nm">lookout-audio</div><div class="ds">Starts the audio streamer at boot.</div></div>
+    <div class="item"><div class="nm">hotplug / usb0</div><div class="ds">Re&#8209;connects the radio link if the radio is plugged in <b>after</b> the box is already running.</div></div>
+    <div class="note">All three services restart themselves if they ever stop, and <b>everything comes back on its own after a power&#8209;cycle</b> &mdash; pull the plug, plug it back in, the map returns with nobody at a keyboard.</div>
+  </div>
+
+  <!-- BUNDLED LIBRARY -->
+  <div class="sec">
+    <h2>5 &nbsp; Bundled library <small>carried inside our files, not installed on the box</small></h2>
+    <div class="item"><div class="nm">Leaflet</div><div class="ds">The open&#8209;source map library that draws the slippy map in the browser. Bundled right inside <span style="font-family:var(--mono)">map.html</span> so the map works fully offline.</div></div>
+  </div>
+
+  <!-- DATA -->
+  <div class="sec">
+    <h2>6 &nbsp; Small data files <small>what the box keeps</small></h2>
+    <div class="item"><div class="nm">aliases.json</div><div class="ds">The friendly names &mdash; turns a raw radio ID into a crew name on the map.</div></div>
+    <div class="item"><div class="nm">admin_token.txt</div><div class="ds">A simple key that guards the rename feature.</div></div>
+    <div class="item"><div class="nm">track_&hellip;.csv</div><div class="ds">A daily log of where units went, written automatically.</div></div>
+  </div>
+
+  <div class="foot">
+    <div class="big">Everything above went on through supported doors.</div>
+    <div class="sm">Drivers and tools from the vendor&rsquo;s own signed package feed; programs in plain Python; one open&#8209;source map library bundled in. <b>No firmware rebuild, no custom kernel, nothing forced or hacked</b> &mdash; each piece doing exactly what it was built to do.</div>
+  </div>
+
+</body>
+</html>
