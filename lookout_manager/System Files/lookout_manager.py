@@ -17,7 +17,7 @@ import json, http.client, threading, queue
 import tkinter as tk
 from tkinter import ttk
 
-VERSION       = "2.0"
+VERSION       = "2.1"
 PORT          = 8080
 DEFAULT_IP    = "192.168.8.1"
 DEFAULT_TOKEN = "lookout"
@@ -34,7 +34,12 @@ SETUP_STEPS = [
     ("Installing the boot services",         "cd /etc/init.d && wget -O bk-bridge %s/openwrt/bk-bridge && wget -O units-kml %s/openwrt/units-kml && chmod +x bk-bridge units-kml" % (REPO_BASE, REPO_BASE)),
     ("Enabling them on boot",                "/etc/init.d/bk-bridge enable && /etc/init.d/units-kml enable"),
     ("Starting the services",                "/etc/init.d/bk-bridge start && /etc/init.d/units-kml start"),
+    ("Installing radio-audio support",       "opkg list-installed | grep -q '^kmod-usb-audio ' && echo 'already installed' || opkg install kmod-usb-audio alsa-utils"),
+    ("Downloading the audio streamer",       "cd /root && wget -O lookout_audio.py %s/lookout_audio.py" % REPO_BASE),
+    ("Installing the audio boot service",    "cd /etc/init.d && wget -O lookout-audio %s/openwrt/lookout-audio && chmod +x lookout-audio" % REPO_BASE),
+    ("Enabling + starting audio",            "/etc/init.d/lookout-audio enable && /etc/init.d/lookout-audio start"),
     ("Checking they are running",            "sleep 1; ps | grep -c '[p]ython3 /root'"),
+    ("Saving everything to flash",           "sync"),   # REQUIRED - or a power-pull reverts the whole setup
 ]
 
 
@@ -220,16 +225,17 @@ class SetupTab(tk.Frame):
                     for line in etxt.splitlines():
                         self.write("   " + line)
                 if label.startswith("Checking"):
-                    # final verify: the ps grep -c should report 2 running python3 /root
+                    # final verify: the ps grep -c should report 3 running python3 /root
                     pass
             # one clean verification read
             _in, out, _e = c.exec_command("ps | grep -c '[p]ython3 /root'", timeout=20)
             count = (out.read().decode().strip() or "0")
-            if count.isdigit() and int(count) >= 2:
-                self.write("\nDONE - the router is now The Lookout. Two services are running.", "ok")
+            if count.isdigit() and int(count) >= 3:
+                self.write("\nDONE - the router is now The Lookout. Three services are running (map, radio bridge, audio).", "ok")
                 self.write("Plug the radio into its USB port and open your Live Units map against this IP.", "ok")
+                self.write("For radio audio in the browser, add a USB sound card and patch the radio's audio out into it, then tap Listen on the map.", "ok")
             else:
-                self.write("\nSetup ran, but I only see %s running service(s) (expected 2)." % count, "err")
+                self.write("\nSetup ran, but I only see %s running service(s) (expected 3)." % count, "err")
                 self.write("Re-run, or check the log above for a download or install error.", "err")
         except Exception as e:
             self.write("Setup stopped: %s" % e, "err")

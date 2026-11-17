@@ -6,7 +6,7 @@
 
 A GPS-telemetry radio already knows where your field units are — but that position is usually trapped: one cable, one PC, one program that has to be installed and allowed to run. **The Lookout** sets it free. A pocket travel router — a ~$170 **GL-MT6000** — reads the radio, pulls the position stream out, and re-serves it on your LAN so **any** device can watch — a plain browser, many ArcGIS Earth PCs, phones, tablets — all seeing the same units move, with nothing installed on the consuming machines.
 
-![The Lookout — the hardware: a BK radio, a GPS, and an SSD on a USB hub into a Wi-Fi travel router, serving the live map to any screen](images/the_lookout_hardware.png)
+![The Lookout — the hardware: a BK radio, a GPS, and an SSD on a USB hub (plus a USB sound card tapping the radio's audio) into a Wi-Fi travel router, serving the live map and live radio audio to any screen](images/the_lookout_hardware.png)
 
 ---
 
@@ -18,6 +18,7 @@ A GPS-telemetry radio already knows where your field units are — but that posi
   - **`:10110` — NMEA over TCP.** A plain NMEA-0183 stream any maps/NMEA app (phone, tablet, chart plotter, Windows tracker) can connect to.
   - **`:8080` — a live KML layer** (`units.kml`) that **ArcGIS Earth pulls on a timer** via a NetworkLink. This is the part that matters for locked-down PCs: it needs **no Python, no install, no admin** — you open one small map file once and the units move on their own.
 - **Shows itself, too ("you are here").** Plug a USB GPS into the hub and the box plots its *own* position on the map alongside the fleet — read directly over libusb, no extra software. The radio feed is untouched; with no GPS it's simply radio-only. Setup: **[docs/GPS_SOURCE.md](docs/GPS_SOURCE.md)**. The full engineering story (reading a Garmin's binary USB protocol over libusb when gpsd and GPSBabel can't, on an OpenWrt router): **[docs/GARMIN_ON_OPENWRT.md](docs/GARMIN_ON_OPENWRT.md)** · **[printable PDF](docs/The_Lookout_Garmin_on_OpenWrt.pdf)**.
+- **Monitors the radio, too.** Add a USB sound card and patch the radio's audio out into it, and the browser map grows a **🔊 Listen** button — the crew *hears* the net while watching the units move, still with nothing installed on the phone or PC. The audio is a byte-for-byte PCM stream over a WebSocket, played by the browser's Web Audio API — no codec, near-zero router CPU. It's a fully isolated add-on on its own process and port: no sound card, no effect on anything else. Engineering record: **[docs/AUDIO_BENCH.md](docs/AUDIO_BENCH.md)**.
 - **Runs itself.** Installed as a boot service, the Lookout comes up on its own every time the box powers on. Plug the radio in, power on, done.
 
 ## How it works (the picture above, left to right)

@@ -1,13 +1,12 @@
 # The Lookout — radio audio over the browser (bench record)
 
-**Status: FULLY PROVEN on 2026-11-17 (live + auto-reconnect + reboot-surviving +
-capacity-clean), awaiting Jim's go to merge.** Lives on branch `audio-bench` — not yet
-on `main`/montage/storefront. All technical gates are cleared: live audio on PC+phone,
-the Listen button auto-reconnects and holds a wake-lock, the procd boot service survives
-a cold power-pull, and the **worst-case capacity test passed** (several listeners + a
-hard Z20 pan + a transmission at once, nothing flinched). **Only step left: merge
-`audio-bench` → `main` + fold the install (ending in `sync`) into Lookout Manager, on
-Jim's go.**
+**Status: SHIPPED to `main` 2026-11-17 — fully proven.** All technical gates cleared:
+live audio on PC+phone, the Listen button auto-reconnects and holds a wake-lock, the
+procd boot service survives a cold power-pull, and the **worst-case capacity test passed**
+(several listeners + a hard Z20 pan + a transmission at once, nothing flinched). Merged
+to `main` and folded into **Lookout Manager v2.1** (installs the sound-card packages +
+`lookout_audio.py` + the boot service, and the whole provision now ends with `sync`).
+This file is now the historical engineering record.
 
 This is the complete engineering record of adding **live radio audio** to the
 Lookout's in-browser map: a crew member opens `http://<router>:8080/`, taps a
@@ -330,5 +329,5 @@ pgrep -f lookout_audio        # expect a PID
 
 ---
 
-*Branch `audio-bench` (first build commit `c3438c8`). Employer-clean — keep it that
-way. When proven and merged, fold this into the main docs and retire the branch.*
+*Built on branch `audio-bench` (first build commit `c3438c8`), merged to `main`
+2026-11-17 once all gates cleared. Employer-clean — keep it that way.*
