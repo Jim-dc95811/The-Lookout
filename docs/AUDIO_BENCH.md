@@ -228,11 +228,11 @@ the *real* radio capture — both confirmed live above.
    Z20 pan **+** a live transmission, all at once, watching `cat /proc/loadavg`,
    free RAM, and `dmesg` for ALSA xruns. This tells us the true headroom, not my
    estimate.
-2. **Boot-service wrap — BUILT 2026-11-17** (`openwrt/lookout-audio`, `START=97`,
-   `respawn`, same shape as `bk-bridge`/`units-kml`), after the hand-run streamer was
-   found to die with its SSH window (no box can keep a PC attached). `enable` + `start`
-   → PID 30742, Listen played on PC + phone with no python window and the SSH window
-   closed.
+2. **Boot-service wrap — BUILT + REBOOT-PROVEN 2026-11-17** (`openwrt/lookout-audio`,
+   `START=97`, `respawn`, same shape as `bk-bridge`/`units-kml`), after the hand-run
+   streamer was found to die with its SSH window (no box can keep a PC attached).
+   `enable` + `start` → PID 30742, Listen played on PC + phone with no python window and
+   the SSH window closed.
 
    **⚠ FLASH-DURABILITY GOTCHA — the big lesson of this build (2026-11-17).** The first
    cold power-pull did NOT bring audio back, and investigation showed the box had
@@ -247,8 +247,10 @@ the *real* radio capture — both confirmed live above.
    be power-cycled. This matters for the whole appliance (truck power-cycles), not just
    audio — fold a `sync` into Lookout Manager's install and into any by-hand deploy.
    After redeploying map.html + the init script, `enable`, `start`, **`sync`**: verified
-   `scheduleRetry`=4, `S97lookout-audio`+`K10lookout-audio` present, PID running. Cold
-   power-pull **re-proof pending** (the sync should make it stick this time).
+   `scheduleRetry`=4, `S97lookout-audio`+`K10lookout-audio` present, PID running. A second
+   **cold power-pull then PROVED it** — all three services came back on their own with
+   fresh boot PIDs (`bk_bridge` 12204, `units_kml` 13816, `lookout_audio` 14266). The
+   `sync` made it durable; **reboot-survival confirmed 2026-11-17.**
 
    Install on the box (note the closing `sync`):
    ```
@@ -261,10 +263,13 @@ the *real* radio capture — both confirmed live above.
    Confirm: `pgrep -f lookout_audio` prints a PID; `logread -e lookout_audio` or
    `logread | grep audio` shows the `[audio] WebSocket PCM server on 0.0.0.0:8081` line
    (procd routes stdout/stderr to the system log, not a terminal). Disable/undo:
-   `/etc/init.d/lookout-audio disable; /etc/init.d/lookout-audio stop`. Reboot-survival
-   still to be proven with a cold power-pull (like the other two services were).
+   `/etc/init.d/lookout-audio disable; /etc/init.d/lookout-audio stop; sync`.
+   **Reboot-survival PROVEN 2026-11-17** (cold power-pull; all three services returned
+   with fresh PIDs).
 3. **Merge `audio-bench` → `main` + Lookout Manager one-click (install the two
-   packages + fetch the files) + README/montage** — only after 1 & 2 and Jim's go.
+   packages + fetch the files + the init script, ending in `sync`) + README/montage** —
+   now gated only on item 1 (capacity test) and Jim's go; item 2 is done. NOTE: whatever
+   does the installing (Lookout Manager, DEPLOY.md, by-hand) MUST end with `sync`.
 4. Nice-to-haves: input pad option for hot radios; a tiny level indicator; a mute
    persistence per viewer (localStorage); squelched vs. open-audio choice is a
    radio-side decision, not ours.
