@@ -13,8 +13,9 @@ html,body{height:100%;background:#0b0f14;color:#e6eef6;font-family:-apple-system
 #title{font-weight:700;letter-spacing:.5px;color:#7fd1ff;white-space:nowrap}
 #mapname{color:#9fb3c8;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:32vw}
 #status{margin-left:auto;display:flex;align-items:center;gap:8px;color:#9fb3c8}
-#maps{pointer-events:auto;cursor:pointer;background:#17344a;color:#bfe0ff;border:1px solid #255277;border-radius:7px;
+#maps,#listen{pointer-events:auto;cursor:pointer;background:#17344a;color:#bfe0ff;border:1px solid #255277;border-radius:7px;
  padding:5px 10px;font-size:13px;font-weight:600;white-space:nowrap}
+#listen.on{background:#1f6b3a;border-color:#3fae63;color:#eafff0}
 #dot{width:9px;height:9px;border-radius:50%;background:#2ecc71;box-shadow:0 0 7px #2ecc71}
 #dot.bad{background:#e74c3c;box-shadow:0 0 7px #e74c3c}
 #menu{position:fixed;z-index:650;top:calc(44px + env(safe-area-inset-top,0px));right:max(10px,env(safe-area-inset-right,0px));
@@ -33,7 +34,7 @@ html,body{height:100%;background:#0b0f14;color:#e6eef6;font-family:-apple-system
 </style></head><body>
 <div id="map"></div>
 <div id="bar"><span id="title">THE LOOKOUT</span><span id="mapname"></span>
-<span id="status"><button id="maps">&#128506; Maps</button><span id="clock">--:--:--</span><span id="count">0 units</span><i id="dot"></i></span></div>
+<span id="status"><button id="maps">&#128506; Maps</button><button id="listen">&#128266; Listen</button><span id="clock">--:--:--</span><span id="count">0 units</span><i id="dot"></i></span></div>
 <div id="menu"></div>
 <div id="banner"></div>
 <script src="/leaflet.js"></script>
@@ -124,4 +125,30 @@ function update(d){
 loadMaps();                    // resolves which map to show, then kicks pollMeta() for its tiles
 tick(); setInterval(tick,3000);
 setInterval(loadMaps,30000);   // pick up newly-added maps without a reload
+
+// ---- Listen: radio audio streamed from the box as PCM over a WebSocket (:8081) ----
+// Optional + fully isolated: if lookout_audio.py isn't running, the button just says
+// "no audio" and nothing else is affected. 16 kHz mono PCM -> Web Audio, small jitter buffer.
+(function(){
+  var AUDIO_PORT=8081, SR=16000, actx=null, ws=null, nextT=0, on=false;
+  var btn=document.getElementById("listen");
+  function stop(){ on=false; btn.classList.remove("on"); btn.innerHTML="🔊 Listen";
+    if(ws){ try{ ws.onclose=null; ws.close(); }catch(e){} ws=null; } }
+  function start(){
+    try{ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)(); actx.resume(); }
+    catch(e){ btn.innerHTML="no audio"; return; }
+    nextT=0; on=true; btn.classList.add("on"); btn.innerHTML="🔊 On";
+    ws=new WebSocket("ws://"+location.hostname+":"+AUDIO_PORT); ws.binaryType="arraybuffer";
+    ws.onmessage=function(ev){ if(!on) return;
+      var i16=new Int16Array(ev.data), f32=new Float32Array(i16.length);
+      for(var i=0;i<i16.length;i++) f32[i]=i16[i]/32768;
+      var b=actx.createBuffer(1,f32.length,SR); b.copyToChannel(f32,0);
+      var s=actx.createBufferSource(); s.buffer=b; s.connect(actx.destination);
+      var now=actx.currentTime; if(nextT<now+0.05) nextT=now+0.15;  // (re)prime jitter buffer
+      s.start(nextT); nextT+=b.duration; };
+    ws.onerror=function(){ if(on) btn.innerHTML="no audio"; };
+    ws.onclose=function(){ if(on) stop(); };
+  }
+  btn.onclick=function(e){ e.stopPropagation(); on?stop():start(); };
+})();
 </script></body></html>
