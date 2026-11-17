@@ -228,9 +228,20 @@ the *real* radio capture — both confirmed live above.
    Z20 pan **+** a live transmission, all at once, watching `cat /proc/loadavg`,
    free RAM, and `dmesg` for ALSA xruns. This tells us the true headroom, not my
    estimate.
-2. **Boot-service wrap:** a procd init script (`openwrt/lookout-audio`, `START=97`,
-   `respawn`), same shape as `bk-bridge`/`units-kml`, so it comes up on its own and
-   survives a power cycle. (Until then it's a hand-started foreground process.)
+2. **Boot-service wrap — BUILT 2026-11-17** (`openwrt/lookout-audio`, `START=97`,
+   `respawn`, same shape as `bk-bridge`/`units-kml`), after the hand-run streamer was
+   found to die with its SSH window (no box can keep a PC attached). Install on the box:
+   ```
+   wget -O /etc/init.d/lookout-audio https://raw.githubusercontent.com/Jim-dc95811/The-Lookout/<audio-bench-SHA>/openwrt/lookout-audio
+   chmod +x /etc/init.d/lookout-audio
+   /etc/init.d/lookout-audio enable
+   /etc/init.d/lookout-audio start
+   ```
+   Confirm: `pgrep -f lookout_audio` prints a PID; `logread -e lookout_audio` or
+   `logread | grep audio` shows the `[audio] WebSocket PCM server on 0.0.0.0:8081` line
+   (procd routes stdout/stderr to the system log, not a terminal). Disable/undo:
+   `/etc/init.d/lookout-audio disable; /etc/init.d/lookout-audio stop`. Reboot-survival
+   still to be proven with a cold power-pull (like the other two services were).
 3. **Merge `audio-bench` → `main` + Lookout Manager one-click (install the two
    packages + fetch the files) + README/montage** — only after 1 & 2 and Jim's go.
 4. Nice-to-haves: input pad option for hot radios; a tiny level indicator; a mute
