@@ -5,6 +5,44 @@ direction to weigh, not a committed plan.
 
 ---
 
+## Info kiosk — scan-to-open, any content, offline — *2026-11-17*
+
+**The idea (Jim):** The Lookout + the printed QR card = a self-contained
+**info kiosk**. Set the box somewhere, print the QR placard, and anyone who
+walks up scans it and gets a local page on their own phone — no app, no cell
+signal, no login, no internet. The content doesn't have to be a map.
+
+**Two generalizations that make it a kiosk, not just a map server:**
+1. **Audio is source-agnostic.** The sound card's input doesn't care what's
+   plugged in — radio, an iPad, a mixer, a mic. Unplug the radio, plug in any
+   player, and the box fans that audio out to every phone on its wifi: a
+   local, offline, one-to-many broadcast. **Important and clean: this is NOT
+   RF / "pirate" radio** — nothing is radiated as a broadcast signal, no
+   spectrum, no FCC / Part-15 / license question. It's a WebSocket stream on
+   a private wifi LAN — legally just a web page that plays sound. The limits
+   are mundane: wifi range (a building or a lot, not miles), and ordinary
+   content/copyright courtesy if you rebroadcast music you don't own.
+2. **The served page can be anything.** Today the box serves `map.html` at
+   `/`. A kiosk wants a small **landing / info page** instead (or in front of
+   the map): text, images, the zoomable picture worlds, a "listen" button,
+   and links to the map. A mini offline website on the box. Small addition,
+   same mechanism — `units_kml.py` already serves files; the QR just points
+   at `/`.
+
+**Scenarios (any "everyone here, on their own phone, offline" space):**
+trailhead / park kiosk (map + trail info + safety + audio guide); museum or
+gallery (a picture world + narration); event info board (schedule, site map,
+announcements); lobby directory; classroom station; and the strong one — a
+**shelter / disaster info point**, which is offline *by design* exactly when
+the grid and the cell network are down.
+
+**Why it's a natural:** the pieces already exist — the QR Maker makes the
+placard, the box serves files and audio, it's reboot-safe and runs on
+nothing. The only new piece is a general landing page so the content isn't
+locked to the map.
+
+---
+
 ## Reverse audio — browser talk-back (a dispatch console) — *2026-11-17*
 
 **The idea (Jim):** the USB sound card has an unused *output* path (its
