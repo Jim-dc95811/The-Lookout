@@ -133,9 +133,30 @@ self-contained IIFE at the end of the page script:
   running `nextTime` cursor with a **~150 ms jitter buffer** (re-primes on underrun
   so a late packet causes a brief gap, not a lasting glitch). The context resamples
   the 16 kHz buffer to its native rate automatically.
-- **Graceful degrade:** if the streamer isn't running, the WS errors and the button
-  just shows **"no audio"** — the map is completely unaffected. Button goes green
+- **Graceful degrade:** if the streamer isn't running, the WS never opens and the
+  button shows **"no audio"** — the map is completely unaffected. Button goes green
   (`#listen.on`) and reads "🔊 On" while playing.
+
+**Reconnect + wake-lock (added 2026-11-17 pm, after a live bench drop).** The box
+drops any listener that goes quiet for 2 s (`SEND_TMO`, §6) so one stuck screen can't
+stall the fan-out. On the bench a phone that dimmed hit exactly that: the box printed
+`[audio] listener gone` and the browser — which closed the socket and gave up — flipped
+the button back to "Listen" after ~2 s. Fix (map.html only, streamer untouched):
+- The page now separates **intent** (`on`, set by the user's tap) from the **socket**.
+  A drop while `on` is true **auto-reconnects** (1 s backoff) and holds the button "On"
+  (shows "🔊 …" during the gap); a hiccup becomes a short gap, not a dead button.
+- Only a socket that **never opened** (streamer down) falls back to "no audio"
+  (`everOpen` flag) — so the old graceful-degrade still works, but a *dropped* live
+  session no longer gives up. Restarting the streamer makes audio return on its own.
+- A **screen wake-lock** (`navigator.wakeLock`) is held while listening, so a phone
+  stops dimming in the first place (the root cause of the drop). Wrapped in try/catch;
+  degrades silently where unsupported. Re-acquired on `visibilitychange` (the lock is
+  auto-released when a tab hides), alongside an `AudioContext` resume and a socket
+  re-check, so returning to a backgrounded tab re-arms cleanly.
+- Verified headless (Playwright): a stand-in streamer that drops connection #1 mid-play
+  → the page reconnects as connection #2 and keeps playing, button stays "🔊 On", 0 JS
+  errors. The everyday case is covered; the **worst-case capacity test** (a truly stuck
+  listener gapping everyone up to 2 s via the sequential sender) is still the open item.
 
 ## 8. Networking
 

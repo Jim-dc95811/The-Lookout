@@ -129,26 +129,92 @@ setInterval(loadMaps,30000);   // pick up newly-added maps without a reload
 // ---- Listen: radio audio streamed from the box as PCM over a WebSocket (:8081) ----
 // Optional + fully isolated: if lookout_audio.py isn't running, the button just says
 // "no audio" and nothing else is affected. 16 kHz mono PCM -> Web Audio, small jitter buffer.
+// The box drops a listener that goes quiet for 2 s (e.g. a phone that dimmed), so the page
+// keeps the user's intent ("on") separate from the socket: a drop auto-reconnects and the
+// button stays "On", and a screen wake-lock keeps a phone awake while listening so it mostly
+// never happens. Only a never-connected socket (streamer down) falls back to "no audio".
 (function(){
-  var AUDIO_PORT=8081, SR=16000, actx=null, ws=null, nextT=0, on=false;
+  var AUDIO_PORT=8081, SR=16000, actx=null, ws=null, nextT=0;
+  var on=false;        // the user wants to listen - stays true across reconnects
+  var everOpen=false;  // did we reach the box at least once this listening session?
+  var retry=null;      // pending reconnect timer
+  var wake=null;       // screen wake-lock
   var btn=document.getElementById("listen");
-  function stop(){ on=false; btn.classList.remove("on"); btn.innerHTML="🔊 Listen";
-    if(ws){ try{ ws.onclose=null; ws.close(); }catch(e){} ws=null; } }
-  function start(){
-    try{ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)(); actx.resume(); }
-    catch(e){ btn.innerHTML="no audio"; return; }
-    nextT=0; on=true; btn.classList.add("on"); btn.innerHTML="🔊 On";
-    ws=new WebSocket("ws://"+location.hostname+":"+AUDIO_PORT); ws.binaryType="arraybuffer";
-    ws.onmessage=function(ev){ if(!on) return;
+  function label(t){ btn.innerHTML=t; }
+
+  function requestWake(){
+    try{
+      if(navigator.wakeLock && !wake){
+        navigator.wakeLock.request("screen").then(function(w){
+          wake=w; w.addEventListener("release",function(){ if(wake===w) wake=null; });
+        }).catch(function(){});
+      }
+    }catch(e){}
+  }
+  function releaseWake(){ try{ if(wake){ wake.release(); wake=null; } }catch(e){} }
+
+  function ensureCtx(){
+    try{ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)(); actx.resume(); return true; }
+    catch(e){ return false; }
+  }
+
+  function connect(){
+    if(!on) return;
+    if(retry){ clearTimeout(retry); retry=null; }
+    nextT=0;
+    var sock;
+    try{ sock=new WebSocket("ws://"+location.hostname+":"+AUDIO_PORT); }
+    catch(e){ scheduleRetry(); return; }
+    sock.binaryType="arraybuffer"; ws=sock;
+    sock.onopen=function(){ everOpen=true; if(on && ws===sock) label("🔊 On"); };
+    sock.onmessage=function(ev){ if(!on || ws!==sock || !actx) return;
       var i16=new Int16Array(ev.data), f32=new Float32Array(i16.length);
       for(var i=0;i<i16.length;i++) f32[i]=i16[i]/32768;
       var b=actx.createBuffer(1,f32.length,SR); b.copyToChannel(f32,0);
       var s=actx.createBufferSource(); s.buffer=b; s.connect(actx.destination);
       var now=actx.currentTime; if(nextT<now+0.05) nextT=now+0.15;  // (re)prime jitter buffer
       s.start(nextT); nextT+=b.duration; };
-    ws.onerror=function(){ if(on) btn.innerHTML="no audio"; };
-    ws.onclose=function(){ if(on) stop(); };
+    sock.onerror=function(){ /* a close event follows; handled there */ };
+    sock.onclose=function(){
+      if(ws===sock) ws=null;
+      if(!on) return;
+      if(everOpen) scheduleRetry();   // was working, got dropped -> dial back in
+      else fail();                    // never reached the box -> streamer isn't running
+    };
   }
+
+  function scheduleRetry(){
+    if(!on || retry) return;
+    label("🔊 …");                    // reconnecting - button stays active (green)
+    retry=setTimeout(function(){ retry=null; ensureCtx(); connect(); }, 1000);
+  }
+
+  function fail(){
+    on=false; btn.classList.remove("on");
+    if(retry){ clearTimeout(retry); retry=null; }
+    releaseWake(); label("no audio");
+  }
+
+  function start(){
+    if(!ensureCtx()){ label("no audio"); return; }
+    on=true; everOpen=false; btn.classList.add("on"); label("🔊 On");
+    requestWake(); connect();
+  }
+  function stop(){
+    on=false; btn.classList.remove("on"); label("🔊 Listen");
+    if(retry){ clearTimeout(retry); retry=null; }
+    releaseWake();
+    if(ws){ var s=ws; ws=null; try{ s.onclose=null; s.onerror=null; s.close(); }catch(e){} }
+  }
+
+  // Returning to a backgrounded tab: re-arm the audio context, wake-lock and socket.
+  document.addEventListener("visibilitychange",function(){
+    if(document.visibilityState==="visible" && on){
+      ensureCtx(); requestWake();
+      if(!ws) scheduleRetry();
+    }
+  });
+
   btn.onclick=function(e){ e.stopPropagation(); on?stop():start(); };
 })();
 </script></body></html>
