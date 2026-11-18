@@ -66,15 +66,16 @@ so there's nothing to secure a connection *to*. Nothing you open leaves the box.
 | Open it this way | Type the address in full with `http://` — `http://192.168.8.1:8080/` — so the bar doesn't auto-upgrade to `https` (phones especially do this). |
 | Avoid | Don't turn on a strict "HTTPS-Only mode." If one is on, allow `192.168.8.1` or turn it off while using the map. |
 
-## 1E · Measured footprint on the box  *(proven live, GL-MT6000, 2026-11-17)*
+## 1E · Measured footprint on the box  *(bare-box before/after, GL-MT6000, 2026-11-18)*
 
 | | |
 |---|---|
-| Writable storage | **459.5 MB used of 7.2 GB — 6% full**, 6.7 GB free. That's the *entire* writable side: OpenWrt, GL's stock extras **and** everything The Lookout adds. (The MT6000's 7.2 GB loop overlay is far bigger than a typical router's ~100 MB.) |
-| The Lookout's share | Roughly **50–70 MB** (estimated) — Python is the bulk; the programs and `map.html` together are under 1 MB. |
-| Memory (RAM) | **~244 MB used of ~1 GB** (whole system + all three services), **~690 MB available**. No swap. |
+| Writable storage | **450.5 MB used of 7.2 GB — 6% full**, 6.7 GB free (provisioned). Stock, before The Lookout: **427.3 MB**. That's the *entire* writable side: OpenWrt, GL's stock extras **and** everything The Lookout adds. (The MT6000's 7.2 GB loop overlay is far bigger than a typical router's ~100 MB.) |
+| The Lookout's share | **~23 MB, measured** — same box, stock 427.3 MB → provisioned 450.5 MB. Python is the bulk; the programs, `map.html` and the bundled Leaflet are small. *Leaner than the earlier ~50–70 MB estimate.* |
+| Network footprint | **Three application ports added** — 8080 (map), 8081 (audio), 10110 (position feed) — on top of the stock router's own 22/53/80/443 and localhost 3008. (A `dnsmasq` line on the radio-link subnet also appears when the radio is plugged — stock DNS following a new interface, not ours.) |
+| Memory (RAM) | **~244 MB used of ~1 GB** (whole system + all three services), **~690 MB available**; stock idle ~225 MB. No swap. |
 | Maps | **On the SSD, never the router** — 145.6 GB on a 466 GB drive in the test; the router's flash holds no map data. |
-| Takeaway | The appliance runs on a fraction of the box — ~¼ of RAM, 6% of storage — so it won't bog down, and there's room to grow. |
+| Takeaway | The appliance runs on a fraction of the box — ~¼ of RAM, 6% of storage, 23 MB of its own — so it won't bog down, and there's room to grow. |
 
 ---
 

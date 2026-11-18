@@ -66,3 +66,9 @@ Power it off and on and it comes right back. If the radio is ever unplugged, eve
   the dashboard shows a connection, then run it again.
 - **Map stays empty after plugging in the radio:** unplug the radio's USB and plug it back in once —
   that re-triggers the link setup. Confirm the radio is powered and a unit is transmitting.
+- **SSHing in by hand warns "REMOTE HOST IDENTIFICATION HAS CHANGED" / "Host key verification
+  failed":** harmless, and it only happens with a *manual* `ssh` — the one-click setup never hits it.
+  A firmware update or a factory reset gives the box a brand-new SSH identity at the same address, and
+  your PC still remembers the old one. Clear it and reconnect: `ssh-keygen -R 192.168.8.1`, then
+  `ssh root@192.168.8.1` again and accept the new key. Tip: run that `ssh-keygen -R` line *before* you
+  reconnect after any reset or firmware flash, and you'll never see the warning.

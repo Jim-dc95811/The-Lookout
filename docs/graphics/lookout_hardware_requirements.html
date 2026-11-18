@@ -143,10 +143,10 @@
 
   <!-- E -->
   <section class="req prov">
-    <div class="sh"><span class="stag">E</span><h2>Measured footprint on the box</h2><span class="smeta">proven live · GL-MT6000 · 2026-11-17</span></div>
+    <div class="sh"><span class="stag">E</span><h2>Measured footprint on the box</h2><span class="smeta">bare-box before/after · GL-MT6000 · 2026-11-18</span></div>
     <dl class="spec">
-      <dt>Writable storage</dt><dd><b>459.5&nbsp;MB used of 7.2&nbsp;GB — 6% full</b>, 6.7&nbsp;GB free. That's the <i>entire</i> writable side: OpenWrt, GL's stock extras <b>and</b> everything The Lookout adds. <span class="small">(The MT6000 gives a big 7.2&nbsp;GB loop-mounted overlay — far more room than a typical router's ~100&nbsp;MB.)</span></dd>
-      <dt>The Lookout's share</dt><dd>Roughly <b>50–70&nbsp;MB</b> of that (estimated) — Python is the bulk; the three programs and <span class="mono">map.html</span> together are under 1&nbsp;MB.</dd>
+      <dt>Writable storage</dt><dd><b>450.5&nbsp;MB used of 7.2&nbsp;GB — 6% full</b>, 6.7&nbsp;GB free (provisioned); <b>427.3&nbsp;MB</b> stock before The Lookout. That's the <i>entire</i> writable side: OpenWrt, GL's stock extras <b>and</b> everything The Lookout adds. <span class="small">(The MT6000 gives a big 7.2&nbsp;GB loop-mounted overlay — far more room than a typical router's ~100&nbsp;MB.)</span></dd>
+      <dt>The Lookout's share</dt><dd><b>~23&nbsp;MB, measured</b> — same box, stock 427.3&nbsp;MB &rarr; provisioned 450.5&nbsp;MB. Python is the bulk; the programs, <span class="mono">map.html</span> and the bundled Leaflet are small — leaner than the earlier estimate.</dd>
       <dt>Memory (RAM)</dt><dd><b>~244&nbsp;MB used of ~1&nbsp;GB</b> — the whole system plus all three services running — with <span class="good">~690&nbsp;MB available</span>. No swap used.</dd>
       <dt>Maps</dt><dd><b>On the SSD, never the router.</b> In this test, 145.6&nbsp;GB of maps sat on a 466&nbsp;GB drive (31%); the router's own flash holds <b>no</b> map data at all.</dd>
       <dt>Takeaway</dt><dd><span class="good">The appliance runs on a fraction of the box</span> — about a quarter of its RAM and 6% of its storage — so it won't bog down, and there's plenty of room to grow. <span class="small">Measured with <span class="mono">df&nbsp;-h</span> / <span class="mono">free&nbsp;-h</span>, all three services (bk_bridge, units_kml, lookout_audio) running.</span></dd>

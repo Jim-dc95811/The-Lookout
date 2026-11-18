@@ -34,6 +34,18 @@
 
   .note{background:var(--amberbg);border-left:4px solid var(--amber);border-radius:6px;
     padding:7px 11px;font-size:11.5px;color:#7a4408;margin:9px 0 2px}
+  .start{background:var(--bluebg);border-left:4px solid var(--blue);border-radius:6px;
+    padding:9px 12px;font-size:11.5px;color:#27406e;margin-bottom:13px;break-inside:avoid}
+  .start b{color:var(--blue)}
+  .start .k{font-family:var(--mono);font-size:11px}
+
+  .proof{background:var(--greenbg);border:1px solid #bfe8cf;border-radius:8px;
+    padding:10px 13px;margin-bottom:13px;break-inside:avoid}
+  .proof .hd{font-size:12px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--green);margin-bottom:6px}
+  .proof ul{margin:0 0 0 16px;padding:0}
+  .proof li{font-size:11.8px;color:#2f4a3a;margin:3px 0;line-height:1.45}
+  .proof li b{color:var(--slate)}
+  .proof .stamp{font-size:11px;color:var(--sub);margin-top:6px;font-style:italic}
 
   .foot{margin-top:14px;border-top:2px solid var(--green);padding-top:10px;
     background:var(--greenbg);border-radius:8px;padding:11px 13px}
@@ -46,21 +58,35 @@
 
   <div class="title">
     <h1>THE <b>LOOKOUT</b> &mdash; Beyond Factory</h1>
-    <p>Everything added on top of a stock OpenWrt travel router, and what each piece does.</p>
+    <p>From a stock OpenWrt travel router to a live mapping appliance &mdash; the complete account, beginning to end.</p>
   </div>
 
   <div class="lead">
-    The router ships as a capable OpenWrt device, but it does not know how to read a radio, serve a map, or stream audio.
-    The Lookout adds a small, specific set of pieces to teach it &mdash; <b>all through supported channels, no firmware rebuild, no custom kernel.</b>
-    Here is each addition and its job.
+    This is the whole story in one page: what a stock <b>GL&#8209;MT6000</b> is out of the box, exactly what The Lookout adds to
+    teach it to read a radio, serve a map and stream audio, how it all goes on, and what it costs &mdash; <b>measured on a
+    carton&#8209;fresh box in a single setup pass.</b> Every addition rides a supported channel: the vendor&rsquo;s own signed
+    package feed and a handful of plain&#8209;Python files. No firmware rebuild, no custom kernel, nothing forced.
+  </div>
+
+  <!-- 0: STARTING POINT -->
+  <div class="sec">
+    <h2>0 &nbsp; The starting point <small>a stock box, before anything is added</small></h2>
+    <div class="start">
+      The router ships as a capable OpenWrt device &mdash; <b>OpenWrt 21.02</b> on a MediaTek MT7986 (aarch64), ~1&nbsp;GB RAM,
+      a 7.2&nbsp;GB writable overlay, GL firmware <span class="k">v4.11.0</span> / kernel <span class="k">5.4.238</span>.
+      But out of the box it knows nothing of radios, maps or audio: <b>no Python, no sound driver, no map server.</b>
+      Measured stock, it uses about <b>427&nbsp;MB</b> of its 7.2&nbsp;GB overlay and listens only on its own admin pages,
+      DNS and SSH (<span class="k">22 / 53 / 80 / 443</span>, plus a localhost&#8209;only GL API on <span class="k">3008</span>).
+      Everything below is what turns that into the appliance.
+    </div>
   </div>
 
   <!-- DRIVERS -->
   <div class="sec">
     <h2>1 &nbsp; Driver packages <small>installed with opkg, from the vendor&rsquo;s own signed, kernel&#8209;matched feed</small></h2>
-    <div class="item"><div class="nm">kmod-usb-audio</div><div class="ds">The <b>USB audio driver</b>. Lets the router see the USB sound card as a recording device so it can hear the radio.</div></div>
+    <div class="item"><div class="nm">kmod-usb-audio</div><div class="ds">The <b>USB audio driver</b>. Lets the router see the USB sound card as a recording device so it can hear the radio. Pulled from GL&rsquo;s feed for the exact running kernel (<span style="font-family:var(--mono)">5.4.238</span>) &mdash; no generic kmod, no vermagic mismatch.</div></div>
     <div class="item"><div class="nm">kmod-sound-core</div><div class="ds">Core sound support that the audio driver sits on. Pulled in automatically with it.</div></div>
-    <div class="note">The driver that reads the radio&rsquo;s GPS link (USB networking / RNDIS) was already built into the router &mdash; nothing to add there. Only audio needed a driver.</div>
+    <div class="note">The driver that reads the radio&rsquo;s GPS link (USB networking / RNDIS) was <b>already built into the router</b> &mdash; nothing to add there. Only audio needed a driver. That is OpenWrt&rsquo;s doing, not ours.</div>
   </div>
 
   <!-- SUPPORT PACKAGES -->
@@ -79,7 +105,7 @@
     <div class="item"><div class="nm">garmin_linux.py</div><div class="ds">Speaks the Garmin&rsquo;s binary GPS language over USB, in pure Python. Discovers the device&rsquo;s own data path instead of guessing it.</div></div>
     <div class="item"><div class="nm">units_kml.py</div><div class="ds">The map server. Hands out the <b>browser map, the live units, and the map tiles</b> off the SSD, and lets you rename units on the fly.</div></div>
     <div class="item"><div class="nm">lookout_audio.py</div><div class="ds">Captures the radio audio and <b>streams it to the browser</b> as raw sound &mdash; no codec, almost no CPU. Runs on its own, so audio can never disturb the map.</div></div>
-    <div class="item"><div class="nm">map.html</div><div class="ds">The map itself, as seen in any browser &mdash; the moving units, the Maps menu, and the &ldquo;Listen&rdquo; button. Carries its own map library (below), so it needs no internet.</div></div>
+    <div class="item"><div class="nm">map.html</div><div class="ds">The map itself, as seen in any browser &mdash; the moving units, the Maps menu, and the &ldquo;Listen&rdquo; button. Loads the map library below (served from the same box), so it needs no internet.</div></div>
   </div>
 
   <!-- SERVICES -->
@@ -94,8 +120,8 @@
 
   <!-- BUNDLED LIBRARY -->
   <div class="sec">
-    <h2>5 &nbsp; Bundled library <small>carried inside our files, not installed on the box</small></h2>
-    <div class="item"><div class="nm">Leaflet</div><div class="ds">The open&#8209;source map library that draws the slippy map in the browser. Bundled right inside <span style="font-family:var(--mono)">map.html</span> so the map works fully offline.</div></div>
+    <h2>5 &nbsp; Bundled library <small>carried with the box, not installed by opkg</small></h2>
+    <div class="item"><div class="nm">leaflet.js<br>leaflet.css</div><div class="ds"><b>Leaflet</b>, the open&#8209;source map library that draws the slippy map in the browser. It ships as two plain files served by the map server alongside <span style="font-family:var(--mono)">map.html</span> &mdash; carried with the box, <b>no CDN, no internet</b> &mdash; so the map works fully offline.</div></div>
   </div>
 
   <!-- DATA -->
@@ -106,9 +132,32 @@
     <div class="item"><div class="nm">track_&hellip;.csv</div><div class="ds">A daily log of where units went, written automatically.</div></div>
   </div>
 
+  <!-- 7: HOW IT GOES ON -->
+  <div class="sec">
+    <h2>7 &nbsp; How it all goes on <small>one setup pass, once, with the box briefly online</small></h2>
+    <div class="ds" style="margin-bottom:4px">In order, every step through a supported door:</div>
+    <div class="item"><div class="nm">opkg</div><div class="ds">Installs the driver and support packages (section 1&ndash;2) from <b>GL&rsquo;s own signed, kernel&#8209;matched feed</b> &mdash; the same feed the router updates itself from.</div></div>
+    <div class="item"><div class="nm">fetch</div><div class="ds">Downloads the programs, boot services, map page and map library (section 3&ndash;5) from the project&rsquo;s public repository.</div></div>
+    <div class="item"><div class="nm">enable + start</div><div class="ds">Registers the three services to launch at boot and starts them &mdash; standard OpenWrt <span style="font-family:var(--mono)">procd</span> init.</div></div>
+    <div class="item"><div class="nm">sync</div><div class="ds">Commits everything to flash so it survives a power&#8209;cycle.</div></div>
+    <div class="note">For the owner this is <b>one button</b> in a small Windows helper (Lookout Manager) that runs the sequence over SSH &mdash; a few minutes, once. After it, the box never needs the internet again and can be frozen on fixed firmware.</div>
+  </div>
+
+  <!-- 8: MEASURED RESULT -->
+  <div class="proof">
+    <div class="hd">8 &nbsp; The measured result &mdash; proven from a bare box</div>
+    <ul>
+      <li>On <b>2026&#8209;11&#8209;18</b> a carton&#8209;fresh GL&#8209;MT6000 (first&#8209;booted, firmware updated to current GL, nothing else) was provisioned in a <b>single pass</b>: Python installed from scratch, the USB&#8209;audio driver pulled from GL&rsquo;s kernel&#8209;matched feed, every program, service and the map front&#8209;end in place.</li>
+      <li>Result, from one button: a <b>live Z20 map</b> in the browser, <b>two units moving</b> (&ldquo;you are here&rdquo; plus a field radio), and <b>radio audio playing</b> &mdash; the whole stack, on a factory box.</li>
+      <li>Cost to the box: about <b>23&nbsp;MB</b> of its 7.2&nbsp;GB storage (measured stock <span class="nm" style="width:auto;display:inline">427&nbsp;MB</span> &rarr; <span class="nm" style="width:auto;display:inline">450&nbsp;MB</span>) and <b>three application ports</b> added on top of the stock router: <b>8080</b> (map), <b>8081</b> (audio), <b>10110</b> (position feed).</li>
+      <li>It <b>survives a power&#8209;cycle</b> on its own &mdash; pull the plug, plug it back, the map returns with nobody at a keyboard.</li>
+    </ul>
+    <div class="stamp">A stock router became a working mapping appliance for ~23&nbsp;MB and three ports &mdash; every piece through a supported door.</div>
+  </div>
+
   <div class="foot">
-    <div class="big">Everything above went on through supported doors.</div>
-    <div class="sm">Drivers and tools from the vendor&rsquo;s own signed package feed; programs in plain Python; one open&#8209;source map library bundled in. <b>No firmware rebuild, no custom kernel, nothing forced or hacked</b> &mdash; each piece doing exactly what it was built to do.</div>
+    <div class="big">This is what the platform already makes possible.</div>
+    <div class="sm">The USB&#8209;net driver was built into OpenWrt; the audio driver came straight from GL&rsquo;s own feed. The Lookout simply assembles what <b>OpenWrt</b> and <b>GL.iNet</b> already provide &mdash; drivers and tools from the vendor&rsquo;s signed feed, programs in plain Python, one open&#8209;source map library carried along. <b>No firmware rebuild, no custom kernel, nothing hacked</b> &mdash; each piece doing exactly what it was built to do.</div>
   </div>
 
 </body>

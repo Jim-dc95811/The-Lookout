@@ -182,6 +182,16 @@ written in plain Python (standard library only), each listening on one port:
 | Audio streamer | 8081 | Streams the radio audio to the browser (receive only) |
 | Position feed | 10110 | Offers the clean position feed to mapping apps |
 
+**Measured on a bare box (2026-11-18), so you need not take it on faith.** A
+stock GL router, before The Lookout, listens only on its own admin pages, DNS
+and SSH (`22 / 53 / 80 / 443`) plus a localhost-only GL API on `3008`. After
+provisioning, the **only** new listeners are the three above — `8080`, `8081`,
+`10110`. One more line appears, `10.250.46.100:53`, but it is **not ours**: it
+is the router's own DNS (`dnsmasq`) answering on the radio-link subnet the box
+brings up — a stock service following a new interface, no new program. You can
+reproduce this exact diff yourself: run `netstat -ltn` before provisioning and
+again after; the difference is those three ports and nothing else.
+
 They are separate, isolated processes. None of them opens a connection
 outward; all they do is answer requests that arrive. There are no added
 background services that reach out, no telemetry agents, and no cloud
