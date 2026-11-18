@@ -7,11 +7,22 @@ direction to weigh, not a committed plan.
 
 ## Field photo report — phone sends a pic back to the box — *2026-11-17*
 
-**The idea (Jim):** the realistic reverse-path. Not live video (that's the
-moonshot — see the note at the end) — just a field user sending a **still
-photo or screenshot** from their phone *back* to the box, which stores it
-and shows it to everyone on the shared map/feed. "Washout on the north road"
-plus a pic, on every crew member's phone, offline.
+**The idea (Jim):** the realistic reverse-path — not live video (that's the
+moonshot at the end), just a **still photo or screenshot** sent from a phone
+*to* the box. **Primary use case: a teacher (or any presenter) shares a photo
+from her phone** — she sends it to the SSD and it's **quickly available from
+the Maps drop-down list**, so anyone in the room taps it and views it. (The
+same move also serves a field photo report — "washout on the north road"
+plus a pic — but the everyday driver is sharing a picture to a room.)
+
+**How it surfaces — reuse the Maps dropdown (the key simplification):** the
+content picker already scans the SSD and refreshes every ~10 s. An uploaded
+photo drops into that *same* list as another selectable item — **no new
+browsing UI.** Tap it and the browser just displays the JPEG (pinch-zoom
+works natively; no tiling needed for a quick share — tiling is only for the
+giant picture-worlds). The new parts are small: an upload endpoint that
+writes the file to the SSD, and the list/viewer recognizing an image file as
+a viewable entry alongside the maps.
 
 **Why it's easy — easier than talk-back audio:**
 - **No HTTPS wall.** Live mic/camera need `getUserMedia` (a secure context),
