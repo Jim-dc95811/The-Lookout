@@ -1,5 +1,7 @@
 # The Lookout — Security Analysis
 
+> *The safest router in the world is the one with the empty WAN connector.*
+
 *An honest, upfront account of what The Lookout does on a network, what it
 does not do, and how to verify every claim in this document for yourself.*
 
@@ -144,6 +146,30 @@ makes no demand to be trusted, so there is nothing to grant and nothing to
 betray.
 
 ---
+
+## The realistic threat model
+
+Good security starts with an honest picture of who is actually on the
+network. In normal use, the people who join The Lookout are the operator and
+their own group — a crew, a class, staff — non-technical users who are there
+to see a map, not to attack a box. For that population the practical risk is
+**accidental misuse, not intrusion**: a malformed upload, a fumbled request,
+an odd input. The box is built to **tolerate** that the way good electronics
+tolerate a voltage spike — with size and type limits, process isolation, and
+graceful failure — not to wage a security war against its own users.
+
+At the other extreme, a determined, sophisticated attacker deliberately
+targeting a specific device is a threat **no consumer product fully stops** —
+the same is true of any router, phone, or appliance on the market. What this
+design does against that tier is **remove the paths such an attack needs**:
+with an empty WAN connector there is no remote reach in or out, the box
+initiates no connections of its own, and it runs no services that chase the
+internet. You cannot remotely attack, command, or exfiltrate from a device
+that has no path to you and makes none to anyone.
+
+In short: the realistic user is harmless by capability, and the box is built
+to shrug off their mistakes; the unrealistic super-attacker is stopped by no
+vendor anywhere, and is given nothing here to work with.
 
 ## What is added on top of the stock router (attack surface)
 
