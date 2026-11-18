@@ -62,6 +62,10 @@ That second row is the whole point: a machine that can't install a thing still g
 
 The router now serves a full **slippy map straight to any web browser** — your own offline map tiles (an `.mbtiles` pyramid *or* an Esri `.tpkx` — the very package ArcGIS Earth opens, no conversion) with the live units drawn on top. A locked-down PC, a phone, a tablet — each just opens **`http://<router>:8080/`**. Nothing installed, no internet. Functionally this is the 2D heart of ArcGIS Earth (an offline tile pyramid you pan and zoom, with a live overlay) running in a plain browser, with no ArcGIS Earth.
 
+**Wait — a web page, with no internet?** Right. Your browser is just a screen; the only question is what it's plugged into. A normal website is a long cable to someone's computer far away. The Lookout's page comes from a chip in the box, a few feet from you — nothing goes "out there" at all:
+
+![Where does the web page come from? A normal website is a long extension cable to Google's computer in San Jose; The Lookout's page comes from a chip in the box, right here in the room. Tell them apart: a name (google.com) is far away, a number (192.168.8.1) is right here — and if you cut the internet, the website dies but the built-in page keeps working.](images/where_the_page_comes_from.png)
+
 **Proven live** on a GL-MT6000, on a PC and an Android phone, with real P25 units riding on offline aerial imagery — nothing on the viewing device but a browser. Stress-tested at **46 GB of Z20** served off an external SSD.
 
 ![A phone, nothing installed, showing the Lookout's live map — the box's own position (LOOKOUT) and a live P25 field unit (9076801), on offline aerial imagery](images/the_lookout_phone.jpg)
