@@ -17,7 +17,7 @@ import json, http.client, threading, queue
 import tkinter as tk
 from tkinter import ttk
 
-VERSION       = "2.1"
+VERSION       = "2.2"
 PORT          = 8080
 DEFAULT_IP    = "192.168.8.1"
 DEFAULT_TOKEN = "lookout"
@@ -30,6 +30,7 @@ SETUP_STEPS = [
     ("Installing GPS support (libusb)",      "opkg list-installed | grep -q '^libusb-1.0-0 ' && echo 'already installed' || opkg install libusb-1.0-0"),
     ("Downloading the bridge",               "cd /root && wget -O bk_bridge.py %s/bk_bridge.py && wget -O gps_source.py %s/gps_source.py && wget -O garmin_linux.py %s/garmin_linux.py" % (REPO_BASE, REPO_BASE, REPO_BASE)),
     ("Downloading the map server",           "cd /root && wget -O units_kml.py %s/units_kml.py" % REPO_BASE),
+    ("Downloading the map page",             "cd /root && wget -O map.html %s/map.html && wget -O leaflet.js %s/leaflet.js && wget -O leaflet.css %s/leaflet.css" % (REPO_BASE, REPO_BASE, REPO_BASE)),
     ("Installing the hotplug handler",       "mkdir -p /etc/hotplug.d/net && wget -O /etc/hotplug.d/net/30-lookout-usb0 %s/openwrt/hotplug-usb0" % REPO_BASE),
     ("Installing the boot services",         "cd /etc/init.d && wget -O bk-bridge %s/openwrt/bk-bridge && wget -O units-kml %s/openwrt/units-kml && chmod +x bk-bridge units-kml" % (REPO_BASE, REPO_BASE)),
     ("Enabling them on boot",                "/etc/init.d/bk-bridge enable && /etc/init.d/units-kml enable"),
@@ -251,7 +252,7 @@ class SetupTab(tk.Frame):
 
 if __name__ == "__main__":
     root = tk.Tk()
-    root.title("Lookout Manager")
+    root.title("Lookout Manager v" + VERSION)
     root.geometry("600x560")
     nb = ttk.Notebook(root)
     nb.add(SetupTab(nb), text="  Set up a router  ")
