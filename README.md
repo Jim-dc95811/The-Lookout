@@ -94,6 +94,8 @@ The router now serves a full **slippy map straight to any web browser** — your
 
 📋 **Full parts list + specs** (setup PC, SSD format, GPS, router, hub, and the browser/http notes): **[docs/graphics/lookout_hardware_requirements.pdf](docs/graphics/lookout_hardware_requirements.pdf)** (printable).
 
+🗂️ **File layout on the router** — a tree of every file and where it goes, so you can verify a box has the same pieces in the same places: **[docs/FILE_LAYOUT.md](docs/FILE_LAYOUT.md)** · **[printable PDF](docs/The_Lookout_File_Layout.pdf)**.
+
 ## Build it
 
 **New to this? Follow the picture.** A box-to-live-map visual walkthrough — power up, set a password, one click, plug in the kit, open the map:
