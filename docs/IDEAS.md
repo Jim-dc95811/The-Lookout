@@ -15,6 +15,18 @@ the Maps drop-down list**, so anyone in the room taps it and views it. (The
 same move also serves a field photo report — "washout on the north road"
 plus a pic — but the everyday driver is sharing a picture to a room.)
 
+**It's a shared board, not just a share (Jim):** the same mechanism makes it
+**many-to-many** — *anyone* on the Wi-Fi can contribute a pic and it's
+visible to everyone else right away (the picker's ~10 s refresh gives the
+live feel for free). That's a **local, offline, no-account, no-app, cross-
+platform shared photo board** — a combination that's genuinely hard to get
+elsewhere (AirDrop is Apple-only; cloud albums need accounts + internet).
+For a classroom it's also a privacy win: the pool never leaves the box, so
+no cloud is harvesting a minor's photos. Posture: with many writers, trust =
+whoever holds the Wi-Fi password (the joined group); fine for a controlled
+room, no logins needed; lean harder on images-only + size/storage caps + the
+isolated uploader, and consider an optional contributor name on each pic.
+
 **How it surfaces — reuse the Maps dropdown (the key simplification):** the
 content picker already scans the SSD and refreshes every ~10 s. An uploaded
 photo drops into that *same* list as another selectable item — **no new
