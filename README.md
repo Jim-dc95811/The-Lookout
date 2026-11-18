@@ -40,6 +40,10 @@ A systems view of the whole box — what plugs in over USB, the three small prog
 
 Everything the Lookout adds on top of a stock OpenWrt router — the drivers, the libraries, our Python programs, the boot services — each with a one-line job: **[docs/The_Lookout_Beyond_Factory.pdf](docs/The_Lookout_Beyond_Factory.pdf)** (printable). All of it installed through supported channels — no firmware rebuild, no custom kernel.
 
+### Security &amp; transparency
+
+The Lookout is a passive, offline, serve-only box: it doesn't spoof your equipment, installs nothing on any device, and has no path to the outside world — and every claim is verifiable with a packet capture in a few minutes. It has run live on a government MDM / Group-Policy-locked iPhone. Full write-up for a security or IT reviewer: **[docs/SECURITY.md](docs/SECURITY.md)** · printable **[PDF](docs/The_Lookout_Security_Analysis.pdf)**.
+
 ## Who it's for
 
 The Lookout exists to reach the people a normal install can't:
