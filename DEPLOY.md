@@ -19,6 +19,13 @@ Power on the router. On your PC, open a browser to **`http://192.168.8.1`**. Fol
 welcome page and **set an admin password** — write it down, you'll use it in a moment. Finish to
 the dashboard and confirm it shows an **internet connection** (it needs one for the next step).
 
+**Then update the firmware before anything else.** On the GL.iNet dashboard, open the firmware /
+upgrade page and **install the update it offers, and let it reboot.** The Lookout is built and
+proven on current GL firmware — don't run setup on whatever happened to ship in the box. This is a
+one-time step; after it, the box never needs the firmware touched again. *(Proven baseline: GL
+firmware v4.11.0 / OpenWrt 21.02 / kernel 5.4.238 — keep it as the known-good to fall back to if a
+newer firmware ever misbehaves.)*
+
 ## 2. One-click setup
 
 Open **Lookout Manager** (double-click `Start Lookout Manager.bat`; the first run installs the one

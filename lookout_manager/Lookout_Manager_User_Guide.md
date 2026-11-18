@@ -20,11 +20,12 @@ Lookout Manager is a small Windows app that stands up and maintains **The Lookou
 
 ## Set up a router (one click)
 
-1. Connect your PC to the router (its Wi‑Fi or a LAN cable). The router must have **internet** for this one‑time setup.
-2. Open Lookout Manager and go to the **Set up a router** tab.
-3. **New router IP** — usually `192.168.8.1` (the GL‑MT6000 default). **Admin password** — the router's own admin password (the one you set on the router's first‑boot page).
-4. Click **Set up this router** and watch the log. It logs in over SSH and installs everything — Python, the Lookout programs, the boot services, the radio hotplug handler, and radio-audio support — then starts and verifies them, and saves it all to flash so it survives a power-cycle.
-5. It's done when the log says the router is now The Lookout and three services are running. Plug in the radio and open **`http://192.168.8.1:8080/`** in any browser. (To hear the radio in the browser, add a USB sound card, patch the radio's audio into it, and tap **🔊 Listen** on the map.)
+1. **First‑boot the router and update its firmware.** On the router's own page (`http://192.168.8.1`), set an admin password and confirm it has internet, then **install the firmware update it offers and let it reboot** — do this *before* anything else. The Lookout is proven on current GL firmware; don't set up on whatever shipped in the box. (One time only — the box never needs the firmware touched again.)
+2. Connect your PC to the router (its Wi‑Fi or a LAN cable). The router must have **internet** for this one‑time setup.
+3. Open Lookout Manager and go to the **Set up a router** tab.
+4. **New router IP** — usually `192.168.8.1` (the GL‑MT6000 default). **Admin password** — the router's own admin password (the one you set on the router's first‑boot page).
+5. Click **Set up this router** and watch the log. It logs in over SSH and installs everything — Python, the Lookout programs, the boot services, the radio hotplug handler, and radio-audio support — then starts and verifies them, and saves it all to flash so it survives a power-cycle.
+6. It's done when the log says the router is now The Lookout and three services are running. Plug in the radio and open **`http://192.168.8.1:8080/`** in any browser. (To hear the radio in the browser, add a USB sound card, patch the radio's audio into it, and tap **🔊 Listen** on the map.)
 
 The admin password is used once, over SSH, to log in to your own router. It is not stored or sent anywhere else.
 

@@ -36,6 +36,14 @@ nothing but a browser.
 | SSD (your maps) | A USB 3 portable SSD, **exFAT or ext4** (*not* FAT32 — its 4 GB per-file limit breaks big maps). Size depends on the maps you carry. Copy `.tpkx` files to the drive **root**. |
 | Power | 12 V (a truck) for the router and hub. Plug it in and it comes up on its own; it survives a power cut. |
 
+> **First boot: update the firmware before you provision.** A brand-new box can ship with older
+> factory firmware and a different kernel than the one everything here was proven against — which
+> matters most for the **kernel-matched audio driver** and the built-in USB-net driver that brings
+> up the radio link with no install. On the GL dashboard, take the firmware update it offers and
+> let it reboot **before** running Lookout Manager. **Proven baseline:** GL firmware **v4.11.0** /
+> OpenWrt **21.02-SNAPSHOT** / kernel **5.4.238**. Run current GL stable, and keep this baseline as
+> the known-good fallback if a newer firmware ever breaks the audio `kmod` match.
+
 ## 1C · Viewing devices — nothing to install  *(any device, offline)*
 
 | | |
@@ -191,6 +199,7 @@ for and what a healthy box returns. A quick full sweep: work top to bottom.
 
 | Command | Purpose | You should get |
 |---|---|---|
+| `cat /etc/glversion; uname -r` | Firmware & kernel version | GL version (proven **4.11.0**) and kernel (**5.4.238**) |
 | `df -h` | Storage headroom | overlay ~6% used, 6.7 GB free |
 | `free -h` | RAM headroom | ~1 GB total, a few hundred MB used |
 | `logread -e bk_bridge` | Bridge log | `connected + subscribed`, steady heartbeats |
