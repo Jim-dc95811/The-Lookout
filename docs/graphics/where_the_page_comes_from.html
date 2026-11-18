@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  :root{
+    --ink:#17212b; --sub:#5a6b7a; --line:#d7e0e8;
+    --far:#2563eb; --farbg:#eef3fe;
+    --here:#16a34a; --herebg:#e9faf0;
+    --amber:#b45309; --amberbg:#fdf4e6;
+    --screen:#0e1b2a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI",system-ui,Arial,sans-serif;background:#fff;color:var(--ink);width:1520px;padding:40px 48px 46px}
+  .head{text-align:center;margin-bottom:8px}
+  .head h1{font-size:40px;color:#13293d;letter-spacing:.2px}
+  .head p{font-size:19px;color:var(--sub);margin-top:8px}
+
+  .panel{border:2px solid var(--line);border-radius:18px;padding:26px 30px;margin-top:26px;position:relative}
+  .panel.a{background:linear-gradient(180deg,#fbfdff,#f4f8ff)}
+  .panel.b{background:linear-gradient(180deg,#fcfffd,#f1faf4)}
+  .tag{position:absolute;top:-15px;left:28px;font-size:15px;font-weight:800;letter-spacing:.5px;
+    text-transform:uppercase;padding:4px 14px;border-radius:8px;color:#fff}
+  .a .tag{background:var(--far)}
+  .b .tag{background:var(--here)}
+
+  .row{display:flex;align-items:center;gap:0}
+  /* screen */
+  .screen{flex:0 0 auto;width:300px}
+  .you{font-size:15px;font-weight:700;color:var(--sub);text-align:center;margin-bottom:8px;letter-spacing:.5px}
+  .browser{border:2px solid #c3cfdb;border-radius:12px;overflow:hidden;box-shadow:0 8px 20px rgba(16,32,48,.12);background:#fff}
+  .bbar{background:#e7edf3;display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid #cfd9e3}
+  .bbar .d{width:10px;height:10px;border-radius:50%;background:#c3cfdb}
+  .addr{flex:1;background:#fff;border-radius:6px;margin-left:8px;padding:5px 9px;font-family:"Consolas",monospace;font-size:13.5px;color:#2b3b4a;border:1px solid #d7e0e8;white-space:nowrap;overflow:hidden}
+  .scr{background:var(--screen);height:118px;display:flex;align-items:center;justify-content:center;color:#9fb4c8;font-size:13px;position:relative}
+  .scr .map{position:absolute;inset:10px;border-radius:6px;opacity:.85;background:
+     radial-gradient(circle at 60% 55%, #1c7a3e 0 7px, transparent 8px),
+     radial-gradient(circle at 42% 44%, #1c7a3e 0 7px, transparent 8px),
+     linear-gradient(135deg,#1b3a28,#163049)}
+  .scr .lbl{position:relative;z-index:2;font-weight:700;color:#cfe6ff}
+
+  /* cable + middle */
+  .mid{flex:1;position:relative;min-width:0;padding:0 6px}
+  .cablewrap{width:100%}
+  .dist{text-align:center;font-size:14px;font-weight:700;color:var(--sub);margin-top:8px}
+  .a .dist{color:var(--far)}
+  .b .dist{color:var(--here)}
+
+  /* destination */
+  .dest{flex:0 0 auto;width:330px;display:flex;flex-direction:column;align-items:center;text-align:center}
+  .destname{font-size:17px;font-weight:800;margin-top:12px}
+  .a .destname{color:var(--far)}
+  .b .destname{color:var(--here)}
+  .destsub{font-size:14px;color:var(--sub);margin-top:4px;line-height:1.35;max-width:300px}
+
+  .cap{margin-top:16px;font-size:17px;line-height:1.5;color:#2b3b4a;border-top:1px dashed #cdd8e2;padding-top:14px}
+  .cap b.far{color:var(--far)} .cap b.here{color:var(--here)}
+
+  /* bottom tell bar */
+  .tell{margin-top:28px;border:2px solid var(--line);border-radius:16px;overflow:hidden}
+  .tellhead{background:#13293d;color:#fff;font-size:18px;font-weight:700;padding:12px 22px;letter-spacing:.3px}
+  .tellrow{display:flex;gap:0}
+  .tcell{flex:1;padding:18px 22px;font-size:16px;line-height:1.45}
+  .tcell+.tcell{border-left:1px solid var(--line)}
+  .tcell .k{font-family:"Consolas",monospace;font-weight:700;font-size:16px}
+  .tcell .k.far{color:var(--far)} .tcell .k.here{color:var(--here)}
+  .tcell .t{color:var(--sub);margin-top:4px}
+  .proof{background:var(--amberbg);padding:15px 22px;font-size:16px;color:#7a4408;border-top:2px solid #f0c98a}
+  .proof b{color:#5c3206}
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <h1>Where does the web page come from?</h1>
+    <p>Your browser is just a screen. The only question is what it&rsquo;s plugged into.</p>
+  </div>
+
+  <!-- PANEL A: the internet -->
+  <div class="panel a">
+    <div class="tag">A normal website</div>
+    <div class="row">
+      <div class="screen">
+        <div class="you">YOU</div>
+        <div class="browser">
+          <div class="bbar"><span class="d"></span><span class="d"></span><span class="d"></span><span class="addr">https://www.google.com</span></div>
+          <div class="scr"><span class="lbl">Google&rsquo;s page</span></div>
+        </div>
+      </div>
+      <div class="mid">
+        <svg class="cablewrap" viewBox="0 0 560 120" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M8,60 C 120,10 160,110 280,60 S 440,10 552,60" fill="none" stroke="#2563eb" stroke-width="7" stroke-linecap="round" stroke-dasharray="2 14"/>
+          <rect x="0" y="52" width="16" height="16" rx="3" fill="#2563eb"/>
+          <rect x="544" y="52" width="16" height="16" rx="3" fill="#2563eb"/>
+        </svg>
+        <div class="dist">a very long extension cable &mdash; hundreds of miles</div>
+      </div>
+      <div class="dest">
+        <svg width="150" height="120" viewBox="0 0 150 120" aria-hidden="true">
+          <rect x="30" y="16" width="90" height="92" rx="6" fill="#dbe6fb" stroke="#2563eb" stroke-width="2.5"/>
+          <rect x="40" y="26" width="70" height="12" rx="2" fill="#fff" stroke="#9cc0f5"/>
+          <rect x="40" y="44" width="70" height="12" rx="2" fill="#fff" stroke="#9cc0f5"/>
+          <rect x="40" y="62" width="70" height="12" rx="2" fill="#fff" stroke="#9cc0f5"/>
+          <rect x="40" y="80" width="70" height="12" rx="2" fill="#fff" stroke="#9cc0f5"/>
+          <circle cx="48" cy="32" r="2.4" fill="#16a34a"/><circle cx="48" cy="50" r="2.4" fill="#16a34a"/>
+          <circle cx="48" cy="68" r="2.4" fill="#16a34a"/><circle cx="48" cy="86" r="2.4" fill="#16a34a"/>
+        </svg>
+        <div class="destname">Google&rsquo;s computer</div>
+        <div class="destsub">A giant building full of servers, in San&nbsp;Jose, California.</div>
+      </div>
+    </div>
+    <div class="cap">You are <b class="far">not</b> looking at your own computer &mdash; you&rsquo;re looking at <b class="far">their</b> computer, far away. The internet is just a very long video-and-audio extension cable reaching all the way to it.</div>
+  </div>
+
+  <!-- PANEL B: the embedded page -->
+  <div class="panel b">
+    <div class="tag">The Lookout (a page built into the equipment)</div>
+    <div class="row">
+      <div class="screen">
+        <div class="you">YOU</div>
+        <div class="browser">
+          <div class="bbar"><span class="d"></span><span class="d"></span><span class="d"></span><span class="addr">192.168.8.1</span></div>
+          <div class="scr"><div class="map"></div><span class="lbl">The&nbsp;map</span></div>
+        </div>
+      </div>
+      <div class="mid">
+        <svg class="cablewrap" viewBox="0 0 560 120" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M8,60 L 552,60" fill="none" stroke="#16a34a" stroke-width="7" stroke-linecap="round"/>
+          <rect x="0" y="52" width="16" height="16" rx="3" fill="#16a34a"/>
+          <rect x="544" y="52" width="16" height="16" rx="3" fill="#16a34a"/>
+        </svg>
+        <div class="dist">a few feet &mdash; right here in the room</div>
+      </div>
+      <div class="dest">
+        <svg width="190" height="120" viewBox="0 0 190 120" aria-hidden="true">
+          <!-- antennas -->
+          <line x1="60" y1="46" x2="52" y2="16" stroke="#0e1720" stroke-width="4" stroke-linecap="round"/>
+          <line x1="130" y1="46" x2="138" y2="16" stroke="#0e1720" stroke-width="4" stroke-linecap="round"/>
+          <!-- body -->
+          <rect x="26" y="44" width="138" height="58" rx="9" fill="#182634" stroke="#0e1720" stroke-width="2"/>
+          <!-- chip -->
+          <rect x="74" y="60" width="42" height="26" rx="3" fill="#0e1720" stroke="#2fd46a" stroke-width="2"/>
+          <text x="95" y="77" text-anchor="middle" font-family="Consolas,monospace" font-size="10" fill="#2fd46a" font-weight="700">web</text>
+          <!-- chip legs -->
+          <g stroke="#2fd46a" stroke-width="1.6">
+            <line x1="74" y1="66" x2="68" y2="66"/><line x1="74" y1="73" x2="68" y2="73"/><line x1="74" y1="80" x2="68" y2="80"/>
+            <line x1="116" y1="66" x2="122" y2="66"/><line x1="116" y1="73" x2="122" y2="73"/><line x1="116" y1="80" x2="122" y2="80"/>
+          </g>
+          <circle cx="40" cy="95" r="2.6" fill="#2fd46a"/>
+        </svg>
+        <div class="destname">A chip in this box</div>
+        <div class="destsub">A tiny web server built into the equipment on the table.</div>
+      </div>
+    </div>
+    <div class="cap">The page comes from a <b class="here">chip inside this box</b>, a few feet away. There is no cable to anywhere. <b class="here">Nothing goes to San&nbsp;Jose.</b> It only looks like the internet because your browser looks the same no matter what it&rsquo;s plugged into.</div>
+  </div>
+
+  <!-- TELL BAR -->
+  <div class="tell">
+    <div class="tellhead">How to tell which one you&rsquo;re looking at</div>
+    <div class="tellrow">
+      <div class="tcell"><span class="k far">a NAME &mdash; google.com</span><div class="t">A name means far away, out on the internet.</div></div>
+      <div class="tcell"><span class="k here">a NUMBER &mdash; 192.168.8.1</span><div class="t">A number like this means right here, in this room.</div></div>
+    </div>
+    <div class="proof"><b>The proof:</b> cut the internet. A normal website goes dark&nbsp;&mdash; its cable was just unplugged. The built-in page keeps working, because it was never coming from out there.</div>
+  </div>
+
+</body>
+</html>
