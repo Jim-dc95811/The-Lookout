@@ -5,6 +5,68 @@ direction to weigh, not a committed plan.
 
 ---
 
+## Field photo report — phone sends a pic back to the box — *2026-11-17*
+
+**The idea (Jim):** the realistic reverse-path. Not live video (that's the
+moonshot — see the note at the end) — just a field user sending a **still
+photo or screenshot** from their phone *back* to the box, which stores it
+and shows it to everyone on the shared map/feed. "Washout on the north road"
+plus a pic, on every crew member's phone, offline.
+
+**Why it's easy — easier than talk-back audio:**
+- **No HTTPS wall.** Live mic/camera need `getUserMedia` (a secure context),
+  which is blocked on the box's plain http. A **photo upload uses a plain
+  file input** (`<input type="file" accept="image/*">` — optionally
+  `capture` to open the camera, or just pick from the gallery), which works
+  over ordinary http. The reverse-image path walks right past the wall that
+  stops reverse-audio.
+- **No encoding, no bandwidth ceiling.** A phone photo is already a
+  compressed JPEG (a few MB); a one-time POST the router handles without
+  noticing. None of the video headaches.
+
+**Storage target = the map SSD (Jim's call), not the router's flash:**
+- **Capacity** — internal flash is tiny (OS only); the SSD has tens to
+  hundreds of GB.
+- **Flash durability** — writing user uploads to the router's overlay flash
+  invites wear and the sync-to-commit landmine we hit with audio; the SSD is
+  built for writes.
+- **Portability / stateless box** — the SSD already carries the maps
+  (`units_kml` serves from `/tmp/mountd/*`). Photos live beside them, travel
+  with the drive, and get pulled off after an incident by just taking the
+  SSD. The router stays stateless firmware; the SSD is the data volume. Fits
+  the "no default map, the SSD carries everything" design.
+
+**Implementation notes / honest caveats:**
+- **The SSD must be present AND writable.** No SSD (the "no maps found"
+  state) = nowhere to store; disable upload and say "insert an SSD." The
+  live SSD was **NTFS** — writing NTFS/exFAT on OpenWrt needs `ntfs-3g` /
+  exfat write support, and a map mount may be read-only for safety, so the
+  uploader needs a read-write mount. Flag this early.
+- **Dedicated folder + storage cap.** Put uploads in e.g. `<drive>/photos/`,
+  named by timestamp (+ optional unit / caption). Cap the size or rotate by
+  date so photos can't fill the drive and starve map serving — tiles are the
+  priority.
+- **Removal resilience.** If the SSD is pulled mid-upload, fail gracefully
+  (SSD-yank resilience already matters for tile reads).
+
+**Posture shift — write it down:** this is the **first feature where a phone
+*writes* to the box** — read-only becomes read/write. Still offline, still
+on the island, nothing leaves. But anyone on the shared-password Wi-Fi can
+post, so: **images only, size-capped, and keep the uploader its own isolated
+process** (same wall as the audio streamer) so it can never touch the map,
+the feed, or the audio.
+
+**The video moonshot (separate — not this):** live video *could* relay
+through the box the way audio does — but only if the **source encodes** it
+(a camera/drone/phone outputting H.264/MJPEG → box relays → browser decodes).
+The box must **never** encode raw video (the router CPU can't). Browser
+camera capture also hits the HTTPS wall, and bandwidth (megabits × many
+viewers) is the real ceiling. MJPEG-over-HTTP is the simplest first version.
+Parked as "possible, but the photo-back above is the thing to actually
+build."
+
+---
+
 ## Info kiosk — scan-to-open, any content, offline — *2026-11-17*
 
 **The idea (Jim):** The Lookout + the printed QR card = a self-contained
