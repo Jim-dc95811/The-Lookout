@@ -58,11 +58,12 @@
   .hero figure{border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 24px 60px rgba(0,0,0,.4)}
   .hero figcaption{font-size:12.5px;color:#90a2b2;margin-top:10px;text-align:center;line-height:1.4}
   @media(max-width:860px){.hero .wrap{grid-template-columns:1fr;gap:30px;padding-top:44px;padding-bottom:48px}.hero figure{max-width:440px;margin:0 auto}}
-  /* single-column hero with the hardware diagram as the lead image */
-  .hero .wrap.solo{display:block}
-  .hero .herotext{max-width:640px}
-  .hero figure.diagram{max-width:none;margin:32px auto 0;background:#fff}
+  /* single-column hero: the hardware diagram leads, at the very top */
+  .hero .wrap.solo{display:block;padding-top:24px;padding-bottom:46px}
+  .hero .herotext{max-width:640px;margin-top:38px}
+  .hero figure.diagram{max-width:none;margin:0 auto;background:#fff}
   .hero figure.diagram img{width:100%}
+  @media(max-width:860px){.hero .wrap.solo{padding-top:18px;padding-bottom:40px}.hero figure.diagram{max-width:none}}
 
   /* sections */
   section{padding:62px 0}
@@ -155,6 +156,10 @@
 <!-- HERO -->
 <div class="hero">
   <div class="wrap solo">
+    <figure class="diagram">
+      <img src="images/the_lookout_hardware.png" alt="The Lookout hardware: a BK radio, a GPS, an SSD and a USB sound card on a powered hub into a Wi-Fi travel router — the box is the map server, chartplotter, radio monitor and browser display, serving the live map and radio receive audio to a laptop and a phone">
+      <figcaption>The whole system — a radio, GPS, SSD and USB sound card on one hub into a travel router, serving the live map and radio audio to every screen.</figcaption>
+    </figure>
     <div class="herotext">
       <div class="eyebrow">Offline · No app · No cloud</div>
       <h1>A live map on <span class="g">every screen.</span></h1>
@@ -164,10 +169,6 @@
         <a class="btn ghost" href="https://github.com/Jim-dc95811/The-Lookout">Get it on GitHub</a>
       </div>
     </div>
-    <figure class="diagram">
-      <img src="images/the_lookout_hardware.png" alt="The Lookout hardware: a BK radio, a GPS, an SSD and a USB sound card on a powered hub into a Wi-Fi travel router — the box is the map server, chartplotter, radio monitor and browser display, serving the live map and radio receive audio to a laptop and a phone" loading="lazy">
-      <figcaption>The whole system — a radio, GPS, SSD and USB sound card on one hub into a travel router, serving the live map and radio audio to every screen.</figcaption>
-    </figure>
   </div>
 </div>
 
