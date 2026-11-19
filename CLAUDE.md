@@ -69,7 +69,7 @@ Boot = three **procd** init scripts under `/etc/init.d/` (sources in `openwrt/`)
 | `docs/SECURITY.md` (+ PDF) | Security analysis for IT/leadership — pull-not-push, no outbound, the measured ports receipt. |
 | `docs/The_Lookout_Beyond_Factory.pdf` (source `docs/graphics/beyond_factory.html`) | The OpenWrt/GL-engineer write-up: stock box → everything added → the measured result, beginning to end. |
 | `docs/IDEAS.md` | Backlog (reverse audio/talk-back, info kiosk, field-photo shared board). |
-| `docs/CONTENT_LAB_JOURNAL.md` | Living log of browser **data-path** experiments — the box as a content/data platform, not just a map server. Tier model, proven combos (Content Lab, Service Manual, Audio Scope), landmines, backlog. Updated in real time; read before building any new browser-served content. |
+| **[The-Signal-Shed](https://github.com/Jim-dc95811/The-Signal-Shed)** repo (its `docs/SYSTEMS_DIARY.md`) | The Lookout's **lab** — where new browser transport paths (audio/video/docs/live-data/phone-GPS/camera) are explored and proven before they graduate back here. The box-as-content-platform work lives there to keep this OG pristine. Read its diary before building any new browser-served content. |
 | `docs/EASY_INSTALL_PLAN.md` | Handoff for making setup humane for non-Pi users. |
 | `lookout_manager/System Files/lookout_manager.py` | The one-click setup + rename app. `SETUP_STEPS` is the provisioning sequence — **every fetch target it names must exist on `main`.** |
 | **family `CLAUDE.md`** (ArcGIS-Earth-Unlocked repo) | Highest-authority newest state, owner working-rules, and the full Garmin protocol write-up (§3c). Read for cross-family context. |
