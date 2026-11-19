@@ -29,6 +29,15 @@ Lookout Manager is a small Windows app that stands up and maintains **The Lookou
 
 The admin password is used once, over SSH, to log in to your own router. It is not stored or sent anywhere else.
 
+### Where the Lookout files come from
+
+Under **Lookout program files** on the Set up tab you choose where the Lookout's own programs come from:
+
+- **Download from GitHub** (the default) — the router downloads the files itself. Simple, and what most setups use. Needs the router to reach GitHub.
+- **Use local files** — Lookout Manager uploads the files straight to the router from a **`Lookout Files`** folder bundled with this app (under *System Files*), so the install does **not** depend on GitHub being up. Use **Browse…** if your files are somewhere else (for example a copy from your backup). If a file is missing the setup stops and tells you which one, before it touches the router.
+
+Either way, the router still needs **internet for the system packages** (Python, the USB-GPS library, and the audio driver) — those always come from the router maker's own package feed, not from us, so there's no offline-sourcing them here.
+
 ## Name units
 
 1. Go to the **Name units** tab. Enter the router **IP** and the **Token** (default `lookout`).

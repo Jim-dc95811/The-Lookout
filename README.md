@@ -171,9 +171,11 @@ The field build has been hardened and live-proven on the router:
 
 ## Lookout Manager (the PC app)
 
-`lookout_manager/` is a small Windows app (standard library + `paramiko` for SSH; the `.bat` installs it on first run) with two tabs:
+**⬇️ [Download Lookout Manager v2.3](Lookout_Manager_v2.3.zip)** · **📖 [User manual (PDF)](lookout_manager/Lookout_Manager_User_Guide.pdf)**
 
-- **Set up a router** — turn a brand-new GL-MT6000 into a Lookout in **one click**. Enter the router's IP and its admin password; the app logs in over SSH and installs everything — Python, both programs, the boot services, the hotplug handler — then starts and verifies them. The router needs internet for this one-time setup. *Proven from a full factory reset: blank router → set an admin password → one button → tracking, with nobody at a terminal.* See **[DEPLOY.md](DEPLOY.md)**.
+`lookout_manager/` is a small Windows app (standard library + `paramiko` for SSH/SFTP; the `.bat` installs it on first run) with two tabs:
+
+- **Set up a router** — turn a brand-new GL-MT6000 into a Lookout in **one click**. Enter the router's IP and its admin password; the app logs in over SSH and installs everything — Python, all three programs (map, radio bridge, audio), the boot services, and the radio hotplug handler — then starts and verifies them and saves it to flash. *Proven from a full factory reset: blank router → set an admin password → one button → live map, moving units, and radio audio, with nobody at a terminal.* **File source (v2.3):** the Lookout programs can be **downloaded from GitHub** (the default) or **uploaded from a local `Lookout Files` folder** bundled with the app, so the install doesn't depend on GitHub being up — handy offline or for a locked-down site. (The system packages still come from the router maker's own feed, so the router needs internet once either way.) See **[DEPLOY.md](DEPLOY.md)**.
 - **Name units** — load the current unit-ID → name table, edit it, save it back. Names appear on the map within a few seconds, via a token-guarded `GET/POST /admin/aliases` endpoint on the KML server (`:8080`).
 
 ## QR card maker — point, tap, you're on the map (NEW, 2026-11-17)

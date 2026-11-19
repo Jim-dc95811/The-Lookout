@@ -1,0 +1,220 @@
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>The Lookout - Live Units</title>
+<link rel="stylesheet" href="/leaflet.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0b0f14;color:#e6eef6;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+#map{position:fixed;inset:0;background:#0b0f14}
+#bar{position:fixed;top:0;left:0;right:0;z-index:600;display:flex;align-items:center;gap:10px;pointer-events:none;
+ height:calc(46px + env(safe-area-inset-top,0px));padding-top:env(safe-area-inset-top,0px);
+ padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));
+ background:rgba(17,22,29,.82);border-bottom:1px solid #1e2732;font-size:14px}
+#title{font-weight:700;letter-spacing:.5px;color:#7fd1ff;white-space:nowrap}
+#mapname{color:#9fb3c8;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:32vw}
+#status{margin-left:auto;display:flex;align-items:center;gap:8px;color:#9fb3c8}
+#maps,#listen{pointer-events:auto;cursor:pointer;background:#17344a;color:#bfe0ff;border:1px solid #255277;border-radius:7px;
+ padding:5px 10px;font-size:13px;font-weight:600;white-space:nowrap}
+#listen.on{background:#1f6b3a;border-color:#3fae63;color:#eafff0}
+#dot{width:9px;height:9px;border-radius:50%;background:#2ecc71;box-shadow:0 0 7px #2ecc71}
+#dot.bad{background:#e74c3c;box-shadow:0 0 7px #e74c3c}
+#menu{position:fixed;z-index:650;top:calc(44px + env(safe-area-inset-top,0px));right:max(10px,env(safe-area-inset-right,0px));
+ width:min(320px,86vw);max-height:70vh;overflow:auto;display:none;
+ background:rgba(13,20,28,.97);border:1px solid #27404f;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+#menu h4{font-size:12px;letter-spacing:.6px;color:#7f98ad;font-weight:700;padding:11px 14px 6px;text-transform:uppercase}
+#menu a{display:block;padding:10px 14px;color:#e6eef6;text-decoration:none;border-top:1px solid #182530;font-size:14px}
+#menu a .sub{display:block;color:#7f98ad;font-size:12px;margin-top:2px}
+#menu a.cur{background:#14304a;color:#7fd1ff}
+#menu a:active{background:#15222e}
+#banner{position:fixed;left:0;right:0;z-index:645;display:none;text-align:center;font-weight:700;color:#fff;
+ background:#c0392b;padding:9px;top:calc(46px + env(safe-area-inset-top,0px))}
+.ulbl{background:rgba(11,15,20,.74);border:none;color:#fff;font-weight:600;font-size:13px;box-shadow:none;padding:1px 6px;border-radius:4px}
+.ulbl::before{display:none}
+.leaflet-container{background:#0b0f14}
+</style></head><body>
+<div id="map"></div>
+<div id="bar"><span id="title">THE LOOKOUT</span><span id="mapname"></span>
+<span id="status"><button id="maps">&#128506; Maps</button><button id="listen">&#128266; Listen</button><span id="clock">--:--:--</span><span id="count">0 units</span><i id="dot"></i></span></div>
+<div id="menu"></div>
+<div id="banner"></div>
+<script src="/leaflet.js"></script>
+<script>
+// This page shows ONE map. The router has no default: root ("/") shows whichever map sorts first
+// (crews order by file name, e.g. "1_" / "a_"); a named map lives at /m/<slug>. Every map is equal.
+var PATHBASE = location.pathname.replace(/\/(map|index\.html)\/?$/,"").replace(/\/+$/,"");
+var atRoot = (PATHBASE === "");
+var TILEBASE = null;              // "/m/<slug>" of the map actually shown; set once /maps.json loads
+var map = L.map("map",{zoomControl:true, attributionControl:false});
+map.setView([30.40,-81.93], 12);   // sane default; re-centers on the map / units once loaded
+var markers={}, tilesAdded=false, userMoved=false;
+var GREEN="#2ecc71", AMBER="#f1c40f";
+// The map frames itself once on load; after that the user owns the view. Units are drawn where
+// they are but NEVER move the display - IDs key up from all over and must not drag it around.
+// Track any user pan/zoom so even the one-time load-framing never yanks a view they've grabbed.
+function markMoved(){ userMoved=true; }
+map.on("dragstart", markMoved);
+map.getContainer().addEventListener("wheel", markMoved, {passive:true});
+function esc(s){return (s+"").replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+
+function setupTiles(meta){
+  if(tilesAdded || !meta.has_tiles || TILEBASE===null) return;
+  tilesAdded=true;
+  var b=meta.bounds, sw=[b[1],b[0]], ne=[b[3],b[2]];
+  L.tileLayer(TILEBASE+"/tiles/{z}/{x}/{y}",{minZoom:meta.minzoom, maxZoom:22, maxNativeZoom:meta.maxzoom, bounds:[sw,ne],
+    errorTileUrl:"data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="}).addTo(map);
+  map.setMaxBounds([[sw[0]-0.08,sw[1]-0.08],[ne[0]+0.08,ne[1]+0.08]]);
+  // Frame the whole map once on load. There is no auto-fit to units: IDs pop in from all over,
+  // so they must never move the display. Skip even this if the user already moved.
+  if(!userMoved){ map.fitBounds([sw,ne]); }
+}
+// Keep asking for this map's tiles until its drive is ready (survives a cold boot where the USB
+// auto-mount finishes AFTER this service starts: the map appears the instant it mounts).
+function pollMeta(){
+  if(TILEBASE===null) return;           // no map resolved yet (none on the drive) - loadMaps retries
+  fetch(TILEBASE+"/meta.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(meta){
+    if(meta.has_tiles) setupTiles(meta); else setTimeout(pollMeta,4000);
+  }).catch(function(){ setTimeout(pollMeta,4000); });
+}
+// Maps menu + which map this page shows. No default: root shows whichever sorts first.
+function loadMaps(){
+  fetch("/maps.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(d){
+    var maps=d.maps||[], cur=null;
+    if(atRoot){ cur = maps[0] || null; }    // root -> first map alphabetically (named by the crew)
+    else { maps.forEach(function(mp){ if(mp.base.replace(/\/+$/,"")===PATHBASE) cur=mp; }); }
+    if(cur && TILEBASE===null){ TILEBASE = cur.base.replace(/\/+$/,""); pollMeta(); }  // first resolve
+    var html='<h4>Maps on this box</h4>';
+    if(maps.length===0){ html+='<a class="cur"><span class="sub">No maps found &middot; insert an SSD with .tpkx / .mbtiles</span></a>'; }
+    maps.forEach(function(mp){
+      var isCur = cur && (mp.base===cur.base);
+      html+='<a href="'+mp.base+'" class="'+(isCur?"cur":"")+'">'+esc(mp.name)+'</a>';
+    });
+    document.getElementById("menu").innerHTML=html;
+    document.getElementById("mapname").textContent = cur ? "· "+cur.name : "";
+  }).catch(function(){});
+}
+document.getElementById("maps").onclick=function(e){
+  e.stopPropagation();
+  var m=document.getElementById("menu");
+  m.style.display = (m.style.display==="block") ? "none" : "block";
+};
+document.addEventListener("click",function(){ document.getElementById("menu").style.display="none"; });
+
+function tick(){
+  fetch("/units.json",{cache:"no-store"}).then(function(r){return r.json()}).then(update)
+  .catch(function(){ document.getElementById("dot").className="bad";
+    document.getElementById("clock").textContent="reconnecting"; });
+}
+function update(d){
+  document.getElementById("dot").className="";
+  document.getElementById("clock").textContent=d.server_time;
+  document.getElementById("count").textContent=d.count+(d.count==1?" unit":" units");
+  var ban=document.getElementById("banner");
+  if(d.alarm&&d.alarm.down){ban.style.display="block";ban.textContent="⚠ RADIO LINK DOWN — "+d.alarm.why;}
+  else ban.style.display="none";
+  var seen={}, pts=[];
+  d.units.forEach(function(u){
+    seen[u.id]=1; var ll=[u.lat,u.lon], col=u.stale?AMBER:GREEN, lab=u.name+" · "+u.age+(u.stale?" (stale)":"");
+    pts.push(ll);
+    if(markers[u.id]){ markers[u.id].setLatLng(ll).setStyle({color:col,fillColor:col}); markers[u.id].setTooltipContent(lab); }
+    else { var m=L.circleMarker(ll,{radius:7,color:col,fillColor:col,fillOpacity:1,weight:2}).addTo(map);
+           m.bindTooltip(lab,{permanent:true,direction:"right",className:"ulbl",offset:[8,0]}); markers[u.id]=m; }
+  });
+  Object.keys(markers).forEach(function(id){ if(!seen[id]){ map.removeLayer(markers[id]); delete markers[id]; }});
+  // (No auto-pan to units: they key up from everywhere and must never move the display.)
+}
+loadMaps();                    // resolves which map to show, then kicks pollMeta() for its tiles
+tick(); setInterval(tick,3000);
+setInterval(loadMaps,30000);   // pick up newly-added maps without a reload
+
+// ---- Listen: radio audio streamed from the box as PCM over a WebSocket (:8081) ----
+// Optional + fully isolated: if lookout_audio.py isn't running, the button just says
+// "no audio" and nothing else is affected. 16 kHz mono PCM -> Web Audio, small jitter buffer.
+// The box drops a listener that goes quiet for 2 s (e.g. a phone that dimmed), so the page
+// keeps the user's intent ("on") separate from the socket: a drop auto-reconnects and the
+// button stays "On", and a screen wake-lock keeps a phone awake while listening so it mostly
+// never happens. Only a never-connected socket (streamer down) falls back to "no audio".
+(function(){
+  var AUDIO_PORT=8081, SR=16000, actx=null, ws=null, nextT=0;
+  var on=false;        // the user wants to listen - stays true across reconnects
+  var everOpen=false;  // did we reach the box at least once this listening session?
+  var retry=null;      // pending reconnect timer
+  var wake=null;       // screen wake-lock
+  var btn=document.getElementById("listen");
+  function label(t){ btn.innerHTML=t; }
+
+  function requestWake(){
+    try{
+      if(navigator.wakeLock && !wake){
+        navigator.wakeLock.request("screen").then(function(w){
+          wake=w; w.addEventListener("release",function(){ if(wake===w) wake=null; });
+        }).catch(function(){});
+      }
+    }catch(e){}
+  }
+  function releaseWake(){ try{ if(wake){ wake.release(); wake=null; } }catch(e){} }
+
+  function ensureCtx(){
+    try{ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)(); actx.resume(); return true; }
+    catch(e){ return false; }
+  }
+
+  function connect(){
+    if(!on) return;
+    if(retry){ clearTimeout(retry); retry=null; }
+    nextT=0;
+    var sock;
+    try{ sock=new WebSocket("ws://"+location.hostname+":"+AUDIO_PORT); }
+    catch(e){ scheduleRetry(); return; }
+    sock.binaryType="arraybuffer"; ws=sock;
+    sock.onopen=function(){ everOpen=true; if(on && ws===sock) label("🔊 On"); };
+    sock.onmessage=function(ev){ if(!on || ws!==sock || !actx) return;
+      var i16=new Int16Array(ev.data), f32=new Float32Array(i16.length);
+      for(var i=0;i<i16.length;i++) f32[i]=i16[i]/32768;
+      var b=actx.createBuffer(1,f32.length,SR); b.copyToChannel(f32,0);
+      var s=actx.createBufferSource(); s.buffer=b; s.connect(actx.destination);
+      var now=actx.currentTime; if(nextT<now+0.05) nextT=now+0.15;  // (re)prime jitter buffer
+      s.start(nextT); nextT+=b.duration; };
+    sock.onerror=function(){ /* a close event follows; handled there */ };
+    sock.onclose=function(){
+      if(ws===sock) ws=null;
+      if(!on) return;
+      if(everOpen) scheduleRetry();   // was working, got dropped -> dial back in
+      else fail();                    // never reached the box -> streamer isn't running
+    };
+  }
+
+  function scheduleRetry(){
+    if(!on || retry) return;
+    label("🔊 …");                    // reconnecting - button stays active (green)
+    retry=setTimeout(function(){ retry=null; ensureCtx(); connect(); }, 1000);
+  }
+
+  function fail(){
+    on=false; btn.classList.remove("on");
+    if(retry){ clearTimeout(retry); retry=null; }
+    releaseWake(); label("no audio");
+  }
+
+  function start(){
+    if(!ensureCtx()){ label("no audio"); return; }
+    on=true; everOpen=false; btn.classList.add("on"); label("🔊 On");
+    requestWake(); connect();
+  }
+  function stop(){
+    on=false; btn.classList.remove("on"); label("🔊 Listen");
+    if(retry){ clearTimeout(retry); retry=null; }
+    releaseWake();
+    if(ws){ var s=ws; ws=null; try{ s.onclose=null; s.onerror=null; s.close(); }catch(e){} }
+  }
+
+  // Returning to a backgrounded tab: re-arm the audio context, wake-lock and socket.
+  document.addEventListener("visibilitychange",function(){
+    if(document.visibilityState==="visible" && on){
+      ensureCtx(); requestWake();
+      if(!ws) scheduleRetry();
+    }
+  });
+
+  btn.onclick=function(e){ e.stopPropagation(); on?stop():start(); };
+})();
+</script></body></html>

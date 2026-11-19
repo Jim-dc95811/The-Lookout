@@ -5,43 +5,96 @@ Two tabs:
   * Set up a router - point it at a brand-new GL-MT6000 (IP + its admin password) and it
     installs everything over SSH: Python, the two programs, the boot services and the
     hotplug handler, then starts them. The same thing you'd otherwise type by hand, in
-    one button. (The router must have internet for this one-time setup.)
+    one button.
+
+    File source (v2.3): the Lookout program files can come from GitHub (the router
+    downloads them - needs internet) OR from a local "Lookout Files" folder bundled
+    beside this app, which Manager uploads to the router over SFTP. Local mode means
+    the install does not depend on GitHub being up. Either way the router still needs
+    internet for the system packages (python3, libusb, the audio driver) - those always
+    come from GL/OpenWrt's own package feed.
   * Name units - load the current unit-ID -> name table from a running box, edit it, save
     it back. Names appear on the map within a few seconds.
 
-Standard library + paramiko (for SSH). The .bat installs paramiko if it is missing.
+Standard library + paramiko (for SSH/SFTP). The .bat installs paramiko if it is missing.
 
 Run:  double-click  Start Lookout Manager.bat
 """
-import json, http.client, threading, queue
+import json, http.client, threading, queue, os
+from pathlib import Path
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 
-VERSION       = "2.2"
+VERSION       = "2.3"
 PORT          = 8080
 DEFAULT_IP    = "192.168.8.1"
 DEFAULT_TOKEN = "lookout"
 REPO_BASE     = "https://raw.githubusercontent.com/Jim-dc95811/The-Lookout/main"
 
-# The exact setup a fresh router needs - the SSH session we run by hand, scripted.
+
+# --- the provisioning sequence -------------------------------------------------
+# Two kinds of step:
+#   sh(label, cmd)                         - a plain shell command, same in both modes
+#   fetch(label, files, pre=.., post=..)   - deliver files to the router:
+#        files = [(repo_path, remote_path), ...]
+#        GitHub mode -> the router wget's each from REPO_BASE
+#        Local mode  -> Manager SFTP-puts each from the local Lookout Files folder
+#        pre/post are optional shell commands run before/after (mkdir, chmod).
+def sh(label, cmd):                     return ("sh", label, cmd)
+def fetch(label, files, pre=None, post=None): return ("fetch", label, files, pre, post)
+
 SETUP_STEPS = [
-    ("Updating the package list",            "opkg update"),
-    ("Installing Python (takes a minute)",   "which python3 >/dev/null 2>&1 && echo 'already installed' || opkg install python3"),
-    ("Installing GPS support (libusb)",      "opkg list-installed | grep -q '^libusb-1.0-0 ' && echo 'already installed' || opkg install libusb-1.0-0"),
-    ("Downloading the bridge",               "cd /root && wget -O bk_bridge.py %s/bk_bridge.py && wget -O gps_source.py %s/gps_source.py && wget -O garmin_linux.py %s/garmin_linux.py" % (REPO_BASE, REPO_BASE, REPO_BASE)),
-    ("Downloading the map server",           "cd /root && wget -O units_kml.py %s/units_kml.py" % REPO_BASE),
-    ("Downloading the map page",             "cd /root && wget -O map.html %s/map.html && wget -O leaflet.js %s/leaflet.js && wget -O leaflet.css %s/leaflet.css" % (REPO_BASE, REPO_BASE, REPO_BASE)),
-    ("Installing the hotplug handler",       "mkdir -p /etc/hotplug.d/net && wget -O /etc/hotplug.d/net/30-lookout-usb0 %s/openwrt/hotplug-usb0" % REPO_BASE),
-    ("Installing the boot services",         "cd /etc/init.d && wget -O bk-bridge %s/openwrt/bk-bridge && wget -O units-kml %s/openwrt/units-kml && chmod +x bk-bridge units-kml" % (REPO_BASE, REPO_BASE)),
-    ("Enabling them on boot",                "/etc/init.d/bk-bridge enable && /etc/init.d/units-kml enable"),
-    ("Starting the services",                "/etc/init.d/bk-bridge start && /etc/init.d/units-kml start"),
-    ("Installing radio-audio support",       "opkg list-installed | grep -q '^kmod-usb-audio ' && echo 'already installed' || opkg install kmod-usb-audio alsa-utils"),
-    ("Downloading the audio streamer",       "cd /root && wget -O lookout_audio.py %s/lookout_audio.py" % REPO_BASE),
-    ("Installing the audio boot service",    "cd /etc/init.d && wget -O lookout-audio %s/openwrt/lookout-audio && chmod +x lookout-audio" % REPO_BASE),
-    ("Enabling + starting audio",            "/etc/init.d/lookout-audio enable && /etc/init.d/lookout-audio start"),
-    ("Checking they are running",            "sleep 1; ps | grep -c '[p]ython3 /root'"),
-    ("Saving everything to flash",           "sync"),   # REQUIRED - or a power-pull reverts the whole setup
+    sh("Updating the package list",          "opkg update"),
+    sh("Installing Python (takes a minute)", "which python3 >/dev/null 2>&1 && echo 'already installed' || opkg install python3"),
+    sh("Installing GPS support (libusb)",    "opkg list-installed | grep -q '^libusb-1.0-0 ' && echo 'already installed' || opkg install libusb-1.0-0"),
+    fetch("Delivering the bridge",           [("bk_bridge.py",   "/root/bk_bridge.py"),
+                                              ("gps_source.py",  "/root/gps_source.py"),
+                                              ("garmin_linux.py", "/root/garmin_linux.py")]),
+    fetch("Delivering the map server",       [("units_kml.py",   "/root/units_kml.py")]),
+    fetch("Delivering the map page",         [("map.html",       "/root/map.html"),
+                                              ("leaflet.js",     "/root/leaflet.js"),
+                                              ("leaflet.css",    "/root/leaflet.css")]),
+    fetch("Installing the hotplug handler",  [("openwrt/hotplug-usb0", "/etc/hotplug.d/net/30-lookout-usb0")],
+                                             pre="mkdir -p /etc/hotplug.d/net"),
+    fetch("Installing the boot services",    [("openwrt/bk-bridge", "/etc/init.d/bk-bridge"),
+                                              ("openwrt/units-kml", "/etc/init.d/units-kml")],
+                                             post="chmod +x /etc/init.d/bk-bridge /etc/init.d/units-kml"),
+    sh("Enabling them on boot",              "/etc/init.d/bk-bridge enable && /etc/init.d/units-kml enable"),
+    sh("Starting the services",              "/etc/init.d/bk-bridge start && /etc/init.d/units-kml start"),
+    sh("Installing radio-audio support",     "opkg list-installed | grep -q '^kmod-usb-audio ' && echo 'already installed' || opkg install kmod-usb-audio alsa-utils"),
+    fetch("Delivering the audio streamer",   [("lookout_audio.py", "/root/lookout_audio.py")]),
+    fetch("Installing the audio boot service", [("openwrt/lookout-audio", "/etc/init.d/lookout-audio")],
+                                             post="chmod +x /etc/init.d/lookout-audio"),
+    sh("Enabling + starting audio",          "/etc/init.d/lookout-audio enable && /etc/init.d/lookout-audio start"),
+    sh("Checking they are running",          "sleep 1; ps | grep -c '[p]ython3 /root'"),
+    sh("Saving everything to flash",         "sync"),   # REQUIRED - or a power-pull reverts the whole setup
 ]
+
+
+def all_fetch_files():
+    """Every (repo_path, remote_path) the setup delivers - used to validate local mode."""
+    out = []
+    for step in SETUP_STEPS:
+        if step[0] == "fetch":
+            out.extend(step[2])
+    return out
+
+
+def default_files_dir():
+    """The bundled Lookout Files folder - a sibling of this script, inside System Files."""
+    return Path(__file__).resolve().parent / "Lookout Files"
+
+
+def github_cmd_for(files, pre, post):
+    """The shell command GitHub mode runs for a fetch step (router wget's each file)."""
+    parts = []
+    if pre:
+        parts.append(pre)
+    for repo_path, remote in files:
+        parts.append("wget -O %s %s/%s" % (remote, REPO_BASE, repo_path))
+    if post:
+        parts.append(post)
+    return " && ".join(parts)
 
 
 # ======================= Name units tab =======================
@@ -153,12 +206,27 @@ class SetupTab(tk.Frame):
                              bg="#1f6feb", fg="white", font=("Segoe UI", 9, "bold"))
         self.btn.grid(row=0, column=4, padx=6)
 
-        tk.Label(self, anchor="w", padx=12, fg="#555",
-                 text="The router must have internet for this one-time setup. Uses the router's own admin "
-                      "password over SSH; it is not saved.").pack(fill="x")
+        # --- file source picker (v2.3) ---
+        self.mode = tk.StringVar(value="github")
+        self.files_dir = tk.StringVar(value=str(default_files_dir()))
+        src = tk.LabelFrame(self, text=" Lookout program files ", padx=10, pady=6)
+        src.pack(fill="x", padx=12, pady=(2, 4))
+        ttk.Radiobutton(src, text="Download from GitHub (needs internet)", value="github",
+                        variable=self.mode, command=self._sync_src).grid(row=0, column=0, columnspan=3, sticky="w")
+        ttk.Radiobutton(src, text="Use local files (no GitHub needed)", value="local",
+                        variable=self.mode, command=self._sync_src).grid(row=1, column=0, columnspan=3, sticky="w")
+        self.folder_entry = tk.Entry(src, textvariable=self.files_dir, width=46)
+        self.folder_entry.grid(row=2, column=0, sticky="w", padx=(22, 4), pady=(2, 0))
+        self.browse_btn = tk.Button(src, text="Browse…", command=self._browse)
+        self.browse_btn.grid(row=2, column=1, sticky="w", pady=(2, 0))
+        self._sync_src()
+
+        tk.Label(self, anchor="w", padx=12, fg="#555", justify="left",
+                 text="The router needs internet for the one-time setup (the system packages come from "
+                      "GL/OpenWrt's feed). Uses the router's own admin password over SSH; it is not saved.").pack(fill="x")
 
         box = tk.Frame(self, padx=12, pady=6); box.pack(fill="both", expand=True)
-        self.log = tk.Text(box, wrap="word", height=18, font=("Consolas", 9),
+        self.log = tk.Text(box, wrap="word", height=16, font=("Consolas", 9),
                            bg="#101418", fg="#d6e2ee", insertbackground="#d6e2ee")
         lsb = tk.Scrollbar(box, command=self.log.yview); self.log.configure(yscrollcommand=lsb.set)
         self.log.pack(side="left", fill="both", expand=True); lsb.pack(side="right", fill="y")
@@ -168,6 +236,17 @@ class SetupTab(tk.Frame):
         self.log.tag_config("step", foreground="#8ab4ff")
 
         self.after(120, self._drain)
+
+    def _sync_src(self):
+        state = "normal" if self.mode.get() == "local" else "disabled"
+        self.folder_entry.config(state=state)
+        self.browse_btn.config(state=state)
+
+    def _browse(self):
+        d = filedialog.askdirectory(title="Pick the Lookout Files folder",
+                                    initialdir=self.files_dir.get() or ".")
+        if d:
+            self.files_dir.set(d)
 
     def write(self, msg, tag=None):
         self.q.put((msg, tag))
@@ -190,12 +269,46 @@ class SetupTab(tk.Frame):
         ip = self.ip.get().strip(); pw = self.pw.get()
         if not ip or not pw:
             return self.write("Enter the router IP and its admin password first.", "err")
+        mode = self.mode.get()
+        files_dir = self.files_dir.get().strip()
+        if mode == "local":
+            missing = self._missing_local_files(files_dir)
+            if missing is None:
+                return self.write("Local files folder not found: %s\nPick the \"Lookout Files\" folder, "
+                                  "or switch to \"Download from GitHub\"." % files_dir, "err")
+            if missing:
+                return self.write("These files are missing from %s:\n   %s\nPick the right folder, or "
+                                  "switch to GitHub." % (files_dir, "\n   ".join(missing)), "err")
         self.running = True
         self.btn.config(state="disabled", text="Setting up...")
         self.log.configure(state="normal"); self.log.delete("1.0", "end"); self.log.configure(state="disabled")
-        threading.Thread(target=self._run, args=(ip, pw), daemon=True).start()
+        threading.Thread(target=self._run, args=(ip, pw, mode, files_dir), daemon=True).start()
 
-    def _run(self, ip, pw):
+    def _missing_local_files(self, files_dir):
+        """None if the folder is absent; else a list of repo_paths not found inside it."""
+        base = Path(files_dir)
+        if not base.is_dir():
+            return None
+        missing = []
+        for repo_path, _remote in all_fetch_files():
+            if not (base / Path(repo_path)).is_file():
+                missing.append(repo_path)
+        return missing
+
+    def _exec(self, c, cmd):
+        """Run one shell command on the router, stream its output to the log, return exit code."""
+        _in, out, err = c.exec_command(cmd, timeout=240)
+        for line in iter(out.readline, ""):
+            if line.strip():
+                self.write("   " + line.rstrip())
+        rc = out.channel.recv_exit_status()
+        etxt = err.read().decode("utf-8", "replace").strip()
+        if etxt:
+            for line in etxt.splitlines():
+                self.write("   " + line)
+        return rc
+
+    def _run(self, ip, pw, mode, files_dir):
         try:
             import paramiko
         except ImportError:
@@ -208,26 +321,36 @@ class SetupTab(tk.Frame):
             self.write("Connecting to %s ..." % ip, "step")
             c.connect(ip, username="root", password=pw, timeout=12,
                       look_for_keys=False, allow_agent=False)
-            self.write("Connected.\n", "ok")
+            self.write("Connected.", "ok")
+            self.write("File source: %s\n" % ("local folder (%s)" % files_dir if mode == "local"
+                                              else "GitHub download"), "ok")
         except Exception as e:
             self.write("Could not log in: %s" % e, "err")
             self.write("Check the IP, that it is a fresh GL-MT6000, and the admin password.", "err")
             return self._done()
+
+        sftp = None
         try:
-            for label, cmd in SETUP_STEPS:
+            for step in SETUP_STEPS:
+                kind, label = step[0], step[1]
                 self.write("== %s ==" % label, "step")
-                _in, out, err = c.exec_command(cmd, timeout=240)
-                for line in iter(out.readline, ""):
-                    if line.strip():
-                        self.write("   " + line.rstrip())
-                rc = out.channel.recv_exit_status()
-                etxt = err.read().decode("utf-8", "replace").strip()
-                if etxt:
-                    for line in etxt.splitlines():
-                        self.write("   " + line)
-                if label.startswith("Checking"):
-                    # final verify: the ps grep -c should report 3 running python3 /root
-                    pass
+                if kind == "sh":
+                    self._exec(c, step[2])
+                else:
+                    _, _, files, pre, post = step
+                    if mode == "github":
+                        self._exec(c, github_cmd_for(files, pre, post))
+                    else:
+                        if pre:
+                            self._exec(c, pre)
+                        if sftp is None:
+                            sftp = c.open_sftp()
+                        for repo_path, remote in files:
+                            local = str(Path(files_dir) / Path(repo_path))
+                            sftp.put(local, remote)
+                            self.write("   sent %s" % remote)
+                        if post:
+                            self._exec(c, post)
             # one clean verification read
             _in, out, _e = c.exec_command("ps | grep -c '[p]ython3 /root'", timeout=20)
             count = (out.read().decode().strip() or "0")
@@ -241,6 +364,11 @@ class SetupTab(tk.Frame):
         except Exception as e:
             self.write("Setup stopped: %s" % e, "err")
         finally:
+            try:
+                if sftp is not None:
+                    sftp.close()
+            except Exception:
+                pass
             try: c.close()
             except Exception: pass
             self._done()
@@ -253,7 +381,7 @@ class SetupTab(tk.Frame):
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("Lookout Manager v" + VERSION)
-    root.geometry("600x560")
+    root.geometry("600x620")
     nb = ttk.Notebook(root)
     nb.add(SetupTab(nb), text="  Set up a router  ")
     nb.add(NamesTab(nb),  text="  Name units  ")
