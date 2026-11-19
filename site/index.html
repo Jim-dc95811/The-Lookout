@@ -58,6 +58,11 @@
   .hero figure{border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 24px 60px rgba(0,0,0,.4)}
   .hero figcaption{font-size:12.5px;color:#90a2b2;margin-top:10px;text-align:center;line-height:1.4}
   @media(max-width:860px){.hero .wrap{grid-template-columns:1fr;gap:30px;padding-top:44px;padding-bottom:48px}.hero figure{max-width:440px;margin:0 auto}}
+  /* single-column hero with the hardware diagram as the lead image */
+  .hero .wrap.solo{display:block}
+  .hero .herotext{max-width:640px}
+  .hero figure.diagram{max-width:none;margin:32px auto 0;background:#fff}
+  .hero figure.diagram img{width:100%}
 
   /* sections */
   section{padding:62px 0}
@@ -149,8 +154,8 @@
 
 <!-- HERO -->
 <div class="hero">
-  <div class="wrap">
-    <div>
+  <div class="wrap solo">
+    <div class="herotext">
       <div class="eyebrow">Offline · No app · No cloud</div>
       <h1>A live map on <span class="g">every screen.</span></h1>
       <p class="lede">A $170 travel router turns your own maps — and your radio — into a live, zoomable map any phone or PC can open. Nothing installed on the viewer. No internet.</p>
@@ -159,9 +164,9 @@
         <a class="btn ghost" href="https://github.com/Jim-dc95811/The-Lookout">Get it on GitHub</a>
       </div>
     </div>
-    <figure>
-      <img src="images/the_lookout_phone.jpg" alt="A smartphone with nothing installed but a browser, showing the Lookout's live map off the router — the box's own position (LOOKOUT) and a live field unit, on offline aerial imagery" loading="lazy">
-      <figcaption>A phone with nothing installed but a browser — the live map served straight off the router, offline.</figcaption>
+    <figure class="diagram">
+      <img src="images/the_lookout_hardware.png" alt="The Lookout hardware: a BK radio, a GPS, an SSD and a USB sound card on a powered hub into a Wi-Fi travel router — the box is the map server, chartplotter, radio monitor and browser display, serving the live map and radio receive audio to a laptop and a phone" loading="lazy">
+      <figcaption>The whole system — a radio, GPS, SSD and USB sound card on one hub into a travel router, serving the live map and radio audio to every screen.</figcaption>
     </figure>
   </div>
 </div>
@@ -254,8 +259,8 @@
     <p class="lead">Plug the radio, a GPS, and an SSD of maps into a GL-MT6000 through a powered USB hub. Then point the setup app at it — it installs everything over the network and starts it. Power-cycle safe: plug it in and forget it.</p>
 
     <div class="figfull">
-      <img src="images/the_lookout_hardware.png" alt="The Lookout hardware: a radio, a GPS, an SSD and a USB sound card on a hub into a Wi-Fi travel router, serving the live map and audio to a laptop and a phone" loading="lazy">
-      <div class="cap">The whole kit: radio + GPS + SSD + USB sound card → one travel router → the live map (and live audio) on any screen.</div>
+      <img src="images/the_lookout_phone.jpg" alt="A smartphone with nothing installed but a browser, showing the Lookout's live map off the router — the box's own position (LOOKOUT) and a live field unit, on offline aerial imagery" loading="lazy">
+      <div class="cap">The result on a phone — nothing installed but a browser, the live map served straight off the router, offline.</div>
     </div>
 
     <div class="dls">
