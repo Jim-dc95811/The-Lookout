@@ -7,16 +7,17 @@ Two tabs:
     hotplug handler, then starts them. The same thing you'd otherwise type by hand, in
     one button.
 
-    File source (v2.3): the Lookout program files can come from GitHub (the router
+    File source (v2.3+): the Lookout program files can come from GitHub (the router
     downloads them - needs internet) OR from a local "Lookout Files" folder bundled
-    beside this app, which Manager uploads to the router over SFTP. Local mode means
+    beside this app, which Manager streams to the router over SSH (`cat > file`, so it
+    works on the router's dropbear SSH, which has no SFTP). Local mode means
     the install does not depend on GitHub being up. Either way the router still needs
     internet for the system packages (python3, libusb, the audio driver) - those always
     come from GL/OpenWrt's own package feed.
   * Name units - load the current unit-ID -> name table from a running box, edit it, save
     it back. Names appear on the map within a few seconds.
 
-Standard library + paramiko (for SSH/SFTP). The .bat installs paramiko if it is missing.
+Standard library + paramiko (for SSH). The .bat installs paramiko if it is missing.
 
 Run:  double-click  Start Lookout Manager.bat
 """
@@ -25,7 +26,7 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, filedialog
 
-VERSION       = "2.3"
+VERSION       = "2.4"
 PORT          = 8080
 DEFAULT_IP    = "192.168.8.1"
 DEFAULT_TOKEN = "lookout"
@@ -308,6 +309,23 @@ class SetupTab(tk.Frame):
                 self.write("   " + line)
         return rc
 
+    def _put_file(self, c, local, remote):
+        """Stream a local file to the router over SSH with `cat > remote`.
+        Uses a plain exec channel, so it works on the router's dropbear SSH
+        (which has no SFTP subsystem). Returns the remote exit code."""
+        with open(local, "rb") as fh:
+            data = fh.read()
+        stdin, stdout, stderr = c.exec_command("cat > '%s'" % remote, timeout=120)
+        stdin.write(data)
+        stdin.flush()
+        stdin.channel.shutdown_write()
+        rc = stdout.channel.recv_exit_status()
+        etxt = stderr.read().decode("utf-8", "replace").strip()
+        if etxt:
+            for line in etxt.splitlines():
+                self.write("   " + line)
+        return rc
+
     def _run(self, ip, pw, mode, files_dir):
         try:
             import paramiko
@@ -329,7 +347,6 @@ class SetupTab(tk.Frame):
             self.write("Check the IP, that it is a fresh GL-MT6000, and the admin password.", "err")
             return self._done()
 
-        sftp = None
         try:
             for step in SETUP_STEPS:
                 kind, label = step[0], step[1]
@@ -343,12 +360,13 @@ class SetupTab(tk.Frame):
                     else:
                         if pre:
                             self._exec(c, pre)
-                        if sftp is None:
-                            sftp = c.open_sftp()
                         for repo_path, remote in files:
                             local = str(Path(files_dir) / Path(repo_path))
-                            sftp.put(local, remote)
-                            self.write("   sent %s" % remote)
+                            rc = self._put_file(c, local, remote)
+                            if rc != 0:
+                                self.write("   FAILED writing %s (exit %s)" % (remote, rc), "err")
+                            else:
+                                self.write("   sent %s" % remote)
                         if post:
                             self._exec(c, post)
             # one clean verification read
@@ -364,11 +382,6 @@ class SetupTab(tk.Frame):
         except Exception as e:
             self.write("Setup stopped: %s" % e, "err")
         finally:
-            try:
-                if sftp is not None:
-                    sftp.close()
-            except Exception:
-                pass
             try: c.close()
             except Exception: pass
             self._done()
