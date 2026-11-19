@@ -99,18 +99,85 @@ render-verified **and** function-verified headless before hand-off.
 
 ---
 
-## Paths to try next (the backlog)
+## The transport systems — master list (the systems diary)
 
-- **"Drop a doc on the box" builder** — point it at a folder of markdown/PDF → emits a
-  Service-Manual-style bundle, links wired. Turns the one-off into a repeatable tool.
-- **Fold the Audio Scope into the real Listen button** (map.html, fed by `:8081`).
-- **Field incident board** — the "mirror" made shared: phones post text+photo, all
-  appear on one page every device sees. Needs a tiny POST sink on the box (server side).
-- **Slide deck from a real `.pptx`** (export → images/HTML, flip in browser).
-- **Live dashboard from a real sensor/SCADA side-pipe** (the `:10110` feed is the model).
-- **2,000-page service manual, tiled** — words reflow, plates tile like imagery; the box
-  as a wireless manual library.
-- **QR deep-links** to a specific page/map (Lookout QR Maker already does map links).
+The running catalog of **every data path the box and a browser can carry between them.**
+The plan (Jim, 2026-11-19): gather them all here first, then go at them **one at a time**,
+researching and hardening each protocol. This table is the backlog and the map.
+
+**Legend** — direction: `→` box to viewer (the range) · `←` viewer to box (the mirror) · `↔` both.
+status: ✅ proven · 🧪 simulated/partial · 🔬 to research · 🔒 needs cert (secure context) · 📱 needs an app.
+
+### Box → viewer (the range)
+
+| # | System | dir | tier | status | Lookout payoff |
+|---|---|---|---|---|---|
+| 1 | Static file download (any type) | → | today | ✅ | hand a phone a CSV/KML/form to keep |
+| 2 | Images (jpg/png/webp) | → | today | ✅ | field photos, reference plates |
+| 3 | Vector graphics (SVG) | → | today | ✅ | diagrams sharp at any zoom, theme-aware |
+| 4 | Tiled slippy map (`.tpkx`/`.mbtiles`) | → | today | ✅ | the core — offline imagery, any browser |
+| 5 | Deep-zoom giant image (pan/zoom + tiles) | → | today | ✅ | a schematic/diagram explored like a map |
+| 6 | Audio file (mp3/AAC) | → | today | ✅ | fault tones, example transmissions |
+| 7 | Audio **stream** (PCM / WebSocket `:8081`) | → | today | ✅ | live radio in the browser |
+| 8 | Audio **visualized** (scope) | → | today | ✅ | *see* a transmission land, volume down |
+| 9 | Video file (H.264 MP4) | → | today | ✅ | procedure walkthrough, site flyover |
+| 10 | **Live video stream** (MJPEG `multipart/x-mixed-replace`) | → | today | 🔬 | a camera on the box → every screen, no plugin |
+| 11 | **Live video stream** (HLS `.m3u8`) | → | today | 🔬 | smoother live camera; needs hls.js on older browsers |
+| 12 | Live data (**SSE** / `text/event-stream`) | → | today | 🔬 | one-way sensor/telemetry ticks — dead simple |
+| 13 | Live data (**WebSocket**) | ↔ | today | 🧪 | the general live channel (dash proven simulated) |
+| 14 | Live positions (KML NetworkLink) | → | today | ✅ | units in ArcGIS Earth |
+| 15 | NMEA/TCP position feed (`:10110`) | → | today | ✅ | units in any NMEA app |
+| 16 | Reflowed document (HTML reader) | → | today | ✅ | searchable manual, beats a PDF |
+| 17 | PDF served (native viewer) | → | today | ✅ | baseline doc view |
+| 18 | Slide deck (HTML, from `.pptx`) | → | today | 🧪 | the box carries its briefing |
+| 19 | 3D model (glTF via `<model-viewer>`/three.js) | → | today | 🔬 | a piece of equipment or site in 3D |
+| 20 | Charts/graphs from data | → | today | 🧪 | trends from the feed (sparkline proven) |
+| 21 | QR deep-link to a page/map | → | today | ✅ | point a phone, land on the right map |
+| 22 | Downloadable Android app (APK) | → | +app | 🔬📱 | the box hands out its own app (iOS can't) |
+| 23 | PWA / offline app install (service worker) | → | +cert | 🔒 | the page installs like an app, works after |
+
+### Viewer → box (the mirror)
+
+| # | System | dir | tier | status | Lookout payoff |
+|---|---|---|---|---|---|
+| 24 | Form submit (text) | ← | today | 🧪 | a field note to the box (needs POST sink) |
+| 25 | Photo **upload** (camera-capture file) | ← | today | 🧪 | proof-of-completion, hazard photo, no app |
+| 26 | File upload (any) | ← | today | 🔬 | drop a track log / doc onto the box |
+| 27 | Audio/voice-memo upload (recorded file) | ← | today | 🔬 | a spoken report filed as a clip |
+| 28 | **Phone GPS → box** (Geolocation API) | ← | +cert | 🔒 | **every crew phone becomes a tracked unit, no radio** |
+| 29 | **Live camera** (getUserMedia) | ← | +cert | 🔒 | a phone as a field camera to the box |
+| 30 | **Live mic** (getUserMedia) | ← | +cert | 🔒 | push-to-talk / live audio from a phone |
+| 31 | QR / barcode scan | ← | today¹ | 🔬 | scan asset tags (¹ via uploaded photo today; live needs cert) |
+| 32 | Map annotation / drawing sent back | ← | today | 🔬 | mark a hazard, everyone sees it (needs sink) |
+| 33 | Device compass / motion | ← | +cert | 🔒 | heading / orientation for AR-ish overlays |
+
+### Two-way / shared / infrastructure
+
+| # | System | dir | tier | status | Lookout payoff |
+|---|---|---|---|---|---|
+| 34 | **Shared board** (post + broadcast via WebSocket) | ↔ | today | 🔬 | the mirror made shared — a live field bulletin |
+| 35 | Text chat / net log | ↔ | today | 🔬 | a crew net without cell service |
+| 36 | Per-device storage (localStorage/IndexedDB) | ↔ | today | ✅ | remember a filter/draft on that phone |
+| 37 | WebRTC phone↔phone (box as signaling) | ↔ | +cert | 🔒🔬 | direct phone-to-phone media, box brokers |
+| 38 | Web Bluetooth to a sensor | ← | +app/+cert | 🔒📱 | a BLE sensor's data onto the map (limited support) |
+
+### Priority picks (what to harden first, and why)
+
+1. **#28 Phone GPS → box** — the biggest payoff for Jim's world: turn any crew phone into
+   a tracked unit with **no radio**, complementing the P25 GPS work (his original Holy
+   Grail was GPS *from radios*; this is GPS *from phones*). Blocked only by the secure-
+   context cert — which is exactly Jim's "browser bridge perfection" step. Research the
+   cert-on-the-fleet path and this unlocks #28/#29/#30/#23 together.
+2. **#34 Shared board** — the mirror's headline demo; needs a small POST+broadcast sink
+   on the box (the first *write* endpoint beyond unit-renaming).
+3. **#10/#12 MJPEG + SSE** — the two cheapest live streams (a box camera, a sensor tick)
+   that work on plain http **today**, no cert. Good early wins.
+4. **"Drop a doc on the box" builder** — productizes the Service Manual: any folder of
+   markdown/PDF → a served bundle. Pure authoring tool, no box-side risk.
+
+**The cert question gates a whole column.** Everything 🔒 (live camera/mic/GPS, PWA,
+WebRTC) waits on one decision: push a locally-trusted cert to the fleet. Research that
+once and five systems light up. That's the first real research task after this catalog.
 
 ---
 
@@ -124,4 +191,9 @@ render-verified **and** function-verified headless before hand-off.
   waveform/spectrum/level; function-tested the reactivity — sweep peak bin climbed 17→31).
   Established the tier model and the SVG-search landmine. Jim: "It's the new revolution,
   build it and they will come." Direction set: the box is a content/data platform, and
-  this journal tracks every path.
+  this journal tracks every path. Then gathered the full **transport-systems master list**
+  (38 paths, grouped by direction, tiered and status-marked) — the "systems diary." Plan:
+  catalog first, then harden one protocol at a time. Flagged **phone-GPS→box (#28)** as the
+  top prize (crew phones as units, no radio) and the **fleet-cert question** as the first
+  real research task (it unlocks five 🔒 systems at once). Repo decision pending: likely a
+  separate "lab" repo to keep the OG Lookout pristine.
