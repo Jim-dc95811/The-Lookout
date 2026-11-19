@@ -37,6 +37,12 @@ SSH helper it needs). On the **Set up a router** tab:
 2. **Admin password:** the one you just set
 3. Click **Set up this router**.
 
+**File source (v2.4):** leave it on **Download from GitHub** for the normal case. If the router
+can't reach GitHub — a locked-down site, or you just want a GitHub-free install — pick **Use local
+files**, and Manager uploads the Lookout programs straight from the `Lookout Files` folder bundled
+in the app instead (over SSH, no SFTP). Either way the router still needs internet once for the
+system packages, which come from the router maker's own feed.
+
 Watch the log. In a minute or two it ends with **"DONE — the router is now The Lookout."** The box
 is provisioned, installed as boot services, and will come back on its own after any power cycle.
 

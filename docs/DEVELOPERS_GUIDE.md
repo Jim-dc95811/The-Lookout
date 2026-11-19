@@ -42,7 +42,16 @@ nothing but a browser.
 > up the radio link with no install. On the GL dashboard, take the firmware update it offers and
 > let it reboot **before** running Lookout Manager. **Proven baseline:** GL firmware **v4.11.0** /
 > OpenWrt **21.02-SNAPSHOT** / kernel **5.4.238**. Run current GL stable, and keep this baseline as
-> the known-good fallback if a newer firmware ever breaks the audio `kmod` match.
+> the known-good fallback if a newer firmware ever breaks the audio `kmod` match. *(The GL release
+> just before v4.11.0 is v4.10, then v4.9, so a carton box typically ships on 4.10.x.)*
+
+> **How Lookout Manager delivers the files (v2.4).** The one-click normally has the router `wget`
+> the 12 program files from GitHub. A **Use local files** mode instead pushes them from a `Lookout
+> Files` folder bundled in the app — useful for a GitHub-free or locked-down install (the opkg
+> system packages still come from GL's feed, so internet is needed once regardless). It streams each
+> file with `cat > '<remote>'` over a plain SSH exec channel, **not** SFTP/`scp`: the router's
+> dropbear SSH has no SFTP subsystem (`open_sftp()` → `EOF during negotiation`). Proven out-of-the-box
+> from local files on a bare GL-MT6000, 2026-11-18.
 
 ## 1C · Viewing devices — nothing to install  *(any device, offline)*
 
