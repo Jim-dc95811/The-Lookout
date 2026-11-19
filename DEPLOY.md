@@ -24,7 +24,9 @@ upgrade page and **install the update it offers, and let it reboot.** The Lookou
 proven on current GL firmware — don't run setup on whatever happened to ship in the box. This is a
 one-time step; after it, the box never needs the firmware touched again. *(Proven baseline: GL
 firmware v4.11.0 / OpenWrt 21.02 / kernel 5.4.238 — keep it as the known-good to fall back to if a
-newer firmware ever misbehaves.)*
+newer firmware ever misbehaves. The GL release just before it is v4.10, then v4.9; a carton box
+typically ships on 4.10.x, which is why the first-boot wizard prompts the jump to current. Source:
+GL.iNet firmware docs, docs.gl-inet.com/router/en/4/features_update/firmware_v4.11.)*
 
 ## 2. One-click setup
 
