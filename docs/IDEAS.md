@@ -64,6 +64,16 @@ Same brain (`bk_bridge` + `units_kml` + `lookout_audio`), two bodies.
 battery-runtime measurement. The portable-radio-as-relay (vs a base/mobile radio)
 is proven in concept — a handheld on the system receives the same forwarded packets.
 
+**Simplification (Jim, 2026-11-19 night): the Traveler needs NO sound card / audio
+streaming.** The operator *wears* the portable, so they just listen to its own
+speaker — the Traveler's job is the **map**. The portable isn't in the pack either;
+it's carried normally, tethered to the Pi by the single USB data link (RNDIS) that
+carries the position packets. So the Traveler reduces to its essentials: **Pi + PD
+power bank + VK172 (u-blox) GPS + Wi-Fi hotspot + `bk_bridge`/`units_kml`** — drop
+`lookout_audio` and the USB sound card entirely. Lighter, fewer parts, one less
+thing to configure. (Parts ordered 2026-11-19: seaistar PD‑30W power bank + HiLetgo
+VK172 u-blox‑7 USB GPS; Pi + Talentcell 12 V LiFePO4 already on hand.)
+
 ---
 
 ## Field photo report — phone sends a pic back to the box — *2026-11-17*
