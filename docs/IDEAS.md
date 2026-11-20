@@ -52,6 +52,32 @@ removable-media, no GUI, fits the "name to order, nothing on the box" model.
 > ports would have avoided. The Pi reasoning below is kept as the record of why it
 > was weighed; **the Pi's real home is the Signal Shed bench, not the product.**
 
+**Physical build (Jim's layout, 2026-11-20) — two configs.**
+
+*Standard (phone on Wi-Fi):*
+
+![Traveler — standard config](../images/the_traveler_standard.png)
+
+Phone joins the box's **Wi-Fi**. Radio → **powered USB hub** → the router's single
+USB3 port (**data only**). The hub is self-powered from the 5 V rail (its own
+17 W / 2.5 A input, fed by a USB-C pigtail) and carries the radio + **VK172 u-blox
+GPS** + thumb drive(s) downstream, so the one router port never has to source their
+current. Donor radio = **BKR9000** handheld **or** **KNG-M150** mobile.
+
+*Battery-saving (phone wired, Wi-Fi off):*
+
+![Traveler — battery-saving config](../images/the_traveler_battery_saving.png)
+
+Router **Wi-Fi radio off** (slashed antenna) and the phone wired in through a
+**USB-C→Ethernet adapter** on the LAN port. This kills **both** Wi-Fi radios — the
+box's AP (one of the steadiest draws in the whole unit) and the phone's — for the
+biggest single power saving, and gives a rock-steady wired link with no RF
+congestion. It also unlocks a **Wi-Fi-less / LTE-less tablet** as a pure display.
+Note this is the **supported** side of Android USB networking: a phone *hosting* a
+standard Ethernet adapter is adopted as `eth0` natively — the opposite of reading
+an RNDIS gadget, which Android can't do. If the phone needs charging while wired,
+use an adapter with **USB-C PD pass-through**.
+
 **The idea (named by Jim):** the fully-wireless, walk-around Lookout. A 12 V Li
 battery runs the brain; a **portable radio** (on its own battery) is the relay;
 a small GPS gives "you are here"; your **phone is the screen** over the box's own
