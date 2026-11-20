@@ -125,6 +125,11 @@ Same brain (`bk_bridge` + `units_kml`), three small differences:
 1. **GPS = VK172 serial NMEA.** `gps_source.py` auto-detects Garmin-libusb → gpsd →
    **serial NMEA**; the VK172 drops onto that third branch. "You are here" comes
    along for free. (No Garmin D800/libusb path on the Traveler.)
+   **Why keep the puck even though the phone has GPS:** the display might *not* be a
+   phone — a **laptop or a Wi-Fi/LTE-less tablet has no GPS of its own** (and those
+   are exactly the displays the wired/Ethernet config opens up). So "you are here"
+   can't depend on the screen device; the box carries its own fix. Display-agnostic
+   by design — which is also why the phone-GPS-back idea was never the answer here.
 2. **Battery-saving config = Wi-Fi off + wired client.** Disable the AP radio; the
    phone/tablet reaches the map over the LAN port through a USB-C→Ethernet adapter.
 3. **No audio.** The operator *wears* the portable and listens to its own speaker,
