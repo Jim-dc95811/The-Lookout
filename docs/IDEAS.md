@@ -5,6 +5,67 @@ direction to weigh, not a committed plan.
 
 ---
 
+## The Lookout Traveler — a man-packable, battery Lookout on a Pi — *2026-11-19*
+
+**The idea (named by Jim):** the fully-wireless, walk-around Lookout. A 12 V Li
+battery runs the brain; a **portable radio** (on its own battery) is the relay;
+a small GPS gives "you are here"; your **phone is the screen** over the box's own
+Wi-Fi. Put it in a backpack and track the whole fleet as you walk the incident.
+The fixed Lookout lives in a vehicle or on a bench; the **Traveler** rides on your
+back.
+
+**The use case that sells it (Jim's own pitch):** the leader who leaves the truck
+to actually lead — pushes a line on a quad, walks a flank on foot — normally goes
+*blind*, because the display stays in the cab. The Traveler puts the whole picture
+in their pocket: every unit the system can hear, live, while they move. It's the
+firefighter-safety / GPS-off-the-radio goal (the "Holy Grail") **un-bolted from a
+vehicle and carried into the fire** — accountability that follows the leader.
+"Captain Smith keeps his people on his phone." (Coverage is the agency's **repeater
+footprint**, not line-of-sight — the relay just needs clean copy of the repeater,
+so a stubby is fine; the network does the long haul.)
+
+**This is the Pi's home.** The Pi started the whole project (the first Bridge) then
+got benched because the GL router is the better *crew-deployable* appliance
+(reachable, web admin). But the Traveler's defining constraint is **battery
+runtime**, and that's exactly where the Pi wins:
+- **Power:** Pi 4 ~3-5 W vs the GL ~7-9 W — the single biggest lever on a backpack.
+  Same battery → a fuller day; same runtime → half the battery weight.
+- **No hub:** the hub existed only because the GL has *one* USB port. The Pi has
+  four — radio-data, sound card, GPS, storage each get their own.
+- **Smaller + simpler GPS:** a tiny u-blox USB dongle speaks plain **NMEA** over
+  serial, which `gps_source.py` already reads — no Garmin D800/libusb path at all.
+- **Audio is easier:** full Raspberry Pi OS has USB-audio/ALSA built in — plug the
+  sound card in, `arecord` + `lookout_audio.py` just run. None of the GL
+  kernel-matched `kmod-usb-audio` dance.
+- **The Pi's old weakness doesn't bite here:** the "headless, can't-reach-it" wall
+  was a *crew-deployment* problem. The Traveler is personal gear, set up once by its
+  owner — the quirk is a non-issue.
+
+**The one build task that moves the other way:** the Pi must become its own **Wi-Fi
+hotspot** (hostapd + dnsmasq) so the phone can join — the GL is a router out of the
+box, the Pi isn't. Easy, and the Pi's modest onboard Wi-Fi range is plenty serving
+one or a few phones.
+
+**Power budget / runtime (ballpark — measure with an inline 12 V watt meter to nail
+it):** off the pack, Pi 4 + sound + GPS + thumb-drive ≈ **8-11 W** (the GL build was
+~13-15 W). The portable runs on its own battery (receive-only handhelds do a full
+shift), so it's basically free to the pack. → a **~150 Wh** (~1 lb) 12 V pack ≈ **a
+full shift**; ~72 Wh ≈ half a shift; ~240 Wh ≈ two shifts.
+
+**The product line this creates:**
+- **The Lookout** → GL-MT6000 router. Reachable appliance, crew-proof, vehicle/mains.
+- **The Lookout Traveler** → Raspberry Pi. Lowest power, smallest, personal, battery,
+  man-packable.
+Same brain (`bk_bridge` + `units_kml` + `lookout_audio`), two bodies.
+
+**Still to prove (build order, buildable here + bench):** Pi-as-hotspot
+(hostapd/dnsmasq) serving the three services; the u-blox NMEA dongle through
+`gps_source.py`'s serial path; audio via standard ALSA on Pi OS; then a real
+battery-runtime measurement. The portable-radio-as-relay (vs a base/mobile radio)
+is proven in concept — a handheld on the system receives the same forwarded packets.
+
+---
+
 ## Field photo report — phone sends a pic back to the box — *2026-11-17*
 
 **The idea (Jim):** the realistic reverse-path — not live video (that's the
