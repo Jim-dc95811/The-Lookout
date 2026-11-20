@@ -130,6 +130,12 @@ Same brain (`bk_bridge` + `units_kml`), three small differences:
    are exactly the displays the wired/Ethernet config opens up). So "you are here"
    can't depend on the screen device; the box carries its own fix. Display-agnostic
    by design — which is also why the phone-GPS-back idea was never the answer here.
+   **Proven on real hardware 2026-11-20:** the map runs great on an **Amazon Fire
+   HD 10** (Wi-Fi-only, **no LTE, no GPS**, ~$100) over the box's Wi-Fi, with the
+   box's own `LOOKOUT` fix plotting "you are here" on it — so both claims above (a
+   cheap LTE-less tablet as the display, **and** box-GPS on a GPS-less device) are
+   confirmed. (This test was on the current box over Wi-Fi; the wired/Ethernet
+   battery-saving path is still to prove.)
 2. **Battery-saving config = Wi-Fi off + wired client.** Disable the AP radio; the
    phone/tablet reaches the map over the LAN port through a USB-C→Ethernet adapter.
 3. **No audio.** The operator *wears* the portable and listens to its own speaker,
