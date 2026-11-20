@@ -71,6 +71,8 @@ Boot = three **procd** init scripts under `/etc/init.d/` (sources in `openwrt/`)
 | `docs/SECURITY.md` (+ PDF) | Security analysis for IT/leadership — pull-not-push, no outbound, the measured ports receipt. |
 | `docs/The_Lookout_Beyond_Factory.pdf` (source `docs/graphics/beyond_factory.html`) | The OpenWrt/GL-engineer write-up: stock box → everything added → the measured result, beginning to end. |
 | `docs/IDEAS.md` | Backlog (reverse audio/talk-back, info kiosk, field-photo shared board). |
+| `docs/TRAVELER.md` | **The Lookout Traveler** — the man-packable, battery MT3000 build: platform decision (MT3000 not Pi), hardware, power design, the two configs (standard + battery-saving, with diagrams), software deltas, what we learned. **Design on record, not built/proven, not public.** The canonical Traveler home. |
+| `docs/BK_GPS_DELIVERY.md` | How BK delivers GPS — the two domains (over-air vs gateway), the three gateway paths, where the Lookout taps in; the Bluetooth/LocateONE path is sealed (don't re-chase). |
 | **[The-Signal-Shed](https://github.com/Jim-dc95811/The-Signal-Shed)** repo (its `docs/SYSTEMS_DIARY.md`) | The Lookout's **lab** — where new browser transport paths (audio/video/docs/live-data/phone-GPS/camera) are explored and proven before they graduate back here. The box-as-content-platform work lives there to keep this OG pristine. Read its diary before building any new browser-served content. |
 | `docs/EASY_INSTALL_PLAN.md` | Handoff for making setup humane for non-Pi users. |
 | `lookout_manager/System Files/lookout_manager.py` | The one-click setup + rename app. `SETUP_STEPS` is the provisioning sequence — **every fetch target it names must exist on `main`.** |
