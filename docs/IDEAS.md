@@ -5,7 +5,52 @@ direction to weigh, not a committed plan.
 
 ---
 
-## The Lookout Traveler — a man-packable, battery Lookout on a Pi — *2026-11-19*
+## Two removable drives — basemaps vs. situational content — *2026-11-20*
+
+**The idea (Jim, "record this for testing"):** with a spare port on the hub, run
+**two thumb drives** instead of one, split by job:
+- **Drive 1 = basemaps** — the stable `.tpkx`/`.mbtiles` the map serves. Rarely
+  changes; the greeter + whatever areas the box carries.
+- **Drive 2 = "everything else, on a situational need"** — incident/situational
+  content (docs, photos, reference, situational data — the Signal Shed content
+  paths), swapped per incident.
+
+**Why it's good:** physical separation of the **stable** layer from the **volatile**
+layer. A crew **hot-swaps the situational drive** for a given incident — pull Drive
+2, plug in that incident's Drive 2 — without ever touching the basemaps. Pure
+removable-media, no GUI, fits the "name to order, nothing on the box" model.
+
+**To test / resolve:**
+- `units_kml` already scans `/tmp/mountd/*` for every `.tpkx`/`.mbtiles`, so **two
+  drives' worth of maps already merge** into the Maps list for free — confirm it,
+  and confirm a drive with **no** maps (Drive 2) doesn't choke the scan.
+- **How Drive 2's non-map content is served** is the open design question: does
+  `units_kml` serve arbitrary files from a mount, or does a small content server own
+  Drive 2? This is the Signal Shed content-platform work (field-photo / content-lab
+  paths) meeting the storage split. One server keyed by file-type (maps vs content)
+  vs. two servers — decide on the bench.
+- **Hot-swap behavior:** pull/insert Drive 2 mid-run — does the box notice the
+  mount/unmount and refresh the list? (The `usb0` hotplug handler is the pattern.)
+- **Label the sticks physically** so a crew never guesses which is which.
+
+---
+
+## The Lookout Traveler — a man-packable, battery Lookout — *2026-11-19*
+
+> **UPDATE 2026-11-20 — the Traveler is now built on the GL-MT3000, not the Pi.**
+> Jim parked the Pi for now ("forget the pi altogether for now, we are focused on
+> the Traveler using the MT-3000"). Why it's the better call: **one platform for both
+> boxes** — everything proven on the MT6000 carries straight over, same code, same
+> one-click — and, decisively, **the GL is self-serve** (a buyer can stand it up
+> alone with the manual + one button) while **the Pi needs AI assistance** to set up
+> (flash, hostapd, hardening). That self-serve line is the whole product. The MT3000
+> (512 MB RAM, WiFi 6, ~$84) has huge headroom for the light stack (measured footprint
+> ~23 MB; perf checks showed only a small % of RAM used). GPS is still the **VK172
+> u-blox on the serial path**; audio still dropped. The one consequence of using the
+> GL: it's **1 USB port**, so the Traveler keeps a **powered hub** (USB-fed from the
+> PD bank — Jim has USB-C power pigtails) for SSD + GPS + radio — the hub the Pi's 4
+> ports would have avoided. The Pi reasoning below is kept as the record of why it
+> was weighed; **the Pi's real home is the Signal Shed bench, not the product.**
 
 **The idea (named by Jim):** the fully-wireless, walk-around Lookout. A 12 V Li
 battery runs the brain; a **portable radio** (on its own battery) is the relay;
