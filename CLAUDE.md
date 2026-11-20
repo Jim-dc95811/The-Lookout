@@ -14,6 +14,8 @@
 
 **Open / optional:** cold power-pull to re-stamp reboot-survival on a given box (already proven); capture the carton firmware version on the next truly-new box *before* updating; the `docs/IDEAS.md` backlog (reverse audio/talk-back, info kiosk, field-photo shared board). Public storefront/polish on Jim's go.
 
+**Lab work lives in [The Signal Shed](https://github.com/Jim-dc95811/The-Signal-Shed)** (new 2026-11-19) — The Lookout's browser-transport lab (audio/video/docs/live-data/phone-GPS). **Staged there, ready to graduate here:** a tested **`units_kml.py` v1.13** patch that adds optional **HTTPS on :8443** (cert-gated — a no-op, byte-identical to v1.12, when no certs are present; :8080 http unchanged) so a phone can share its OWN GPS back and become a unit (`/share`, `POST /report`, `/ca` serves a private "Lookout Fleet CA"). Proven end to end in the sandbox; bench steps (make certs → swap in the v1.13 build → install the CA on a phone) in the Shed's `experiments/28_phone_gps/`. The same cert then unlocks phone camera/mic for free. Don't re-derive it — read the Shed first.
+
 ---
 
 ## What it is  *(one breath)*
