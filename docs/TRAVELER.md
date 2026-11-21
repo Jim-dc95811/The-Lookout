@@ -120,7 +120,8 @@ charging while wired, use an adapter with **USB-C PD pass-through**.
 
 ## Software — deltas from the fixed Lookout
 
-Same brain (`bk_bridge` + `units_kml`), three small differences:
+The Traveler is **opinionated** — stripped and *locked* for singular focus, not a
+"lite Lookout." Same brain (`bk_bridge` + `units_kml`), a few deliberate differences:
 
 1. **GPS = VK172 serial NMEA.** `gps_source.py` auto-detects Garmin-libusb → gpsd →
    **serial NMEA**; the VK172 drops onto that third branch. "You are here" comes
@@ -141,6 +142,19 @@ Same brain (`bk_bridge` + `units_kml`), three small differences:
 3. **No audio.** The operator *wears* the portable and listens to its own speaker,
    so the Traveler drops `lookout_audio.py` and the USB sound card entirely. Lighter,
    fewer parts, one less thing to configure.
+4. **Locked UI — no map menu, a fixed split-screen (Jim, 2026-11-20).** A Traveler
+   operator has *singular focus* (one person, on foot, one incident), so it drops the
+   Maps menu entirely and shows **one locked [synced split-screen]**: hybrid on the
+   left, street map on the right, same grid/zoom, "you are here" centered in both (his
+   canonical pairing: **Mega 4 grid Z18 hybrid | Z18 street** — see `IDEAS.md`). No
+   choosing, no fumbling — glance and go. This is what makes the Traveler *distinct*
+   from the fixed Lookout (the flexible hub: menu + audio + many viewers), not just a
+   smaller copy. **Build it without forking:** keep the one `units_kml`/`map.html`
+   brain (the whole MT3000-platform win) and make "Traveler" a **mode** the box reads —
+   serve the locked split view, hide the Maps menu + audio button; Lookout Manager sets
+   the mode at setup. Same program, two faces (the fixed Lookout can optionally offer
+   split-screen as a toggle; the Traveler has it welded on). Depends on building the
+   split-screen feature first (`IDEAS.md`).
 
 ---
 

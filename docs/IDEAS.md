@@ -43,6 +43,14 @@ ragged).
 swipe-toggle so each map keeps real estate. Fits the Signal Shed / `map.html` work
 (after the Traveler).
 
+**Traveler lock-in (Jim, 2026-11-20):** this becomes the **Traveler's signature locked
+view** — no Maps menu, no audio, just the fixed hybrid|street split (singular focus,
+glance-and-go). It's what makes the Traveler *distinct* from the fixed Lookout (the
+flexible hub), not a smaller copy. Build via a **mode flag** on the one shared
+`map.html`/`units_kml` (don't fork): Traveler = locked split + menu/audio hidden; fixed
+Lookout keeps the full UI and can offer split-screen as an *optional* toggle. See
+`docs/TRAVELER.md` §Software deltas.
+
 ---
 
 ## WAN uplink + port-forward — publish the Lookout into an existing network — *2026-11-20*
