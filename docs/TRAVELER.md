@@ -147,7 +147,17 @@ The Traveler is **opinionated** — stripped and *locked* for singular focus, no
    Maps menu entirely and shows **one locked [synced split-screen]**: hybrid on the
    left, street map on the right, same grid/zoom, "you are here" centered in both (his
    canonical pairing: **Mega 4 grid Z18 hybrid | Z18 street** — see `IDEAS.md`). No
-   choosing, no fumbling — glance and go. This is what makes the Traveler *distinct*
+   choosing, no fumbling — glance and go. **Hard rule (Jim, 2026-11-21): the two basemaps
+   must be the SAME extent** (ideally the same zoom range too) so the synced panes line up
+   — a mismatched pair would pan one pane off its own coverage. Cheap to enforce: the
+   server **already** reads each `.tpkx`'s extent (`iteminfo.json` → `extent`
+   {xmin,ymin,xmax,ymax}) and zoom (`root.json` → minLOD/maxLOD) to set the map bounds
+   (`units_kml.py` line ~105), so the Traveler's split server can **auto-verify the pair at
+   startup** — extents match → serve the split; don't match → refuse + a clear red banner
+   ("these two maps aren't the same area — a Traveler needs a matching pair"). The
+   same-extent rule gets enforced *at the box*, not left to whoever loaded the SSD. (Extent
+   is the real sync requirement; zoom-range match is a bonus — same-extent maps with
+   different max zoom still sync, one just runs out of detail sooner.) This is what makes the Traveler *distinct*
    from the fixed Lookout (the flexible hub: menu + audio + many viewers), not just a
    smaller copy. The Traveler's box software is its **own standalone program** (its own
    split-screen server + `map.html`), not a mode of the fixed Lookout — see the
