@@ -49,6 +49,38 @@ pieces that do the job. The map is the whole job.
 
 ---
 
+## Platform vision — the Traveler as the Shed's chassis (Jim, 2026-11-21)
+
+The map is the **first payload**, not the point. The Traveler (battery MT3000 that serves
+a browser app with nothing installed on the viewer) is a **reusable chassis** for a large
+number of **Signal Shed skunk-works** apps — the virtual **service manual**, the audio
+scope, the content lab, a field-photo board, live data, anything the Shed proves a plain
+browser can carry to/from an offline box. The Shed is the R&D (prove the transport paths);
+the Traveler is the box that carries them. One chassis, many payloads.
+
+**One box, many apps, selected on demand — "don't blow out wifi for nothing."** A single
+box could hold several of these apps and **enable one at a time from a menu on the unit's
+own control surface** (the GL admin page, the physical mode button + LED, or a GL model
+with a small screen — pick without even a phone). Two layers, different jobs:
+- **Content menu** (browser side) — connect, land on one page, pick Map / Service Manual /
+  Audio Scope. Cheap; everything's just a link; nothing saved (all services still up).
+- **On-box enablement** (the real win) — only *run and broadcast the one app selected*. On
+  a battery man-pack this isn't cosmetic: it saves **battery** (an idle radio + service is
+  constant drain), **airtime** (a quiet AP is a beacon nobody's using), and **attack
+  surface** (a port that isn't up can't be poked). Buildable on this box today: GL firmware
+  toggles the radios + services through `uci`, and the mode button binds to actions, so
+  "pick an app → raise WiFi + that one service → drop it when done" is a real sequence.
+
+**Discipline (stays consistent with the two-independent-products call):** the menu is a
+**thin selector; the apps stay independent payloads.** The box hosts them side by side and
+lights one up — it does NOT fuse them into a shared framework (that's the shared-core trap,
+already rejected). One chassis, many payloads, nothing welded that doesn't need to be.
+
+*This is really a Signal Shed frame as much as a Traveler one — graduate it into the Shed's
+`docs/SYSTEMS_DIARY.md` when work swings back there.*
+
+---
+
 ## Platform — GL-MT3000, not the Pi
 
 Decided 2026-11-20. The Traveler is built on the **GL-MT3000 Beryl AX** — the same
