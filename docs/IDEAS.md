@@ -51,7 +51,24 @@ capability to consider — it's his established technique; the Lookout just adds
 map/data node to the same pattern. (His "never internet-WAN" caveat above is about the
 *no-auth Lookout services*, not purpose-built RoIP gear built for this.) The
 WAN/forward/firewall routing bridges **Telex IP RoIP** devices between isolated LAN
-branches (segment them, forward only what you choose). And at a
+branches (segment them, forward only what you choose). Jim has also proven it over
+**Starlink** (a Mini on a *business plan* for a routable public IP; voice RoIP needs
+only **~32 kbps** in use, so it rides satellite fine) — also on his channel.
+
+**Threat model (Jim's insight — "an AI hacking special with nothing to hack"):** an
+IP-223 is a **dumb single-purpose appliance** — no OS, shell, filesystem or accounts —
+so there is *nothing to hack* no matter how clever the attacker; the whole attack
+surface is **inject or eavesdrop audio** ("spoof sounds"). Intelligence buys an
+attacker nothing against a device that only moves audio packets. And that worst case
+is the **same one RF already has** (anyone in range with a radio can key up on the
+channel), so bridging RoIP over the internet changes the *geography* of the risk, not
+its *class*. **Security by simplicity, not defense.** **Lookout caveat (be precise):**
+the map service is likewise dumb/read-only (worst case: read the map or inject a fake
+unit — still no system to pwn), BUT the Lookout runs on a real **Linux router**, so the
+box's own admin/SSH *is* a "system" — the one genuinely intelligent-to-hack part. So
+forward only the one dumb service, **never** the router admin, trusted nets only.
+
+And at a
 **Group-Policy-locked endpoint** where you can't drop in an IP/RoIP client, convert
 **RoIP → plain analog audio** (a locked PC can always do audio in/out), patch through
 it, then back to **RoIP** on the far side. **The principle:** audio is the universal,
