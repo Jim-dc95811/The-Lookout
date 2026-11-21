@@ -149,26 +149,29 @@ The Traveler is **opinionated** — stripped and *locked* for singular focus, no
    canonical pairing: **Mega 4 grid Z18 hybrid | Z18 street** — see `IDEAS.md`). No
    choosing, no fumbling — glance and go. This is what makes the Traveler *distinct*
    from the fixed Lookout (the flexible hub: menu + audio + many viewers), not just a
-   smaller copy. **Build it without forking the box brain:** keep the one
-   `units_kml`/`map.html` codebase (the whole MT3000-platform win) and make "Traveler" a
-   **mode flag** the box reads — serve the locked split view, hide the Maps menu + audio
-   button. Same box brain, two faces (the fixed Lookout can optionally offer split-screen
-   as a toggle; the Traveler has it welded on). Depends on building the split-screen
-   feature first (`IDEAS.md`).
-5. **A completely SEPARATE Traveler Manager PC app (Jim, 2026-11-21) — NOT a mode in
-   Lookout Manager.** Two layers, don't conflate them: the *box software* above stays one
-   codebase with a mode flag; the *PC setup tool* splits into its own app. Rationale: the
-   Traveler setup flow barely overlaps Lookout Manager's (serial GPS not Garmin/radio, no
-   audio, the welded split-screen, the friendly-address + SSID naming, battery config), so
-   a shared app with mode toggles would show a Traveler user audio/map-menu options that
-   don't apply — the confusing-extras clutter Jim designs against. A distinct product gets
-   its own obvious tool + `.bat` + manual (the packaging standard). **Avoid duplicating
-   the hard part:** the proven setup *engine* (paramiko SSH login, the `cat >`-stream file
-   push = the dropbear/no-SFTP fix, `opkg` install, the functional verify, `sync`) goes in
-   **one shared setup-core module** that BOTH managers import; each manager is a thin,
-   product-specific front end over it, so a bug fixed in the engine is fixed for both (no
-   drift). Net: **two separate apps, one shared core.** Built AFTER the manual bench recipe
-   is proven (the recipe becomes Traveler Manager's setup steps).
+   smaller copy. The Traveler's box software is its **own standalone program** (its own
+   split-screen server + `map.html`), not a mode of the fixed Lookout — see the
+   full-independence decision in #5. Depends on building the split-screen feature first
+   (`IDEAS.md`).
+5. **Two FULLY INDEPENDENT products — zero shared base (Jim, 2026-11-21).** The Lookout
+   and the Traveler are **separate standalone products**, exactly like every other tool
+   in the family (Parcel100 vs mb2tpkx vs Object Factory — none share a "base," and none
+   ever should). A **Traveler box carries only Traveler files; a Lookout box only Lookout
+   files**; installing one never puts a single file of the other on the box, and there is
+   **no runtime mode flag**. A person can have just a Traveler, just a Lookout, or both —
+   they never interact. This holds for **both layers**: the box software (its own server +
+   `map.html` + boot scripts) **and** the PC setup app — a **completely separate Traveler
+   Manager**, zero shared files with Lookout Manager (the setup flows barely overlap:
+   serial GPS not Garmin/radio, no audio, welded split-screen, friendly-address + SSID;
+   each is its own obvious `.bat` + manual, the packaging standard). **No shared core, no
+   shared module** — an earlier idea to share a setup/engine module was dropped as
+   over-engineering: it's coupling that exists nowhere else in the family. The few files
+   that start identical (`gps_source.py`, `bk_bridge.py`) get their **own copy** in each
+   product and are free to **diverge** for each product's needs (the Traveler likely wants
+   a no-radio, self-GPS-only bridge with no RADIO LINK DOWN alarm — a shared file would
+   fight that). A shared-logic fix, if ever needed, is a trivial copy to both — cheap, and
+   the family norm. Built AFTER the manual bench recipe is proven (it becomes the
+   Traveler's own setup steps).
 
 ---
 
@@ -273,10 +276,10 @@ The Traveler is **opinionated** — stripped and *locked* for singular focus, no
      "test it first" part — SSH is the backstop against lockout), and how `a.lan`
      behaves *typed* on the Fire and a phone (https-upgrade, dual-homed WiFi+cell
      resolve). **Same recipe applies to the MT6000** (same GL/OpenWrt/`uci`).
-   - **Productization → the setup managers (via the shared core; see delta #5).** This
-     friendly-address feature is useful to **both** the new **Traveler Manager** and the
-     fixed Lookout Manager, so it belongs in the shared setup-core they both import. Once
-     proven, add a **"Name this site" field** to the setup UI: the user types a label (e.g. `abcd`),
+   - **Productization → the setup managers.** This friendly-address feature is useful to
+     **both** the new **Traveler Manager** and the fixed Lookout Manager — each implements
+     it in its own code (no shared module; see delta #5). Once proven, add a **"Name this
+     site" field** to the setup UI: the user types a label (e.g. `abcd`),
      Manager **appends `.lan` itself** and writes the dnsmasq entry + applies the
      port-flip, so one-click yields `abcd.lan` → the map. Blank = plain IP.
      **Safety-by-design:** because Manager owns the `.lan` suffix, a user can't pick a
