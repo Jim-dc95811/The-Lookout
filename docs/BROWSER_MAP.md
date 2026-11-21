@@ -25,6 +25,18 @@ What it is **not**: no 3D globe or terrain, no Esri/Living Atlas data ecosystem,
 
 **Why it can out-run ArcGIS Earth at this one job.** It isn't magic and it isn't a better GIS — it's doing far less. ArcGIS Earth is a 3D globe: terrain mesh, draping, reprojection, a whole authoring and data ecosystem riding along. The browser map draws 2D raster tiles only — seek to the tile in the package, hand the raw JPEG to Leaflet, draw the units on top. No globe math, no decode-and-recompress, no weight. For the one thing most field users actually need — *look at the map, see the units* — stripping the problem down to its 2D heart is exactly why it flies. Keep ArcGIS Earth for the globe, the KML authoring and the Esri data; this is the delivery truck that reaches the crew who would never open the globe.
 
+## 2a. Any browser, any device — and why it holds
+
+**If it has Wi-Fi and a browser, it works.** That's every tablet, phone and laptop made in the last ~15 years — regardless of GPS chip, cellular, cameras, OS or price. The box supplies the map, the data, the GPS and the compute; the screen only has to draw a web page. So there's **no supported-device list, no app to install, no minimum spec, no account.** You're not shopping for capability — every device already has it. The only things left to choose are *how tough* and *how cheap*.
+
+> *"There's no device to buy. If it has Wi-Fi and a browser, it works — that's every tablet, phone and laptop you already own. The box does everything else."*
+
+**Why it's airtight, not a slogan.** The map works on everything *because the design never asks the device for anything but a web page.* The one thing that would break universality — needing the device's own camera/mic/GPS, which hits the browser **secure-context (https) wall** (see §5) — is exactly what the Lookout deliberately avoids: the box carries the GPS so the tablet doesn't have to. "Opens a map → sees the units" isn't luck; it's a design choice.
+
+**Proven on the weird end of the spectrum.** The live map ran clean on the **Amazon Fire HD 10's Silk browser** (2026-11-20) — Amazon's own non-Chrome, non-Safari engine, about as off-the-beaten-path as a browser gets. If it renders on Silk, "any browser" is proven, not hoped. Confirmed displays so far: desktop browsers, Android phone browsers, and a **Fire HD 10** (Wi-Fi-only, no LTE, no GPS) on Silk — the box's own GPS plotting "you are here" on a tablet that has none.
+
+**Consumable display — redundancy over ruggedness.** Because nothing lives on the screen, the display is cheap and instantly replaceable. Break your tablet mid-shift? Pull your phone and keep going — no data lost, no re-setup; the box held everything. So the right fleet buy is usually **cheap and plural**: several ~$100 Wi-Fi tablets (a Fire HD 10, a Lenovo Tab One) beat one expensive unit on *both* cost and redundancy (no single point of failure) — as long as a spare is in reach. Reserve a true rugged tablet (Samsung Galaxy Tab Active class, ~$500–700, IP68 + hot-swap battery) only for a role where the screen is genuinely exposed — dirt, rain, sun, a drop to pavement, a mid-shift battery swap — and "grab another" isn't an option in the moment.
+
 ## 3. How it works
 
 ```

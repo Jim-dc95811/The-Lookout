@@ -156,6 +156,11 @@ Same brain (`bk_bridge` + `units_kml`), three small differences:
   - Note the clean distinction: a phone *hosting* a normal USB-C→**Ethernet adapter**
     (battery-saving config) is the **supported** case and works natively. Reading an
     RNDIS gadget is the unsupported one.
+- **Any browser, any device — the display is a cheap, swappable consumable.** Wi-Fi
+  + a browser is universal (proven even on the Fire HD 10's oddball **Amazon Silk**
+  browser), so there's no device to qualify and no app to install. Break the tablet,
+  pull your phone — nothing lived on the screen. Fleet buy = cheap and plural; rugged
+  only for a genuinely exposed role. Full write-up: [`docs/BROWSER_MAP.md`](BROWSER_MAP.md) §2a.
 - **How BK delivers GPS → [`docs/BK_GPS_DELIVERY.md`](BK_GPS_DELIVERY.md).** The
   Lookout taps BK's own base-radio-over-USB gateway (the `pkgcot.exe` path), format
   reverse-engineered (`NMEA + $PP25`). No public BK API/SDK.
