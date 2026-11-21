@@ -103,10 +103,24 @@ so the managed fleet and the Lookout network **never touch.** This also sharpens
 WAN caution: forwarding onto the agency LAN is dangerous because it **bridges the clean
 managed net to the rogue one** (the cross-contamination IT fears) — that's the real
 reason it needs IT's blessing, not "exposing the map." Honest precision: the Lookout
-isn't actually a malware host (known box, map tiles + a web page), but **IT can't verify
-that** and treating any unsanctioned network as hostile is a legitimate default — so the
-unarguable answer is "state devices never touch it," which costs nothing (viewers are
-BYOD / cheap tablets).
+isn't actually a malware host (known box, map tiles + a web page), but IT can't verify
+that, so builder-trust is the real residual (below).
+
+**Reality check (Jim) — don't over-cook this (an earlier draft here invented a stricter
+policy than the agency actually has):** his agency **already allows state devices on
+public ISPs** (motel WiFi, etc.) and only gates the **intranet** behind VPN. By that
+existing tolerance the Lookout is **not a gray area** — it's squarely in the permitted
+"public network" bucket *and* the safest member of it: **no internet connectivity at
+all**, so there's no path in for an internet-borne worm and no path out to exfiltrate —
+guarantees motel WiFi can't offer. And the VPN rule never applies because **the Lookout
+isn't the intranet** (it touches nothing of theirs). "No internet" isn't a limitation
+here; it's the best security property a network can have. **The only real residual is
+builder trust** — "as long as you and I aren't troublemakers": a supply-chain/insider
+matter (keep the box clean), not a network one, true of any tool. Net: for an agency
+that already permits public WiFi, an offline Lookout is *within existing policy and
+safer than what they already trust*; "state devices never touch it" is a conservative
+option for a strict shop, not a universal mandate — and it's IT's call, not ours to
+overstate.
 
 And at a
 **Group-Policy-locked endpoint** where you can't drop in an IP/RoIP client, convert
