@@ -36,6 +36,20 @@ clients; the upstream net's DNS doesn't know `a.lan`). Uplink mode is an IP:port
 exposing them anywhere beyond an island, and keep a bright line between "island mode"
 (default, safe) and "uplink mode" (deliberate, trusted-net-only).
 
+**Concrete use (Jim) — Telex RoIP across isolated LAN branches + the audio-drop for
+Group Policy.** The WAN/forward/firewall routing bridges **Telex IP RoIP** devices
+between isolated LAN branches (segment them, forward only what you choose). And at a
+**Group-Policy-locked endpoint** where you can't drop in an IP/RoIP client, convert
+**RoIP → plain analog audio** (a locked PC can always do audio in/out), patch through
+it, then back to **RoIP** on the far side. **The principle:** audio is the universal,
+un-blockable interchange for *radio* exactly as the browser is for the *map* — the
+floor no lockdown reaches. The move is identical in both domains: **drop to the
+lowest layer the policy can't touch, cross the boundary, climb back up.** It's the
+project's core idea proven in a second domain (and Jim's earlier Teams+Telex patch is
+the same radio↔audio↔IP pattern). Note the Lookout box's **USB sound card already
+does mini-RoIP** (radio audio ↔ browser one way; the talk-back idea is the return
+path), so a Lookout box could *be* an endpoint in such a design, not just a neighbor.
+
 ---
 
 ## Lookout QR Maker — add a minimal / bare-QR output option — *2026-11-20*
