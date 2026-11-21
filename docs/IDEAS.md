@@ -81,9 +81,17 @@ tiles anyone can already pull, and the picture-worlds** (Babel, etc.) — no pas
 no PII, no database, and (isolated island) **nowhere to pivot.** You can own the box
 and leave with nothing worth having. Two distinct virtues: the IP-223 has **low attack
 surface** (nothing to break); the Lookout has **low loot value** (breakable, but the
-prize is a map and a painting). **The one real-value item** is the **live unit
-positions** (where crews are) — but it's bounded (the same positions ride the P25 that
-anyone can monitor), and protecting it is exactly why the box stays isolated.
+prize is a map and a painting). **Context that deflates even this (Jim):** a **fire department is not covert** — big
+numbered apparatus, lights, scanner-trackable response, and the whole GPS-off-the-radio
+goal is so crews can be *seen* and *found*. So even the live positions aren't a tactical
+secret; there's essentially **nothing operationally secret on a Lookout** because the
+operation isn't secret. What's actually left are two things that are **not hacker
+problems**: (1) **IT/policy compliance** — don't put an unmanaged box on the agency
+network against their rules (politics + hygiene, the real constraint); and (2)
+**individual-tracking consent** — the one genuine privacy thread, and it's *internal*
+(a worker not wanting management watching their personal GPS), already handled **at the
+radio, by the user** (opt-in), not by a firewall. So the fire-dept security story is
+"stay inside IT's rules + honor the radio-level opt-in," **not** "guard secrets."
 
 And at a
 **Group-Policy-locked endpoint** where you can't drop in an IP/RoIP client, convert
