@@ -212,7 +212,7 @@ The Traveler is **opinionated** — stripped and *locked* for singular focus, no
 - **VK172 seen on the bus with NO driver install:** `Vendor=1546 ProdID=01a7`, `u-blox 7 - GPS/GNSS Receiver`.
 - **GPS driver needs ZERO internet — the carton firmware already ships `kmod-usb-acm`** (`5.4.211-1`), plus `kmod-usb-serial*`. It just wasn't *loaded*: `modprobe cdc-acm` created `/dev/ttyACM0` instantly (`cdc_acm 1-1.1:1.0: ttyACM0: USB ACM device`). **Correction to the plan below (step 2): the GPS is fully offline-provisionable; the only internet-once need is `python3` + `python3-pyserial`, not a GPS kmod.** ⚠ `cdc-acm` is **not auto-loaded at boot** — the boot/init step must `modprobe cdc-acm` (or add it to `/etc/modules.d/`) or a rebooted Traveler comes up with no GPS node.
 - **LIVE 3D FIX proven** (`timeout 6 cat /dev/ttyACM0`): valid `$GPGGA`/`$GPRMC` (status A) at **30.3938° N, 81.9377° W** (Nassau County — the same spot the MT6000's Garmin put it), **6 sats, HDOP 1.35**. The full Traveler GPS chain — VK172 → powered hub → MT3000 → cdc-acm → `/dev/ttyACM0` → valid NMEA — is proven. `gps_source.py`'s serial branch (`SerialSource`, needs pyserial, probes 4800/9600) reads exactly this.
-- **Still to do (continuing):** `opkg install python3 python3-pyserial` (the one internet moment), fetch the stack, serve the map, friendly address, battery config.
+- **DONE on the bench 2026-11-21:** GPS chain; `python3` + `python3-pyserial` install; the stock stack serving a **live `LOOKOUT` "you are here" map to a plain PC browser** over the box's Wi-Fi (step 3 above). **Still to do (continuing):** plug the map SSD for a basemap under the dot (watch for NTFS/exFAT mount support), friendly address (`a.lan` + port-flip + SSID via `uci`), battery-saving wired config, runtime, the Traveler's own standalone files + split-screen.
 
 1. **Bare-box recon.** The MT3000 is carton-fresh — **capture the shipped firmware
    first**: `cat /etc/glversion; uname -r` **before** updating (standing open item:
@@ -233,8 +233,18 @@ The Traveler is **opinionated** — stripped and *locked* for singular focus, no
    load, so the GPS costs **no** internet. The one internet-once need is `python3` +
    `python3-pyserial`. Live 3D fix confirmed at the bench (see BENCH RESULTS above).
    The boot/init step must load `cdc-acm` (not auto-loaded on this firmware).
-3. **Standard config** — hub brings up the radio's `usb0` through the one host port;
-   `bk_bridge` + `units_kml` serve the map over the box's Wi-Fi to a phone/tablet.
+3. ✅ **Standard config — map serving + self-GPS PROVEN 2026-11-21.** With `python3` +
+   `python3-pyserial` installed (the one internet moment), the stock Lookout stack
+   (`bk_bridge` + `gps_source` + `units_kml` + `map.html`/leaflet, fetched to `/root`) was
+   run by hand: `bk_bridge` picked up the VK172 on `gps_source`'s serial branch
+   (`serial NMEA /dev/ttyACM0 @ 4800`) and broadcast the box as unit `LOOKOUT`;
+   `units_kml` (v1.12) read it off `:10110` and served `:8080`; a plain Edge browser on
+   the PC at `http://192.168.8.1:8080/` showed **`LOOKOUT · now`, 1 unit green** — a live
+   "you are here" over the box's Wi-Fi, nothing installed on the PC. (Bench had no radio,
+   so the expected `RADIO LINK DOWN` banner showed — the Traveler's own bridge will drop
+   it; and no SSD, so the map drew dark under the dot.) This used the stock Lookout files
+   purely to prove the platform; the Traveler's own standalone files come later.
+   *Next: plug the map SSD into the hub so a basemap draws under the dot.*
 4. **Friendly address (new design 2026-11-20).** Do it via **`uci`**, the box's
    official config interface — **not** LuCI (the LuCI GUI is broken on these boxes;
    `uci` is the engine underneath and is always present), so the one-click can apply
