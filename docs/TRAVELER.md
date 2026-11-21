@@ -121,7 +121,13 @@ charging while wired, use an adapter with **USB-C PD pass-through**.
 ## Software — deltas from the fixed Lookout
 
 The Traveler is **opinionated** — stripped and *locked* for singular focus, not a
-"lite Lookout." Same brain (`bk_bridge` + `units_kml`), a few deliberate differences:
+"lite Lookout." **Absolute simplicity is its north star (Jim, 2026-11-21):** the
+discipline is to keep *resisting* "just one more thing" — simplicity here isn't a
+finishing phase, it's the product. (Jim, on seeing the palm-sized box + the two-maps-and-
+a-dot screen: "the Traveler looks 21st century" — the smallness is the point, where the
+fixed Lookout is the hub and earns its size.) It's a **separate standalone program** (its
+own copies of the pieces, free to diverge — see #5), with these deliberate differences
+from the fixed Lookout:
 
 1. **GPS = VK172 serial NMEA.** `gps_source.py` auto-detects Garmin-libusb → gpsd →
    **serial NMEA**; the VK172 drops onto that third branch. "You are here" comes
