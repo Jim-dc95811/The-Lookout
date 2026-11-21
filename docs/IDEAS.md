@@ -75,6 +75,15 @@ exposed** — its security is *where you put it, not what it is*. Remove the iso
 (port-forward it onto a hostile net) and it's as hackable as any small Linux host.
 So port-forwarding a dumb IP-223 is a shrug; port-forwarding the Lookout is a real
 decision with a real OS to defend.
+**Second layer — low loot value (even a successful breach wins little):** separate from
+attack surface is *what an attacker gets* once in. On a Lookout: **public-domain map
+tiles anyone can already pull, and the picture-worlds** (Babel, etc.) — no passwords,
+no PII, no database, and (isolated island) **nowhere to pivot.** You can own the box
+and leave with nothing worth having. Two distinct virtues: the IP-223 has **low attack
+surface** (nothing to break); the Lookout has **low loot value** (breakable, but the
+prize is a map and a painting). **The one real-value item** is the **live unit
+positions** (where crews are) — but it's bounded (the same positions ride the P25 that
+anyone can monitor), and protecting it is exactly why the box stays isolated.
 
 And at a
 **Group-Policy-locked endpoint** where you can't drop in an IP/RoIP client, convert
