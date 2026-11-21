@@ -6,13 +6,15 @@ learned — so none of the design work lives only in chat or memory. Non-public:
 sits in the repo docs but is **not advertised** anywhere (README, site, family
 storefront).*
 
-> **STATUS — 2026-11-21: CORE PROVEN ON THE BENCH.** The GPS chain and a live "you
-> are here" map are proven on a real MT3000 (VK172 serial GPS → map served to a PC
-> browser; see BENCH RESULTS below), and the split-screen page is built +
-> function-verified. Still to finish: basemap on the SSD, friendly address, battery
-> config, runtime, and the Traveler's own standalone packaging. Still **not public** —
-> it graduates onto the storefront only after the full battery box runs end to end
-> ("proven workers first"). Until then this doc is the memory.
+> **STATUS — 2026-11-21: COMPLETE PRODUCT + FULL FUNCTIONAL PASS PROVEN.** The Traveler is now a
+> packaged product like the Lookout: a bare MT3000 was factory-reset and provisioned end-to-end by
+> the new one-click **`Traveler Manager v1.1`** (its own independent PC app, zero shared files with
+> Lookout Manager), and the live browser pass passed — the locked split-screen drew both panes, the
+> box's Garmin **LOOKOUT** rode both, and the **first live PORTABLE-radio fleet unit** plotted on the
+> man-packed box (fleet + you-are-here, offline, nothing on the viewer). See the ★ milestone at the
+> top of BENCH RESULTS. Still **not public** — graduates onto the storefront after the full battery
+> box runs end to end ("proven workers first"); remaining items are polish (reboot-stamp, friendly
+> address, battery wired config, runtime, two-thumbdrive split). Until then this doc is the memory.
 >
 > **UPDATE 2026-11-21 (pm):** (1) **GPS is now the Garmin GPS 18 USB over libusb — same as the
 > fixed Lookout.** The VK172 gave one 3D fix then wouldn't re-lock indoors after a power cycle;
@@ -344,6 +346,7 @@ from the fixed Lookout:
 
 ### ✅ BENCH RESULTS 2026-11-21 — GPS chain PROVEN end to end
 
+- **★ FULL FUNCTIONAL PASS + COMPLETE PRODUCT (2026-11-21 pm, LIVE with Jim). The Traveler is now a packaged product like the Lookout and its whole job is proven.** A bare MT3000 was factory-reset and provisioned **end to end by the new `Traveler Manager v1.1`** (one-click: opkg → python3 → libusb → stream the bundled Traveler files via `cat >` → install `bk-bridge`+`units-kml` procd services + the usb0 hotplug handler → enable → start → `sync`), the clean/right way (no hand-built init — the earlier hand-written `/etc/init.d/traveler` is gone, confirmed `ls` → *No such file*; the proper `S95bk-bridge`/`S96units-kml` symlinks are in place, both services running, `:8080` + `:10110` LISTEN). Then the browser functional pass at `http://192.168.8.1:8080/` **passed live**: the locked split-screen drew both panes (top `mega 4 zoom18 ghy` hybrid / bottom `mega 4 grid z18 google street`, same spot), the box's Garmin **LOOKOUT** rode live on **both** panes, and — **THE MILESTONE: the FIRST proven live PORTABLE-radio plot on the Traveler** — field unit **9076802 · now** (green) appeared on the map while a second ID **9076801** correctly aged to amber **6 min (stale)** (also proving the staleness coloring). The man-packed fleet tracker did its actual job: fleet + you-are-here, split-screen, offline, nothing installed on the viewing browser. **The Traveler Manager** (`traveler_manager/`, on `main` 467480b) is a fully independent PC app — zero shared files with Lookout Manager — and v1.1 also **bundles `System Files/Fix SSH host-key (run once).bat`** (writes a `Host 192.168.8.1` block: `StrictHostKeyChecking no` / `UserKnownHostsFile NUL`, so a *manual* `ssh` never re-trips "REMOTE HOST IDENTIFICATION HAS CHANGED" after a reset/flash; the Manager's own paramiko already auto-accepts, so this is a PC-side convenience only). **Still open (polish, not blockers):** cold-power-pull to stamp reboot-survival on this box; friendly address (`a.lan` + port-flip + SSID via `uci`); battery-saving wired config; runtime measurement; two-thumbdrive split; size-based pane detection baked into the Traveler's own server.
 - **Carton firmware: GL v4.11.0 / OpenWrt 21.02-SNAPSHOT (r15812+926-46b6ee7ffc) / kernel 5.4.211.** Same generation the MT6000 was proven on; the point release differs (5.4.211 vs the MT6000's 5.4.238) because it's a different radio — immaterial, since GL's `opkg` feed is kernel-matched, and the Traveler has no audio (the one kmod that's fussy about the exact kernel). No pending update; went straight to work.
 - **Powered SABRENT hub enumerated clean:** GenesysLogic USB2.1 + USB3.1 Hub (`05e3:0610` / `05e3:0626`). The VK172 hangs off it and is powered — the self-powered-hub design works.
 - **VK172 seen on the bus with NO driver install:** `Vendor=1546 ProdID=01a7`, `u-blox 7 - GPS/GNSS Receiver`.
