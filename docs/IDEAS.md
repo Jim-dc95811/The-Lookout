@@ -116,7 +116,24 @@ guarantees motel WiFi can't offer. And the VPN rule never applies because **the 
 isn't the intranet** (it touches nothing of theirs). "No internet" isn't a limitation
 here; it's the best security property a network can have. **The only real residual is
 builder trust** — "as long as you and I aren't troublemakers": a supply-chain/insider
-matter (keep the box clean), not a network one, true of any tool. Net: for an agency
+matter (keep the box clean), not a network one, true of any tool.
+
+**Why a device can't "catch a virus" from it (Jim) — render-only streaming, no file
+handoff:** infection almost always means a *file* lands on a device and gets *executed*
+(.exe, installer, macro doc). The Lookout **never hands you a file** — it *streams*
+content the browser renders and discards (map tiles → canvas, position markers, audio,
+a web page), like watching a video. No "Save As", no download, no attachment — **the
+delivery mechanism can't deposit an executable**, so the infection path isn't present.
+(Precision: the page *does* run JavaScript — Leaflet drawing the map — but **sandboxed
+in the browser like any website**, never saved as a file or handed to the OS.) **Guard
+going forward:** the field-photo / content-sharing ideas serve *files* — keep them
+**inline-rendered** (view a photo *in* the page, not "download this attachment"), so the
+box never becomes a point that hands the OS something to run.
+
+**The full stack (each an independent, real property):** no internet (no worm-in / no
+exfil-out) · render-only streaming (no executable delivered) · low loot value (a map +
+Babel) · offline island (safer than the motel WiFi they already permit). For "will my
+device catch something," that's airtight; the only residual is builder trust. Net: for an agency
 that already permits public WiFi, an offline Lookout is *within existing policy and
 safer than what they already trust*; "state devices never touch it" is a conservative
 option for a strict shop, not a universal mandate — and it's IT's call, not ours to
