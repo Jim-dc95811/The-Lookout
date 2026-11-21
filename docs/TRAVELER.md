@@ -219,6 +219,16 @@ Same brain (`bk_bridge` + `units_kml`), three small differences:
      by the tool, not the person. Naming *implies* the port-flip (a name with no port
      hits admin otherwise), so they package as one feature. Doubles as a human label
      for multi-box outfits (`north.lan`, `truck7.lan`).
+   - **One name, both jobs (Jim 2026-11-20).** The same "Name this site" field also
+     sets the **WiFi SSID** (`uci` `wireless`, both 2.4 + 5 GHz radios) to that name,
+     so the network you *join* and the address you *open* are the identical string —
+     "connect to `a.lan`, go to `a.lan`." One word, learned once, does both — ideal
+     for low-computer-skill crews; and the SSID becomes each box's visible identity
+     for multi-box outfits. **Bench caveat:** changing the SSID drops any device
+     currently on that WiFi (the setup PC included if it's on WiFi), so Manager sets
+     the SSID **last** and tells the user to rejoin the renamed network — **or** run
+     setup over the box's **LAN/Ethernet port** so the control link never rides the
+     WiFi being renamed. Prove the ordering on the bench.
    - **Caveat:** the plain IP + bookmark (handed-out tablets) / QR (BYOD phones) stays
      the leak-proof, scheme-proof default — the friendly name is for placards and
      word-of-mouth, not a replacement.
