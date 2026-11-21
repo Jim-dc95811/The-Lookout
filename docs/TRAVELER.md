@@ -13,6 +13,14 @@ storefront).*
 > config, runtime, and the Traveler's own standalone packaging. Still **not public** —
 > it graduates onto the storefront only after the full battery box runs end to end
 > ("proven workers first"). Until then this doc is the memory.
+>
+> **⚠ READ-FIRST (added 2026-11-21 after a continuity miss):** the Traveler's mission is
+> **"What it is"** and **"Platform vision"** below — the walk-around, **man-packed fleet
+> tracker** (the radio-GPS "Holy Grail" carried on foot) **and** the reusable **chassis** for
+> the Signal Shed's browser apps. The split-screen **"you are here" is the first *payload*, not
+> the mission.** A compacted session summary is **not** a source of truth and over-weights
+> recent bench work — re-read those two sections before any mission-level claim rather than
+> inferring the mission from whatever the last session happened to be building.
 
 ---
 
