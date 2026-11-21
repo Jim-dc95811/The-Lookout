@@ -5,6 +5,36 @@ direction to weigh, not a committed plan.
 
 ---
 
+## Synced split-screen — two basemaps, one location (from OpenCPN) — *2026-11-20*
+
+**The idea (Jim):** a feature he loved in OpenCPN and hasn't seen since — a **split
+display showing two different basemaps at once, synced to the same location**, with your
+GPS marker ("a little ship") centered in **both** panes side by side at the same time.
+
+**Why it drops straight into the Lookout browser map:** the box already serves every
+map on the SSD (the Maps menu) and the live position feed, so this is purely a
+**`map.html`** feature — no hardware, no server change.
+
+**Mechanism:** two Leaflet map panes side by side, **locked to the same center + zoom**
+(pan/zoom one → the other follows; standard "synced maps" pattern — the Leaflet.Sync
+approach, or ~20 lines of hand-rolled move/zoom mirroring with a re-entrancy guard).
+Left pane draws one map (`/m/<slugA>/`), right pane a different one (`/m/<slugB>/`), and
+**both** overlay the live units / "you are here" from the shared `/units.json`. Position
+marker centered in both at once.
+
+**Fire use cases (not just cool):** detail + context at once (Z20 close imagery | Z16
+wide or a road/label map — see the tree you're next to *and* where you sit in the
+district); **imagery comparison** (two dates/sources of the same fire area side by side
+to spot change — ties to the fresh-imagery "holy grail"); satellite | road-overlay (the
+OpenCPN chart-over-land origin reborn). **Differentiator:** ArcGIS Earth itself doesn't
+do synced split basemaps — the browser map would do what the globe can't.
+
+**Responsive:** side-by-side on a tablet/PC; on a narrow phone, stack top/bottom or a
+swipe-toggle so each map keeps real estate. Fits the Signal Shed / `map.html` work
+(after the Traveler).
+
+---
+
 ## WAN uplink + port-forward — publish the Lookout into an existing network — *2026-11-20*
 
 **The idea (Jim):** the GL box is a full router (WAN + LAN + firewall + port-forward),
