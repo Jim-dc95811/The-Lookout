@@ -67,6 +67,14 @@ the map service is likewise dumb/read-only (worst case: read the map or inject a
 unit — still no system to pwn), BUT the Lookout runs on a real **Linux router**, so the
 box's own admin/SSH *is* a "system" — the one genuinely intelligent-to-hack part. So
 forward only the one dumb service, **never** the router admin, trusted nets only.
+**The clean distinction — don't ever read this as "the Lookout is unhackable":** the
+IP-223 is safe **intrinsically** (it's dumb — nothing to exploit, anywhere). The
+Lookout is safe **architecturally** (isolation — island model, no outbound, not on any
+untrusted net). The Lookout is a **real Linux box and is genuinely vulnerable if
+exposed** — its security is *where you put it, not what it is*. Remove the isolation
+(port-forward it onto a hostile net) and it's as hackable as any small Linux host.
+So port-forwarding a dumb IP-223 is a shrug; port-forwarding the Lookout is a real
+decision with a real OS to defend.
 
 And at a
 **Group-Policy-locked endpoint** where you can't drop in an IP/RoIP client, convert
