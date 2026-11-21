@@ -172,16 +172,40 @@ Same brain (`bk_bridge` + `units_kml`), three small differences:
 
 ## Open / to prove (build order when the MT3000 lands)
 
-1. **Poke the bare MT3000** first — firmware, USB host behavior, where the one port
-   enumerates the hub.
+*Planned bench day: 2026-11-21.*
+
+1. **Bare-box recon.** The MT3000 is carton-fresh — **capture the shipped firmware
+   first**: `cat /etc/glversion; uname -r` **before** updating (standing open item:
+   log a truly-new box's shipped version). *Then* GL first-boot + firmware update
+   (firmware-first landmine). Then look at USB host behavior / how the one port
+   enumerates the powered hub, and RAM/footprint sanity.
 2. **VK172 through `gps_source.py`'s serial branch** — confirm the NMEA dongle is
    picked up and plots "you are here."
 3. **Standard config** — hub brings up the radio's `usb0` through the one host port;
-   `bk_bridge` + `units_kml` serve the map over the box's Wi-Fi to a phone.
-4. **Battery-saving config** — Wi-Fi off + USB-C→Ethernet client comes up as `eth0`
+   `bk_bridge` + `units_kml` serve the map over the box's Wi-Fi to a phone/tablet.
+4. **Friendly address (new design 2026-11-20).** Do it via **`uci`**, the box's
+   official config interface — **not** LuCI (the LuCI GUI is broken on these boxes;
+   `uci` is the engine underneath and is always present), so the one-click can apply
+   it with no human GUI step. Two parts:
+   - **Short name:** a dnsmasq host entry `a.lan → 192.168.8.1` (`uci` on
+     `/etc/config/dhcp`, commit, reload dnsmasq). A dotted name reads as a URL (not a
+     search); `.lan` is leak-safe (no public existence) — a real TLD like `.com` was
+     rejected because a cell-data device could launch to the real site.
+   - **Port-flip:** serve the map on **:80** (one-line change in *our* `units_kml`
+     config) and move the GL admin off :80 to **:8080** (`uci`), so `a.lan` opens the
+     **map**, not the admin login (a name with no port = :80 = admin today — the same
+     trap as `http://…:8080` dropping to the login page).
+   - **Bench-confirm:** that freeing :80 from admin is clean on this firmware (the
+     "test it first" part — SSH is the backstop against lockout), and how `a.lan`
+     behaves *typed* on the Fire and a phone (https-upgrade, dual-homed WiFi+cell
+     resolve). Fold into Lookout Manager once proven. **Same recipe applies to the
+     MT6000** (same GL/OpenWrt/`uci`). **Caveat:** the plain IP + bookmark (handed-out
+     tablets) / QR (BYOD phones) stays the leak-proof, scheme-proof default — the
+     friendly name is for placards and word-of-mouth, not a replacement.
+5. **Battery-saving config** — Wi-Fi off + USB-C→Ethernet client comes up as `eth0`
    and pulls the map over the wire.
-5. **Real battery-runtime measurement** with an inline watt meter, both configs.
-6. **Two-thumbdrive split** (basemaps vs. situational) — see `IDEAS.md`.
+6. **Real battery-runtime measurement** with an inline watt meter, both configs.
+7. **Two-thumbdrive split** (basemaps vs. situational) — see `IDEAS.md`.
 
 Then decide whether it graduates onto the README/site as the second body in the
 product line: **The Lookout** (MT6000, vehicle/mains) + **The Lookout Traveler**
