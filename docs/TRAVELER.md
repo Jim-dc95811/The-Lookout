@@ -208,6 +208,17 @@ Same brain (`bk_bridge` + `units_kml`), three small differences:
      officially-reserved private TLD is **`.internal`** (ICANN, Aug 2024) — guaranteed
      never public, but 10 chars and not the router default. For an offline box `.lan`
      is fine (native + short); use `.internal` if you want the official guarantee.
+     **Browser handling (checked 2026-11-20):** no major browser special-cases
+     `.internal` by name yet (too new). But Chrome's HTTPS-First / 2026 HTTPS-by-default
+     **exempts** private IPs, `localhost`, single-label names, and **"non-unique"
+     hostnames** (any non-public-registry TLD) — so `a.lan` *and* `a.internal` both
+     ride the non-unique exemption on desktop Chrome, and the 2026 push targets
+     **public** sites (private/intranet/local-IP treated as lower-risk). A LAN box
+     isn't the crackdown's target. `.internal`'s future edge: its official reservation
+     gives browsers a clean hook to add it to local/non-unique allowlists explicitly,
+     which `.lan` lacks. Caveat: that's desktop-Chrome documented behavior; **mobile**
+     browsers (Silk, the typed-address upgrades) are messier — so the IP + bookmark/QR
+     stays the bulletproof path, the name is the convenience layer.
    - **Port-flip:** serve the map on **:80** (one-line change in *our* `units_kml`
      config) and move the GL admin off :80 to **:8080** (`uci`), so `a.lan` opens the
      **map**, not the admin login (a name with no port = :80 = admin today — the same
