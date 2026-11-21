@@ -5,6 +5,39 @@ direction to weigh, not a committed plan.
 
 ---
 
+## WAN uplink + port-forward — publish the Lookout into an existing network — *2026-11-20*
+
+**The idea (Jim):** the GL box is a full router (WAN + LAN + firewall + port-forward),
+so instead of only being an **island you join**, connect its **WAN** to an existing
+private network and **port-forward `:8080`** — now everyone already on that network
+opens the map at the box's WAN IP, without joining the Lookout's WiFi. The box can do
+**both at once**: its own WiFi island for direct clients *and* uplink/forward into the
+upstream net. Trivial on GL (port-forward UI, or `uci firewall`).
+
+**Good uses (networks you control/trust):** a command vehicle's own router, an
+isolated incident network, a home/bench lab — publish the live map into a net people
+are already on.
+
+**Cautions — this flips the security posture (island → exposed):**
+- The map server has **no auth** (fine on an island). Forwarding it exposes it — **and
+  the NMEA feed `:10110` and the token-guarded rename endpoint** — to that *whole*
+  upstream network. Only do it on a network you control and trust. The SECURITY.md
+  "isolated, nothing leaves, three ports" story assumes the island model.
+- **Agency network = explicit IT approval first.** An unmanaged self-built router
+  forwarding ports on their LAN is exactly the pattern security teams hunt for.
+- **Never forward to an internet-facing WAN** (cellular uplink, or upstream of a public
+  net) — an unauthenticated map + feed exposed to the internet is a hard no.
+
+**Name gotcha:** across the WAN you reach it by the box's **WAN IP + forwarded port**,
+not `a.lan` — the friendly name is **LAN-only** (the box's dnsmasq only answers its own
+clients; the upstream net's DNS doesn't know `a.lan`). Uplink mode is an IP:port story.
+
+**If pursued:** consider adding simple auth to the map/rename endpoints before
+exposing them anywhere beyond an island, and keep a bright line between "island mode"
+(default, safe) and "uplink mode" (deliberate, trusted-net-only).
+
+---
+
 ## Lookout QR Maker — add a minimal / bare-QR output option — *2026-11-20*
 
 **Feedback (Jim):** the QR Maker forces the full placard on every card — the
