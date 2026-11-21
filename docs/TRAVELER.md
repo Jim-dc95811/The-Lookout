@@ -6,11 +6,13 @@ learned — so none of the design work lives only in chat or memory. Non-public:
 sits in the repo docs but is **not advertised** anywhere (README, site, family
 storefront).*
 
-> **STATUS — 2026-11-20: DESIGN ON RECORD. NOT BUILT. NOT PROVEN.** Hardware is
-> arriving (MT3000 + PD power bank + VK172 GPS due ~2026-11-20/21); nothing is
-> bench-tested yet. It graduates onto the public storefront only after a real box
-> is provisioned and a phone pulls the live map off a battery pack — the standing
-> "proven workers first" rule. Until then this doc is the memory.
+> **STATUS — 2026-11-21: CORE PROVEN ON THE BENCH.** The GPS chain and a live "you
+> are here" map are proven on a real MT3000 (VK172 serial GPS → map served to a PC
+> browser; see BENCH RESULTS below), and the split-screen page is built +
+> function-verified. Still to finish: basemap on the SSD, friendly address, battery
+> config, runtime, and the Traveler's own standalone packaging. Still **not public** —
+> it graduates onto the storefront only after the full battery box runs end to end
+> ("proven workers first"). Until then this doc is the memory.
 
 ---
 
@@ -22,6 +24,17 @@ gives "you are here"; a **phone is the screen** over the box's own Wi-Fi (or wir
 see configs). Put it in a backpack and it tracks the whole fleet as the operator
 walks the incident. The fixed Lookout rides in a vehicle or on a bench; the
 Traveler rides on a back.
+
+**Naming — RV-style lineup (Jim, 2026-11-21).** Products are badged like travel
+trailers: a brand line + a model + a maker's signature. **The Lookout** is the line;
+the models are **The Lookout** (the hub) and **The Lookout Traveler** (this, the
+man-pack) — one badge, two floorplans. "**w/ Maps**" is a real trim: a unit that ships
+with the SSD loaded vs bring-your-own ("The Lookout Traveler w/ Maps" = handed over
+ready to run). The maker's signature on the nameplate is "**built by Claude McNally**"
+— a fictional-founder badge for the Jim-&-Claude human-AI build (RV brands are named
+after the founder; this one wears the collaboration on purpose). Emblem: a fire-lookout
+tower, windows lit, over a sunset ridge (watchtower + fire + outdoor). Nameplate /
+sticker art + `badge.html` source live in Jim's Downloads.
 
 **The use case that sells it:** the leader who leaves the truck to actually lead —
 pushes a line, walks a flank on foot — normally goes *blind*, because the display
