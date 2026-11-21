@@ -222,9 +222,13 @@ Same brain (`bk_bridge` + `units_kml`), three small differences:
    - **One name, both jobs (Jim 2026-11-20).** The same "Name this site" field also
      sets the **WiFi SSID** (`uci` `wireless`, both 2.4 + 5 GHz radios) to that name,
      so the network you *join* and the address you *open* are the identical string —
-     "connect to `a.lan`, go to `a.lan`." One word, learned once, does both — ideal
-     for low-computer-skill crews; and the SSID becomes each box's visible identity
-     for multi-box outfits. **Self-documenting — you don't even have to remember the
+     "connect to `a.lan`, go to `a.lan`." One word, learned once, does both. Its real
+     value isn't about user skill — it **removes the arbitrary URL-quirk surface**
+     (the `http://`-vs-bare reversal, a bare name silently hitting the admin login,
+     the https auto-upgrade) that ambushes *anyone*, novice or expert, because those
+     behaviors are browser *guesses*, not logic, and they aren't even consistent
+     device to device. Delete the typing and the guesswork never gets a turn. The SSID
+     also becomes each box's visible identity for multi-box outfits. **Self-documenting — you don't even have to remember the
      address:** it's the name of the WiFi you're already connected to, so if you
      forget it, glance at your device's WiFi settings and the connected network *is*
      what to type. The box carries its own reminder on the one screen every user
