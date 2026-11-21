@@ -144,10 +144,11 @@ The Traveler is **opinionated** — stripped and *locked* for singular focus, no
    fewer parts, one less thing to configure.
 4. **Locked UI — no map menu, a fixed split-screen (Jim, 2026-11-20).** A Traveler
    operator has *singular focus* (one person, on foot, one incident), so it drops the
-   Maps menu entirely and shows **one locked [synced split-screen]**: hybrid on the
-   left, street map on the right, same grid/zoom, "you are here" centered in both (his
-   canonical pairing: **Mega 4 grid Z18 hybrid | Z18 street** — see `IDEAS.md`). No
-   choosing, no fumbling — glance and go. **Hard rule (Jim, 2026-11-21): the two basemaps
+   Maps menu entirely and shows **one locked [synced split-screen]**: hybrid on **top**,
+   street on the **bottom** (Jim, 2026-11-21 — stacked, not side-by-side: on a portrait
+   phone, the Traveler's likely display, two full-width strips beat two skinny columns),
+   same grid/zoom, "you are here" centered in both (his canonical pairing: **Mega 4 grid
+   Z18 hybrid | Z18 street** — see `IDEAS.md`). No choosing, no fumbling — glance and go. **Hard rule (Jim, 2026-11-21): the two basemaps
    must be the SAME extent** (ideally the same zoom range too) so the synced panes line up
    — a mismatched pair would pan one pane off its own coverage. Cheap to enforce: the
    server **already** reads each `.tpkx`'s extent (`iteminfo.json` → `extent`
@@ -163,6 +164,20 @@ The Traveler is **opinionated** — stripped and *locked* for singular focus, no
    split-screen server + `map.html`), not a mode of the fixed Lookout — see the
    full-independence decision in #5. Depends on building the split-screen feature first
    (`IDEAS.md`).
+   - ✅ **Split-screen PROTOTYPE built + function-verified 2026-11-21** (standalone
+     `traveler_map.html`; not yet in the repo pending the Traveler product scaffold). Two
+     stacked Leaflet panes, **hand-rolled two-way sync** (`src.on("move zoom")` → guarded
+     `dst.setView(center,zoom,{animate:false})`), live units on **both** panes, the
+     `LOOKOUT` self-unit drawn with a brighter ring + **follow-me** (recenters on your own
+     fix unless you pan; a "Re-center on me" button resumes), chrome stripped (no Maps
+     menu, no Listen). The **extent guard** is in: it reads both maps' bounds and shows a
+     green "✓ Matched pair" or a red "⚠ not the same area" banner. Verified headless
+     (Playwright, 12/12): tiles on both panes, a programmatic pan+zoom on one pane mirrored
+     by the other (both directions), units on both, guard fires on a mismatched pair.
+     Portrait render + the mismatch-warning render delivered to Jim's Downloads
+     (`Traveler_SplitScreen_*`). Reacts-to list for Jim: top/bottom layout, the look,
+     follow-me behavior, and warn-vs-hard-refuse on a mismatch. *Goes live on the box over
+     the real two-map SSD once it finishes loading.*
 5. **Two FULLY INDEPENDENT products — zero shared base (Jim, 2026-11-21).** The Lookout
    and the Traveler are **separate standalone products**, exactly like every other tool
    in the family (Parcel100 vs mb2tpkx vs Object Factory — none share a "base," and none
