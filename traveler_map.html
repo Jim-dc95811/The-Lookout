@@ -109,7 +109,12 @@ function setup(){
       banner("warn","Traveler needs TWO maps of the same area on the SSD - found "+maps.length+".");
       return;
     }
-    var A=maps[0], B=maps[1];                 // alphabetical: name them so hybrid sorts before street
+    // Top pane = HYBRID/satellite (context); bottom = STREET (tracking). Pick by NAME so the
+    // operator's natural file names work in any sort order; fall back to alphabetical.
+    var hy = maps.find(function(m){ return /hybrid|ghy|sat|imagery|aerial/.test(m.name.toLowerCase()); });
+    var st = maps.find(function(m){ return /street|osm|road/.test(m.name.toLowerCase()); });
+    var A, B;
+    if(hy && st && hy!==st){ A=hy; B=st; } else { A=maps[0]; B=maps[1]; }
     document.getElementById("labA").textContent=A.name;
     document.getElementById("labB").textContent=B.name;
     // pull each pane's authoritative meta (bounds + zoom), then tiles + the extent check
