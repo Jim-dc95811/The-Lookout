@@ -209,10 +209,19 @@ Same brain (`bk_bridge` + `units_kml`), three small differences:
    - **Bench-confirm:** that freeing :80 from admin is clean on this firmware (the
      "test it first" part — SSH is the backstop against lockout), and how `a.lan`
      behaves *typed* on the Fire and a phone (https-upgrade, dual-homed WiFi+cell
-     resolve). Fold into Lookout Manager once proven. **Same recipe applies to the
-     MT6000** (same GL/OpenWrt/`uci`). **Caveat:** the plain IP + bookmark (handed-out
-     tablets) / QR (BYOD phones) stays the leak-proof, scheme-proof default — the
-     friendly name is for placards and word-of-mouth, not a replacement.
+     resolve). **Same recipe applies to the MT6000** (same GL/OpenWrt/`uci`).
+   - **Productization → Lookout Manager (new version).** Once proven, add a **"Name
+     this site" field** to the setup tab: the user types a label (e.g. `abcd`),
+     Manager **appends `.lan` itself** and writes the dnsmasq entry + applies the
+     port-flip, so one-click yields `abcd.lan` → the map. Blank = plain IP.
+     **Safety-by-design:** because Manager owns the `.lan` suffix, a user can't pick a
+     real TLD (`.com`) and reintroduce the cell-data leak — the safe suffix is enforced
+     by the tool, not the person. Naming *implies* the port-flip (a name with no port
+     hits admin otherwise), so they package as one feature. Doubles as a human label
+     for multi-box outfits (`north.lan`, `truck7.lan`).
+   - **Caveat:** the plain IP + bookmark (handed-out tablets) / QR (BYOD phones) stays
+     the leak-proof, scheme-proof default — the friendly name is for placards and
+     word-of-mouth, not a replacement.
 5. **Battery-saving config** — Wi-Fi off + USB-C→Ethernet client comes up as `eth0`
    and pulls the map over the wire.
 6. **Real battery-runtime measurement** with an inline watt meter, both configs.
