@@ -45,6 +45,21 @@ Either way, the router still needs **internet for the system packages** (Python,
 3. Edit the **Unit ID** / **Name** rows — for example `9076801` → `Jax 24`. **+ Add unit** adds a row; the **–** button removes one.
 4. Click **Save to router**. The names appear on the map within a few seconds.
 
+## Get crews onto the map — print a QR card
+
+The easiest way to get **anyone** onto the live map is a printed **QR card** taped to the box or inside the truck. A crew member points a phone camera at it, taps the banner, and the live map opens — **no app, no typing, no login, no GIS.**
+
+Make the card with the free **Lookout QR Maker**, a separate one‑click Windows tool:
+
+1. **Download it:** [Lookout_QR_Maker_v1.1.zip](https://github.com/Jim-dc95811/The-Lookout/raw/main/Lookout_QR_Maker_v1.1.zip) — Extract All, then double‑click **Make a QR card.bat**.
+2. Type the box's address — just `192.168.8.1` works, or paste a full deep link to one named map.
+3. It makes a print‑ready card (example below). The card always prints the exact address it encodes, so you can check it before printing.
+4. Print it and tape it to the box or the dash. Done.
+
+![An example Lookout QR card — point a phone camera at it and tap the banner to open the live map](../images/lookout_qr_card.png)
+
+**Why it works:** phones force `https` when someone *types* an address, so a typed address lands on nothing. The QR code carries the `http://` part explicitly — so the scan always works. One sticker is the whole onboarding.
+
 ## What you need
 
 - A **GL‑MT6000** travel router (or another OpenWrt router) — the box Lookout Manager sets up.

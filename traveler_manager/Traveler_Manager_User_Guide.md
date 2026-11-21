@@ -43,6 +43,21 @@ The box still needs **internet once** for the two system packages (Python and th
 2. Edit a name, **+ Add unit** for a new one, or **-** to remove one.
 3. Click **Save to box**. The names appear on the map within a few seconds. No restart.
 
+## Get crews onto the map — print a QR card
+
+The fastest way onto the Traveler's live split‑screen is a printed **QR card** — a crew member points a phone camera at it, taps the banner, and the map opens. **No app, no typing, no login, no GIS.** Because every Traveler uses the same address, **one card works for every box.**
+
+Make the card with the free **Lookout QR Maker**, a separate one‑click Windows tool:
+
+1. **Download it:** [Lookout_QR_Maker_v1.1.zip](https://github.com/Jim-dc95811/The-Lookout/raw/main/Lookout_QR_Maker_v1.1.zip) — Extract All, then double‑click **Make a QR card.bat**.
+2. Type the Traveler's map address: **`192.168.8.1:8080`** (the locked split‑screen opens at the box's root).
+3. It makes a print‑ready card (example below). The card always prints the exact address it encodes, so you can check it before printing.
+4. Print it and tape it to the box. One card, every Traveler.
+
+![An example QR card — point a phone camera at it and tap the banner to open the live map](../images/lookout_qr_card.png)
+
+**Why it works:** phones force `https` when someone *types* an address, so a typed address lands on nothing. The QR code carries the `http://` part explicitly — so the scan always works. (The phone just needs to be on the box's Wi‑Fi first.) One sticker is the whole onboarding.
+
 ## What makes the Traveler different from the fixed Lookout
 
 | | The Lookout | The Lookout Traveler |
