@@ -62,6 +62,7 @@ To wipe a box and set it up clean: on the box's page do a **factory reset**, run
 ## Troubleshooting
 
 - **"Could not log in"** — check the IP, that it's a fresh GL-MT3000, and the admin password. After a factory reset or firmware flash the box's SSH identity changes; that only affects a *manual* `ssh` (this app auto-accepts it).
+- **`ssh` gives "REMOTE HOST IDENTIFICATION HAS CHANGED" / "Host key verification failed"** — only happens if you log into the box *by hand* with `ssh` (Traveler Manager never hits this). A factory reset or firmware flash gives the box a new identity, and your PC still remembers the old one. **Fix it once, forever:** double-click **`System Files\Fix SSH host-key (run once).bat`**. It clears the old key and tells your PC to stop checking that address, so `ssh root@192.168.8.1` connects clean through every future reset. You only ever run it once.
 - **"only see 1 running service"** — a step failed; scroll the log for a download or install error (usually the box had no internet for Python/libusb), fix it, and run again.
 - **Map is blank under the dot** — no maps on the box yet. Put a **matched pair** of maps (same area: a hybrid and a street `.tpkx` of the same extent) on the box's drive. A mismatched pair shows a red warning banner.
 - **Radio shows "LINK DOWN"** — the radio relay isn't reachable on the box's USB. Check it's plugged into the hub and powered.

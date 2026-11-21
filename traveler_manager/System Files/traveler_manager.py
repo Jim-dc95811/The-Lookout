@@ -34,7 +34,7 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, filedialog
 
-VERSION       = "1.0"
+VERSION       = "1.1"
 PORT          = 8080
 DEFAULT_IP    = "192.168.8.1"
 DEFAULT_TOKEN = "lookout"
