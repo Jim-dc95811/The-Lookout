@@ -219,6 +219,14 @@ Same brain (`bk_bridge` + `units_kml`), three small differences:
      which `.lan` lacks. Caveat: that's desktop-Chrome documented behavior; **mobile**
      browsers (Silk, the typed-address upgrades) are messier — so the IP + bookmark/QR
      stays the bulletproof path, the name is the convenience layer.
+     **Don't shorten the TLD to save characters (checked 2026-11-20):** DNS allows
+     1-char labels, but **every 2-letter TLD is a real country code** (`.la` = Laos,
+     etc.), which reintroduces the `.com` leak + public-https problem — avoid all of
+     them. A 1-letter TLD (`a.a`) is undelegated/leak-safe but browsers less reliably
+     treat it as a URL (vs a search). `.lan` is already optimal: non-public, OpenWrt's
+     **default** local domain (zero config), reliably URL-shaped, and `a.lan` already
+     makes the smallest possible QR (**version 1** — can't shrink). The 2 saved chars
+     aren't worth the ccTLD trap or the flakiness.
    - **Port-flip:** serve the map on **:80** (one-line change in *our* `units_kml`
      config) and move the GL admin off :80 to **:8080** (`uci`), so `a.lan` opens the
      **map**, not the admin login (a name with no port = :80 = admin today — the same
