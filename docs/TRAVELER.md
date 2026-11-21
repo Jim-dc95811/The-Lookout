@@ -188,6 +188,15 @@ The Traveler is **opinionated** — stripped and *locked* for singular focus, no
 
 *Planned bench day: 2026-11-21.*
 
+### ✅ BENCH RESULTS 2026-11-21 — GPS chain PROVEN end to end
+
+- **Carton firmware: GL v4.11.0 / OpenWrt 21.02-SNAPSHOT (r15812+926-46b6ee7ffc) / kernel 5.4.211.** Same generation the MT6000 was proven on; the point release differs (5.4.211 vs the MT6000's 5.4.238) because it's a different radio — immaterial, since GL's `opkg` feed is kernel-matched, and the Traveler has no audio (the one kmod that's fussy about the exact kernel). No pending update; went straight to work.
+- **Powered SABRENT hub enumerated clean:** GenesysLogic USB2.1 + USB3.1 Hub (`05e3:0610` / `05e3:0626`). The VK172 hangs off it and is powered — the self-powered-hub design works.
+- **VK172 seen on the bus with NO driver install:** `Vendor=1546 ProdID=01a7`, `u-blox 7 - GPS/GNSS Receiver`.
+- **GPS driver needs ZERO internet — the carton firmware already ships `kmod-usb-acm`** (`5.4.211-1`), plus `kmod-usb-serial*`. It just wasn't *loaded*: `modprobe cdc-acm` created `/dev/ttyACM0` instantly (`cdc_acm 1-1.1:1.0: ttyACM0: USB ACM device`). **Correction to the plan below (step 2): the GPS is fully offline-provisionable; the only internet-once need is `python3` + `python3-pyserial`, not a GPS kmod.** ⚠ `cdc-acm` is **not auto-loaded at boot** — the boot/init step must `modprobe cdc-acm` (or add it to `/etc/modules.d/`) or a rebooted Traveler comes up with no GPS node.
+- **LIVE 3D FIX proven** (`timeout 6 cat /dev/ttyACM0`): valid `$GPGGA`/`$GPRMC` (status A) at **30.3938° N, 81.9377° W** (Nassau County — the same spot the MT6000's Garmin put it), **6 sats, HDOP 1.35**. The full Traveler GPS chain — VK172 → powered hub → MT3000 → cdc-acm → `/dev/ttyACM0` → valid NMEA — is proven. `gps_source.py`'s serial branch (`SerialSource`, needs pyserial, probes 4800/9600) reads exactly this.
+- **Still to do (continuing):** `opkg install python3 python3-pyserial` (the one internet moment), fetch the stack, serve the map, friendly address, battery config.
+
 1. **Bare-box recon.** The MT3000 is carton-fresh — **capture the shipped firmware
    first**: `cat /etc/glversion; uname -r` **before** updating (standing open item:
    log a truly-new box's shipped version; also tells us if MT3000 4.11.0 is the same
@@ -201,11 +210,12 @@ The Traveler is **opinionated** — stripped and *locked* for singular focus, no
    the radio) + USB-serial (for the VK172), both standard. *Then* firmware update if
    one's offered, and look at USB host behavior / how the one port enumerates the
    powered hub, and RAM/footprint sanity.
-2. **VK172 through `gps_source.py`'s serial branch** — confirm the NMEA dongle is
-   picked up and plots "you are here." Likely needs **`opkg install kmod-usb-acm`**
-   (u-blox-7 enumerates as CDC-ACM → `/dev/ttyACM0`); so the box needs **internet on
-   once** at setup for `python3` + this kmod, same as the MT6000 install. Confirm what
-   it actually enumerates as on the bench (`dmesg` / `ls /dev/tty*`).
+2. ✅ **VK172 through `gps_source.py`'s serial branch (PROVEN 2026-11-21).** u-blox-7
+   enumerates as CDC-ACM → `/dev/ttyACM0`. **`kmod-usb-acm` ships in the carton
+   firmware** (not the expected extra install) — it only needed `modprobe cdc-acm` to
+   load, so the GPS costs **no** internet. The one internet-once need is `python3` +
+   `python3-pyserial`. Live 3D fix confirmed at the bench (see BENCH RESULTS above).
+   The boot/init step must load `cdc-acm` (not auto-loaded on this firmware).
 3. **Standard config** — hub brings up the radio's `usb0` through the one host port;
    `bk_bridge` + `units_kml` serve the map over the box's Wi-Fi to a phone/tablet.
 4. **Friendly address (new design 2026-11-20).** Do it via **`uci`**, the box's
