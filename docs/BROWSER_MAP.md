@@ -29,6 +29,8 @@ What it is **not**: no 3D globe or terrain, no Esri/Living Atlas data ecosystem,
 
 **If it has Wi-Fi and a browser, it works.** That's every tablet, phone and laptop made in the last ~15 years — regardless of GPS chip, cellular, cameras, OS or price. The box supplies the map, the data, the GPS and the compute; the screen only has to draw a web page. So there's **no supported-device list, no app to install, no minimum spec, no account.** You're not shopping for capability — every device already has it. The only things left to choose are *how tough* and *how cheap*.
 
+**This is architecture, not a feature of one model — it holds for every Lookout body alike:** the fixed **GL-MT6000** in a truck, the battery **Traveler** (MT3000) on your back, or a **Pi**. They all serve the identical web page, so the viewer requirement never changes no matter which box you're running. The box always does the work; the screen is always just a screen.
+
 > *"There's no device to buy. If it has Wi-Fi and a browser, it works — that's every tablet, phone and laptop you already own. The box does everything else."*
 
 **Why it's airtight, not a slogan.** The map works on everything *because the design never asks the device for anything but a web page.* The one thing that would break universality — needing the device's own camera/mic/GPS, which hits the browser **secure-context (https) wall** (see §5) — is exactly what the Lookout deliberately avoids: the box carries the GPS so the tablet doesn't have to. "Opens a map → sees the units" isn't luck; it's a design choice.
