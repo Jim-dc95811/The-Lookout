@@ -93,6 +93,21 @@ network against their rules (politics + hygiene, the real constraint); and (2)
 radio, by the user** (opt-in), not by a firewall. So the fire-dept security story is
 "stay inside IT's rules + honor the radio-level opt-in," **not** "guard secrets."
 
+**The real risk, stated simply (Jim) — it's the INVERSE of "someone hacks the Lookout":**
+the concern is a **managed state device joining this unmanaged ("rogue") network and
+catching a virus/worm** — the protected asset is the *state device*, not the Lookout's
+data. That's how IT actually thinks (unknown network = hostile by default). **Mitigation
+falls out of the existing design:** *never connect a state device* — the viewer is a
+**personal phone or a cheap dedicated tablet** (the GP PCs can't run the tools anyway),
+so the managed fleet and the Lookout network **never touch.** This also sharpens the
+WAN caution: forwarding onto the agency LAN is dangerous because it **bridges the clean
+managed net to the rogue one** (the cross-contamination IT fears) — that's the real
+reason it needs IT's blessing, not "exposing the map." Honest precision: the Lookout
+isn't actually a malware host (known box, map tiles + a web page), but **IT can't verify
+that** and treating any unsanctioned network as hostile is a legitimate default — so the
+unarguable answer is "state devices never touch it," which costs nothing (viewers are
+BYOD / cheap tablets).
+
 And at a
 **Group-Policy-locked endpoint** where you can't drop in an IP/RoIP client, convert
 **RoIP → plain analog audio** (a locked PC can always do audio in/out), patch through
