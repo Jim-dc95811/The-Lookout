@@ -29,6 +29,16 @@ to spot change — ties to the fresh-imagery "holy grail"); satellite | road-ove
 OpenCPN chart-over-land origin reborn). **Differentiator:** ArcGIS Earth itself doesn't
 do synced split basemaps — the browser map would do what the globe can't.
 
+**Jim's canonical example (the real target config):** **"Mega 4 grid Z18 **hybrid**"**
+on one pane | **"Mega 4 grid Z18 **street map**"** on the other. Hybrid = the actual
+ground (trees, structures, fire scars) with roads/labels on it = truth; street map =
+clean road network + names, no imagery clutter = how to get there. He **already builds
+both renderings** of his grids, so the feature has real content day one (drop both Z18
+`.tpkx` on the SSD). And because both panes are the **same grid at the same zoom**, they
+line up exactly — pan/zoom anywhere and both stay fully populated, no edge-mismatch
+(that's the clean ideal case; pairing a small map with a wide one is where sync gets
+ragged).
+
 **Responsive:** side-by-side on a tablet/PC; on a narrow phone, stack top/bottom or a
 swipe-toggle so each map keeps real estate. Fits the Signal Shed / `map.html` work
 (after the Traveler).
