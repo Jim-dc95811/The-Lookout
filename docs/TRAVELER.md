@@ -224,7 +224,11 @@ Same brain (`bk_bridge` + `units_kml`), three small differences:
      so the network you *join* and the address you *open* are the identical string —
      "connect to `a.lan`, go to `a.lan`." One word, learned once, does both — ideal
      for low-computer-skill crews; and the SSID becomes each box's visible identity
-     for multi-box outfits. **Bench caveat:** changing the SSID drops any device
+     for multi-box outfits. **Self-documenting — you don't even have to remember the
+     address:** it's the name of the WiFi you're already connected to, so if you
+     forget it, glance at your device's WiFi settings and the connected network *is*
+     what to type. The box carries its own reminder on the one screen every user
+     already checks. **Bench caveat:** changing the SSID drops any device
      currently on that WiFi (the setup PC included if it's on WiFi), so Manager sets
      the SSID **last** and tells the user to rejoin the renamed network — **or** run
      setup over the box's **LAN/Ethernet port** so the control link never rides the
