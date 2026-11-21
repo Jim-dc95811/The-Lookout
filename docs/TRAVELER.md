@@ -238,8 +238,24 @@ from the fixed Lookout:
      by the other (both directions), units on both, guard fires on a mismatched pair.
      Portrait render + the mismatch-warning render delivered to Jim's Downloads
      (`Traveler_SplitScreen_*`). Reacts-to list for Jim: top/bottom layout, the look,
-     follow-me behavior, and warn-vs-hard-refuse on a mismatch. *Goes live on the box over
-     the real two-map SSD once it finishes loading.*
+     follow-me behavior, and warn-vs-hard-refuse on a mismatch.
+   - **Pane assignment — hybrid on TOP, street on BOTTOM.** Two signals: (stopgap) detect
+     by **name** (`hybrid|ghy|sat|imagery|aerial` → top; `street|osm|road` → bottom; else
+     alphabetical) — this is what the prototype ships, and it lands Jim's real files
+     (`…ghy` → top, `…google street` → bottom). **(better, Jim 2026-11-21) detect by FILE
+     SIZE: imagery is always the bigger `.tpkx`** — photo tiles are dense and barely
+     compress, a street/road tile is mostly flat color and squashes tiny, so for a matched
+     pair (same extent + same zoom) the imagery file is *always* larger. Name-independent,
+     no keyword list. **Needs the server to report each map's byte size** in `maps.json` /
+     `meta.json` (it doesn't yet) — so **bake size-detection into the Traveler's OWN server
+     when the product is scaffolded**; don't hack it into the borrowed Lookout `units_kml`.
+   - ✅ **LIVE on the MT3000 2026-11-21** over Jim's real **Mega 4 Z18 hybrid (ghy) + Z18
+     google street** (`/tmp/mountd/disk1_part1`, identical bounds `[-83.0003, 28.9997,
+     -80.9995, 31.0012]` → matched pair). Swapped onto the box by `cp /root/map.html
+     /root/map.html.bak` then `wget -O /root/map.html <commit-SHA raw URL>/traveler_map.html`
+     (served live, no restart; hard-refresh the browser). Restore with `cp
+     /root/map.html.bak /root/map.html`. Bench branch `traveler-splitscreen-bench` (Jim to
+     delete after). *Goes into the Traveler product proper when scaffolded.*
 5. **Two FULLY INDEPENDENT products — zero shared base (Jim, 2026-11-21).** The Lookout
    and the Traveler are **separate standalone products**, exactly like every other tool
    in the family (Parcel100 vs mb2tpkx vs Object Factory — none share a "base," and none
