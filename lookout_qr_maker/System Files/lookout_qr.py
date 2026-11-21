@@ -7,7 +7,7 @@
 # types 192.168.8.1:8080 lands on nothing. A QR encodes http:// explicitly, so a
 # camera scan opens the Lookout map directly. Print the card, tape it to the box.
 
-VERSION = "1.2"   # 1.2: encodes exactly what you type (no forced :8080); "Just the QR" bare-code option; clean address shown
+VERSION = "1.3"   # 1.3: card shows the full http:// address (the typeable form that works). 1.2: encode exactly what you type (no forced :8080); "Just the QR" bare-code option
 
 # ---------- QR parameters (single data block only) ----------
 # Each entry: (version, modules/side, EC codewords, DATA codewords,
@@ -212,7 +212,10 @@ def make_card(url, box_name="", minimal=False):
                 px = (x+QZ)*SC; py = (y+QZ)*SC
                 dq.rectangle([px, py, px+SC-1, py+SC-1], fill="black")
 
-    show = pretty(url)                       # clean address, e.g. a.lan:8080
+    # Show the FULL address incl. http:// - this line is a typing instruction, and
+    # the only form that works when typed is http://a.lan (bare a.lan gets
+    # https-upgraded / search-boxed). So the http:// belongs on the card.
+    show = url
 
     # ----- bare mode: just the code (keeps its quiet zone) + the clean address -----
     if minimal:
