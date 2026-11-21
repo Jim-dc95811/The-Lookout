@@ -154,7 +154,18 @@ from the fixed Lookout:
    street on the **bottom** (Jim, 2026-11-21 — stacked, not side-by-side: on a portrait
    phone, the Traveler's likely display, two full-width strips beat two skinny columns),
    same grid/zoom, "you are here" centered in both (his canonical pairing: **Mega 4 grid
-   Z18 hybrid | Z18 street** — see `IDEAS.md`). No choosing, no fumbling — glance and go. **Hard rule (Jim, 2026-11-21): the two basemaps
+   Z18 hybrid | Z18 street** — see `IDEAS.md`). No choosing, no fumbling — glance and go.
+   **Why this pairing — field rationale (Jim, 2026-11-21):** the two panes do two jobs. The
+   **street pane is the tracking view** — in the woods it goes near-empty ("an ocean of
+   blue"), and against that emptiness the personnel icons stand out like a sore thumb, so a
+   human eye tracks them instantly. The **sat/hybrid pane is the context view** — it fills
+   that ocean back in (canopy, clearings, drainage, two-tracks) so you know what the blue
+   actually *is*. It's Jim's **OpenCPN instinct realized**: the street pane is the clean
+   chart that tracks a unit beautifully (icons popping like boats on open water), the sat
+   pane is the imagery-over-land he's chased since the project began — stacked and synced
+   instead of chosen between. (Implication: keep the street pane *clean* and unit icons
+   *high-contrast* — the emptiness IS the feature; don't clutter it.)
+   **Hard rule (Jim, 2026-11-21): the two basemaps
    must be the SAME extent** (ideally the same zoom range too) so the synced panes line up
    — a mismatched pair would pan one pane off its own coverage. Cheap to enforce: the
    server **already** reads each `.tpkx`'s extent (`iteminfo.json` → `extent`
