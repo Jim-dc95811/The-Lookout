@@ -149,12 +149,26 @@ The Traveler is **opinionated** — stripped and *locked* for singular focus, no
    canonical pairing: **Mega 4 grid Z18 hybrid | Z18 street** — see `IDEAS.md`). No
    choosing, no fumbling — glance and go. This is what makes the Traveler *distinct*
    from the fixed Lookout (the flexible hub: menu + audio + many viewers), not just a
-   smaller copy. **Build it without forking:** keep the one `units_kml`/`map.html`
-   brain (the whole MT3000-platform win) and make "Traveler" a **mode** the box reads —
-   serve the locked split view, hide the Maps menu + audio button; Lookout Manager sets
-   the mode at setup. Same program, two faces (the fixed Lookout can optionally offer
-   split-screen as a toggle; the Traveler has it welded on). Depends on building the
-   split-screen feature first (`IDEAS.md`).
+   smaller copy. **Build it without forking the box brain:** keep the one
+   `units_kml`/`map.html` codebase (the whole MT3000-platform win) and make "Traveler" a
+   **mode flag** the box reads — serve the locked split view, hide the Maps menu + audio
+   button. Same box brain, two faces (the fixed Lookout can optionally offer split-screen
+   as a toggle; the Traveler has it welded on). Depends on building the split-screen
+   feature first (`IDEAS.md`).
+5. **A completely SEPARATE Traveler Manager PC app (Jim, 2026-11-21) — NOT a mode in
+   Lookout Manager.** Two layers, don't conflate them: the *box software* above stays one
+   codebase with a mode flag; the *PC setup tool* splits into its own app. Rationale: the
+   Traveler setup flow barely overlaps Lookout Manager's (serial GPS not Garmin/radio, no
+   audio, the welded split-screen, the friendly-address + SSID naming, battery config), so
+   a shared app with mode toggles would show a Traveler user audio/map-menu options that
+   don't apply — the confusing-extras clutter Jim designs against. A distinct product gets
+   its own obvious tool + `.bat` + manual (the packaging standard). **Avoid duplicating
+   the hard part:** the proven setup *engine* (paramiko SSH login, the `cat >`-stream file
+   push = the dropbear/no-SFTP fix, `opkg` install, the functional verify, `sync`) goes in
+   **one shared setup-core module** that BOTH managers import; each manager is a thin,
+   product-specific front end over it, so a bug fixed in the engine is fixed for both (no
+   drift). Net: **two separate apps, one shared core.** Built AFTER the manual bench recipe
+   is proven (the recipe becomes Traveler Manager's setup steps).
 
 ---
 
@@ -259,8 +273,10 @@ The Traveler is **opinionated** — stripped and *locked* for singular focus, no
      "test it first" part — SSH is the backstop against lockout), and how `a.lan`
      behaves *typed* on the Fire and a phone (https-upgrade, dual-homed WiFi+cell
      resolve). **Same recipe applies to the MT6000** (same GL/OpenWrt/`uci`).
-   - **Productization → Lookout Manager (new version).** Once proven, add a **"Name
-     this site" field** to the setup tab: the user types a label (e.g. `abcd`),
+   - **Productization → the setup managers (via the shared core; see delta #5).** This
+     friendly-address feature is useful to **both** the new **Traveler Manager** and the
+     fixed Lookout Manager, so it belongs in the shared setup-core they both import. Once
+     proven, add a **"Name this site" field** to the setup UI: the user types a label (e.g. `abcd`),
      Manager **appends `.lan` itself** and writes the dnsmasq entry + applies the
      port-flip, so one-click yields `abcd.lan` → the map. Blank = plain IP.
      **Safety-by-design:** because Manager owns the `.lan` suffix, a user can't pick a
