@@ -25,8 +25,12 @@ are already on.
   "isolated, nothing leaves, three ports" story assumes the island model.
 - **Agency network = explicit IT approval first.** An unmanaged self-built router
   forwarding ports on their LAN is exactly the pattern security teams hunt for.
-- **Never forward to an internet-facing WAN** (cellular uplink, or upstream of a public
-  net) — an unauthenticated map + feed exposed to the internet is a hard no.
+- **Never forward the *Lookout's* services to an internet-facing WAN** (cellular
+  uplink, or upstream of a public net) — the map (`:8080`), feed (`:10110`) and rename
+  endpoint have **no auth**, so exposing them to the internet is a hard no *for those
+  services*. (This is specifically about the no-auth Lookout services — not a blanket
+  rule against internet port-forwarding; purpose-built gear with its own design is a
+  separate case, see below.)
 
 **Name gotcha:** across the WAN you reach it by the box's **WAN IP + forwarded port**,
 not `a.lan` — the friendly name is **LAN-only** (the box's dnsmasq only answers its own
@@ -37,8 +41,17 @@ exposing them anywhere beyond an island, and keep a bright line between "island 
 (default, safe) and "uplink mode" (deliberate, trusted-net-only).
 
 **Concrete use (Jim) — Telex RoIP across isolated LAN branches + the audio-drop for
-Group Policy.** The WAN/forward/firewall routing bridges **Telex IP RoIP** devices
-between isolated LAN branches (segment them, forward only what you choose). And at a
+Group Policy. PROVEN, not theoretical:** Jim already runs **Telex IP-223** RoIP across
+the *public internet* via port forwarding — two unrelated ISPs (Kinetic Fiber ↔
+Verizon), each router forwarding the IP-223's RTP port to the local box, with the
+**far end's public IP placed in the IP-223's multicast Rx/Tx fields** so a LAN-multicast
+device streams point-to-point across the internet (console site ↔ remote BK radio, no
+VPN). Documented on his YouTube channel. So the WAN+port-forward topology isn't a
+capability to consider — it's his established technique; the Lookout just adds a
+map/data node to the same pattern. (His "never internet-WAN" caveat above is about the
+*no-auth Lookout services*, not purpose-built RoIP gear built for this.) The
+WAN/forward/firewall routing bridges **Telex IP RoIP** devices between isolated LAN
+branches (segment them, forward only what you choose). And at a
 **Group-Policy-locked endpoint** where you can't drop in an IP/RoIP client, convert
 **RoIP → plain analog audio** (a locked PC can always do audio in/out), patch through
 it, then back to **RoIP** on the far side. **The principle:** audio is the universal,
