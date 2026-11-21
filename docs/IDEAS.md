@@ -5,6 +5,25 @@ direction to weigh, not a committed plan.
 
 ---
 
+## Lookout QR Maker — add a minimal / bare-QR output option — *2026-11-20*
+
+**Feedback (Jim):** the QR Maker forces the full placard on every card — the
+"THE LOOKOUT" header, the "Scan with your phone camera…" caption, the "Box: ___"
+write-in line, and the border — with no way to get just the code. For a clean short
+address like `http://a.lan:8080/` the chrome is mostly redundant.
+
+**The idea:** a toggle (or a second output) for a **bare QR** — just the code,
+optionally with a small URL line under it — alongside the current full card. New
+Maker version (bump + repackage per the standing rule).
+
+**Bonus the address work already gives:** the shorter the URL, the lower-density and
+cleaner the QR — `192.168.8.1:8080` (dense) → `a.lan:8080` (clean) → after the
+port-flip `http://a.lan/` (cleanest). So the friendly-address thread makes the QR
+prettier for free; a bare-output mode just lets that cleanliness show without the
+furniture.
+
+---
+
 ## Two removable drives — basemaps vs. situational content — *2026-11-20*
 
 **The idea (Jim, "record this for testing"):** with a spare port on the hub, run
