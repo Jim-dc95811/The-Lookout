@@ -1,5 +1,7 @@
 # Maintainer self-test (no .bat on purpose). Encodes several addresses, renders
 # each card, and decodes it back with OpenCV to confirm it is scannable.
+# v1.2: normalize() encodes EXACTLY what is typed (adds only http://, no forced
+# :8080 and no forced trailing slash); also exercises the bare "Just the QR" mode.
 import sys, cv2, numpy as np
 import lookout_qr as L
 
@@ -8,14 +10,16 @@ def decode(img):
     data, pts, _ = cv2.QRCodeDetector().detectAndDecode(arr)
     return data
 
+# (typed address, expected encoded URL) — encode exactly what you type
 cases = [
-    ("192.168.8.1",                      "http://192.168.8.1:8080/"),      # v1/v2
-    ("192.168.8.1:8080",                 "http://192.168.8.1:8080/"),
-    ("http://192.168.8.1:8080/",         "http://192.168.8.1:8080/"),
-    ("10.250.46.100",                    "http://10.250.46.100:8080/"),
-    ("192.168.8.1:8080/m/a_mega_4_grid", "http://192.168.8.1:8080/m/a_mega_4_grid"),  # longer -> v3
-    ("192.168.8.1:8080/m/b-mega-4-grid-z-16-bing/", "http://192.168.8.1:8080/m/b-mega-4-grid-z-16-bing/"),  # Jim's 50-char deep link
-    ("192.168.8.1:8080/m/c-master-grid-1s-ghy-z20-a/", "http://192.168.8.1:8080/m/c-master-grid-1s-ghy-z20-a/"),
+    ("a.lan",                            "http://a.lan"),                  # v1 (the clean one)
+    ("a.lan:8080",                       "http://a.lan:8080"),
+    ("north.lan:8080",                   "http://north.lan:8080"),
+    ("192.168.8.1:8080",                 "http://192.168.8.1:8080"),
+    ("192.168.8.1",                      "http://192.168.8.1"),            # no port imposed
+    ("http://192.168.8.1:8080/",         "http://192.168.8.1:8080/"),      # scheme/slash preserved
+    ("192.168.8.1:8080/m/a_mega_4_grid", "http://192.168.8.1:8080/m/a_mega_4_grid"),            # -> v3
+    ("192.168.8.1:8080/m/c-master-grid-1s-ghy-z20-a/", "http://192.168.8.1:8080/m/c-master-grid-1s-ghy-z20-a/"),  # long deep link
 ]
 ok = True
 for raw, expect in cases:
@@ -25,7 +29,19 @@ for raw, expect in cases:
     got = decode(img)
     good = (got == url)
     ok = ok and good
-    print(("PASS" if good else "FAIL"), "v%d" % ver, "%-40s" % url, "-> decoded %r" % got)
+    print(("PASS" if good else "FAIL"), "v%d" % ver, "%-44s" % url, "-> decoded %r" % got)
+
+# bare "Just the QR" mode still produces a scannable code
+bimg, bver = L.make_card(L.normalize("a.lan"), minimal=True)
+bgot = decode(bimg)
+bgood = (bgot == "http://a.lan")
+ok = ok and bgood
+print(("PASS" if bgood else "FAIL"), "bare v%d" % bver, "%-44s" % "http://a.lan", "-> decoded %r" % bgot)
+
+# pretty() = what you'd type, scheme + bare trailing slash dropped
+assert L.pretty("http://a.lan") == "a.lan"
+assert L.pretty("http://a.lan:8080/") == "a.lan:8080"
+print("PASS pretty() strips scheme + bare trailing slash")
 
 # length guard
 try:
