@@ -8,6 +8,8 @@ A GPS-telemetry radio already knows where your field units are — but that posi
 
 ![The Lookout — the hardware: a BK radio, a GPS, and an SSD on a USB hub (plus a USB sound card tapping the radio's audio) into a Wi-Fi travel router, serving the live map and live radio audio to any screen](images/the_lookout_hardware.png)
 
+> 🎒 **Need it on foot?** There's a man-packable, battery-powered version — **[the Lookout Traveler](#traveler)** — one person, one incident, a locked split-screen map. Proven 2026-11-21.
+
 ---
 
 ## What it does
@@ -187,6 +189,20 @@ Phones force **https** when you *type* an address, so a crew that types the rout
 `lookout_qr_maker/` is a tiny Windows app (standard library + Pillow): type the router address — just `192.168.8.1` works, or paste a full deep link to one named map — and it makes a print-ready card you tape to the box or inside the truck. The QR encoder is pure Python (no external QR library), everything runs offline, and the card always shows the exact address it encodes so you can verify it before printing.
 
 ![A printable Lookout QR card — point a phone camera at it and tap to open the live map](images/lookout_qr_card.png)
+
+<a id="traveler"></a>
+
+## 🎒 The Lookout Traveler — the man-packable, battery sibling (NEW · PROVEN 2026-11-21)
+
+Everything above rides in a vehicle or sits on mains power. **The Traveler is the Lookout you carry** — the same live fleet map and "you are here," on a pocket **GL-MT3000** running off a battery bank, for one person on foot at one incident. No audio (you're wearing the radio) and no map menu — instead a **locked split-screen**: hybrid imagery on top, street map on the bottom, your position centered in both, so you read terrain and streets at a glance without touching a control.
+
+**⬇️ [Download Traveler Manager v1.1](Traveler_Manager_v1.1.zip)** · **📖 [User manual (PDF)](traveler_manager/Traveler_Manager_User_Guide.pdf)** · **🧭 [Full design &amp; build record](docs/TRAVELER.md)**
+
+![The Lookout Traveler — the kit: a phone or tablet as the screen, a battery bank, a GPS puck and thumb-drives on a powered USB hub into a GL-MT3000 travel router, reading a BK portable (BKR 9000) or mobile (KNG-M150) radio; shown in the standard Wi-Fi config and a battery-saving wired config with Wi-Fi off](images/the_lookout_traveler_hardware.png)
+
+**Proven end to end (2026-11-21):** a bare MT3000, set up in one click by **Traveler Manager**, served the locked split-screen to a plain browser with the box's own **LOOKOUT** position on both panes — **and the first live portable-radio fleet unit on the map** — offline, nothing installed on the viewer. The man-packed fleet tracker doing its job.
+
+Setup is the same one-click idea as the Lookout: type the box's IP and admin password into **Traveler Manager**, click once, and it installs everything over SSH. It's a **completely independent product** — a Traveler box carries only Traveler files, a Lookout box only Lookout files, and Traveler Manager shares nothing with Lookout Manager. Have just a Traveler, just a Lookout, or both.
 
 ## Credits — a human–AI engineering collaboration
 

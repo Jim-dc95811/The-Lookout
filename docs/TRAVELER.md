@@ -12,9 +12,11 @@ storefront).*
 > Lookout Manager), and the live browser pass passed — the locked split-screen drew both panes, the
 > box's Garmin **LOOKOUT** rode both, and the **first live PORTABLE-radio fleet unit** plotted on the
 > man-packed box (fleet + you-are-here, offline, nothing on the viewer). See the ★ milestone at the
-> top of BENCH RESULTS. Still **not public** — graduates onto the storefront after the full battery
-> box runs end to end ("proven workers first"); remaining items are polish (reboot-stamp, friendly
-> address, battery wired config, runtime, two-thumbdrive split). Until then this doc is the memory.
+> top of BENCH RESULTS. **PUBLIC as of 2026-11-21 (Jim: "go full public, it's a masterpiece").** The
+> Traveler is now a shipped product in The-Lookout repo: Traveler Manager v1.1 download + user guide,
+> the canonical hardware diagram (`images/the_lookout_traveler_hardware.png`), and a front-page
+> section in the repo README. Remaining items are polish, not blockers (reboot-stamp, friendly
+> address, battery wired config, runtime, two-thumbdrive split). This doc stays the full design memory.
 >
 > **UPDATE 2026-11-21 (pm):** (1) **GPS is now the Garmin GPS 18 USB over libusb — same as the
 > fixed Lookout.** The VK172 gave one 3D fix then wouldn't re-lock indoors after a power cycle;
