@@ -176,11 +176,22 @@ Same brain (`bk_bridge` + `units_kml`), three small differences:
 
 1. **Bare-box recon.** The MT3000 is carton-fresh — **capture the shipped firmware
    first**: `cat /etc/glversion; uname -r` **before** updating (standing open item:
-   log a truly-new box's shipped version). *Then* GL first-boot + firmware update
-   (firmware-first landmine). Then look at USB host behavior / how the one port
-   enumerates the powered hub, and RAM/footprint sanity.
+   log a truly-new box's shipped version; also tells us if MT3000 4.11.0 is the same
+   OpenWrt-21.02 / kernel-5.4.238 generation the MT6000 was proven on). **Target =
+   GL v4.11.0 stable** (released 2026-09-28, same major as the MT6000 baseline; a
+   4.11.1 *beta* exists — skip it). The box may already be on 4.11.0 (**no pending
+   update** — just go) or ship older and get offered it. **Firmware-first is LOWER
+   stakes here than on the MT6000:** that landmine was driven by the kernel-matched
+   `kmod-usb-audio`, and **the Traveler drops audio** — so even on older firmware
+   we're not in the audio-mismatch danger zone; the box just needs USB-net host (for
+   the radio) + USB-serial (for the VK172), both standard. *Then* firmware update if
+   one's offered, and look at USB host behavior / how the one port enumerates the
+   powered hub, and RAM/footprint sanity.
 2. **VK172 through `gps_source.py`'s serial branch** — confirm the NMEA dongle is
-   picked up and plots "you are here."
+   picked up and plots "you are here." Likely needs **`opkg install kmod-usb-acm`**
+   (u-blox-7 enumerates as CDC-ACM → `/dev/ttyACM0`); so the box needs **internet on
+   once** at setup for `python3` + this kmod, same as the MT6000 install. Confirm what
+   it actually enumerates as on the bench (`dmesg` / `ls /dev/tty*`).
 3. **Standard config** — hub brings up the radio's `usb0` through the one host port;
    `bk_bridge` + `units_kml` serve the map over the box's Wi-Fi to a phone/tablet.
 4. **Friendly address (new design 2026-11-20).** Do it via **`uci`**, the box's
