@@ -200,8 +200,14 @@ Same brain (`bk_bridge` + `units_kml`), three small differences:
    it with no human GUI step. Two parts:
    - **Short name:** a dnsmasq host entry `a.lan → 192.168.8.1` (`uci` on
      `/etc/config/dhcp`, commit, reload dnsmasq). A dotted name reads as a URL (not a
-     search); `.lan` is leak-safe (no public existence) — a real TLD like `.com` was
-     rejected because a cell-data device could launch to the real site.
+     search). A real TLD like `.com` was rejected because a cell-data device could
+     launch to the real site. **TLD status (checked 2026-11-20):** `.lan` is
+     *de-facto* private, not officially reserved — it's undelegated (nobody owns it
+     publicly) and is the GL/OpenWrt **default** local domain, so it's leak-safe in
+     practice and needs zero setup, and it's the shortest (5 chars). The **only**
+     officially-reserved private TLD is **`.internal`** (ICANN, Aug 2024) — guaranteed
+     never public, but 10 chars and not the router default. For an offline box `.lan`
+     is fine (native + short); use `.internal` if you want the official guarantee.
    - **Port-flip:** serve the map on **:80** (one-line change in *our* `units_kml`
      config) and move the GL admin off :80 to **:8080** (`uci`), so `a.lan` opens the
      **map**, not the admin login (a name with no port = :80 = admin today — the same
