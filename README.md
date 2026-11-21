@@ -20,6 +20,10 @@ The Lookout above rides in a vehicle or sits on mains power. Its sibling, **the 
 
 ![The Lookout Traveler — the kit: a phone or tablet as the screen, a battery bank, a GPS puck and thumb-drives on a powered USB hub into a GL-MT3000 travel router, reading a BK portable (BKR 9000) or mobile (KNG-M150) radio; shown in the standard Wi-Fi config and a battery-saving wired config with Wi-Fi off](images/the_lookout_traveler_hardware.png)
 
+![The Lookout Traveler's locked split-screen, live — top pane hybrid aerial (Mega 4 Z18), bottom pane street map (Z18), the box's own LOOKOUT position centered in both, with live radio units (a portable showing "now", another aged to stale) on the map](images/the_lookout_traveler_split.jpg)
+
+*The locked split-screen in action: aerial over street, your position centered in both, the live fleet on top — served to a plain browser, offline.*
+
 **Proven end to end (2026-11-21):** a bare MT3000, set up in one click by **Traveler Manager**, served the locked split-screen to a plain browser with the box's own **LOOKOUT** position on both panes — **and the first live portable-radio fleet unit on the map** — offline, nothing installed on the viewer. The man-packed fleet tracker doing its job. It's a **completely independent product**: a Traveler box carries only Traveler files, a Lookout box only Lookout files, and Traveler Manager shares nothing with Lookout Manager. Have just a Traveler, just a Lookout, or both.
 
 Everything below is **the fixed Lookout** — the vehicle/mains build with the full toolkit (maps, live units, radio audio in the browser, the Maps menu).
