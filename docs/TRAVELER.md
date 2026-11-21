@@ -68,8 +68,19 @@ with a small screen — pick without even a phone). Two layers, different jobs:
   a battery man-pack this isn't cosmetic: it saves **battery** (an idle radio + service is
   constant drain), **airtime** (a quiet AP is a beacon nobody's using), and **attack
   surface** (a port that isn't up can't be poked). Buildable on this box today: GL firmware
-  toggles the radios + services through `uci`, and the mode button binds to actions, so
-  "pick an app → raise WiFi + that one service → drop it when done" is a real sequence.
+  toggles the radios + services through `uci`, so "pick an app → raise WiFi + that one
+  service → drop it when done" is a real sequence.
+  - **The MT3000's physical control = a 2-position toggle SWITCH, not a multi-way selector**
+    (GL docs, SYSTEM → Toggle Button Settings). Stock it binds to ONE of: No Function /
+    Repeater / **Wi-Fi (Main/Guest)** / VPN / Tor / AdGuard / LED; state follows the switch
+    and persists across reboot; the stock GUI can NOT bind it to a custom script. **Bind it
+    to Wi-Fi and the switch becomes the physical power lever** (flip up = AP + map reachable;
+    flip down = radio off, battery saved) — the cleanest realization of "don't blow out wifi
+    for nothing," no screen needed. **Limits for the multi-app menu:** (1) it's on/off, so it
+    can't *pick among* payloads — choosing *which* app stays in the browser menu or the
+    separate function-button press-count; (2) richer "raise THIS service + Wi-Fi together"
+    needs the OpenWrt button/hotplug layer (`/etc/rc.button/` or a hotplug handler), not GL's
+    dropdown. Ref: GL "Toggle Button Settings" docs.
 
 **Discipline (stays consistent with the two-independent-products call):** the menu is a
 **thin selector; the apps stay independent payloads.** The box hosts them side by side and
