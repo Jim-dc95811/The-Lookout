@@ -14,6 +14,17 @@ storefront).*
 > it graduates onto the storefront only after the full battery box runs end to end
 > ("proven workers first"). Until then this doc is the memory.
 >
+> **UPDATE 2026-11-21 (pm):** (1) **GPS is now the Garmin GPS 18 USB over libusb — same as the
+> fixed Lookout.** The VK172 gave one 3D fix then wouldn't re-lock indoors after a power cycle;
+> the Garmin's patch antenna locked instantly. The VK172-serial sections below are **superseded
+> on the GPS point** — the two boxes' self-GPS are now identical. (2) **The Traveler is
+> scaffolded as a product:** `traveler_manager/` — its own Traveler Manager + bundled
+> `Traveler Files`, built from the proven Lookout Manager (audio dropped, 2 services on the box,
+> split-screen map), released as `Traveler_Manager_v1.0.zip`. (3) **Boot/provisioning lesson:**
+> stand a box up with the **Manager** (it installs the proven `openwrt/bk-bridge`, which brings
+> the radio's `usb0` up) — **not** a hand-written init over SSH, which dropped the usb0 step and
+> blocked the fleet. Fresh-start on a box = factory reset → run Traveler Manager.
+>
 > **⚠ READ-FIRST (added 2026-11-21 after a continuity miss):** the Traveler's mission is
 > **"What it is"** and **"Platform vision"** below — the walk-around, **man-packed fleet
 > tracker** (the radio-GPS "Holy Grail" carried on foot) **and** the reusable **chassis** for
@@ -156,7 +167,7 @@ charging while wired, use an adapter with **USB-C PD pass-through**.
 | **GL-MT3000 (Beryl AX)** | the brain / Wi-Fi + USB host | 512 MB RAM, Wi-Fi 6; runs the same stack as the MT6000 |
 | **Portable radio** — BKR9000 handheld **or** KNG-M150 mobile | the relay (donor radio) | on its own battery; USB = data link (RNDIS), near-zero draw from the box |
 | **Powered USB hub** (SABRENT 4-port) | fans the one router port out to radio + GPS + storage | self-powered, 17 W / 2.5 A input fed from the 5 V rail |
-| **VK172 u-blox GPS** | "you are here" | serial NMEA — rides `gps_source.py`'s serial branch, no Garmin/libusb path |
+| **Garmin GPS 18 USB** *(VK172 u-blox tried, dropped 2026-11-21)* | "you are here" | Garmin D800 over libusb — rides `gps_source.py`'s Garmin branch, **same as the fixed Lookout** (the VK172 wouldn't hold a lock) |
 | **PD power bank** | the pack | single 5 V rail; USB-C pigtails feed router + hub |
 | **USB-C→Ethernet adapter** (UGREEN) | battery-saving config only | phone as host → `eth0`; get the PD-passthrough version if charging while wired |
 | **Thumb drive(s)** | map / content storage | optional two-drive split: basemaps vs. situational (see `IDEAS.md`) |
@@ -193,9 +204,13 @@ fixed Lookout is the hub and earns its size.) It's a **separate standalone progr
 own copies of the pieces, free to diverge — see #5), with these deliberate differences
 from the fixed Lookout:
 
-1. **GPS = VK172 serial NMEA.** `gps_source.py` auto-detects Garmin-libusb → gpsd →
-   **serial NMEA**; the VK172 drops onto that third branch. "You are here" comes
-   along for free. (No Garmin D800/libusb path on the Traveler.)
+1. **GPS = Garmin GPS 18 USB over libusb (updated 2026-11-21 — replaced the VK172).**
+   `gps_source.py` auto-detects **Garmin-libusb** → gpsd → serial NMEA; the Garmin lands on
+   the first branch — identical to the fixed Lookout. "You are here" comes along for free.
+   *(History: the Traveler was designed around the VK172 on the serial branch; it gave one 3D
+   fix but wouldn't re-lock indoors after a power cycle, so we switched to the Garmin's patch
+   antenna, which locked instantly. Needs `libusb` + `garmin_linux.py` — both already in the
+   proven stack, and now installed by the Traveler Manager.)*
    **Why keep the puck even though the phone has GPS:** the display might *not* be a
    phone — a **laptop or a Wi-Fi/LTE-less tablet has no GPS of its own** (and those
    are exactly the displays the wired/Ethernet config opens up). So "you are here"

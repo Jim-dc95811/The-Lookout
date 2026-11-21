@@ -1,0 +1,185 @@
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>The Lookout Traveler</title>
+<link rel="stylesheet" href="/leaflet.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0b0f14;color:#e6eef6;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;overflow:hidden}
+#wrap{position:fixed;inset:0;display:flex;flex-direction:column}
+.pane{position:relative;flex:1 1 50%;min-width:0;min-height:0}
+.pane + .pane{border-top:2px solid #000}
+.lmap{position:absolute;inset:0;background:#0b0f14}
+.plabel{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));left:8px;z-index:600;
+  background:rgba(11,15,20,.78);color:#bfe0ff;font-weight:700;font-size:13px;letter-spacing:.4px;
+  padding:3px 9px;border-radius:6px;pointer-events:none;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#recenter{position:fixed;z-index:650;bottom:calc(18px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);
+  background:#17344a;color:#eaf4ff;border:1px solid #3a6b93;border-radius:22px;padding:9px 18px;font-size:14px;font-weight:700;
+  cursor:pointer;display:none;box-shadow:0 6px 18px rgba(0,0,0,.45)}
+#recenter:active{background:#1f4a68}
+#banner{position:fixed;top:0;left:0;right:0;z-index:700;display:none;text-align:center;font-weight:700;color:#fff;
+  padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px}
+#banner.warn{background:#c0392b}
+#banner.ok{background:#1f6b3a}
+.ulbl{background:rgba(11,15,20,.78);border:none;color:#fff;font-weight:600;font-size:13px;box-shadow:none;padding:1px 6px;border-radius:4px}
+.ulbl::before{display:none}
+.leaflet-container{background:#0b0f14}
+.leaflet-control-attribution{display:none}
+/* "you are here" gets a brighter ring so the operator reads apart from fleet units */
+.me-ring{filter:drop-shadow(0 0 4px #37e0ff)}
+</style></head><body>
+<div id="banner"></div>
+<div id="wrap">
+  <div class="pane"><div id="mapA" class="lmap"></div><div class="plabel" id="labA">top</div></div>
+  <div class="pane"><div id="mapB" class="lmap"></div><div class="plabel" id="labB">bottom</div></div>
+</div>
+<button id="recenter">&#9678; Re-center on me</button>
+<script src="/leaflet.js"></script>
+<script>
+// ===== The Lookout Traveler - locked synced split-screen =====
+// Two panes, two basemaps of the SAME area (hybrid | street), pan/zoom locked together,
+// the live units on BOTH, "you are here" (the box's own GPS) centered with follow. No map
+// menu, no audio - a Traveler has singular focus. This page is the Traveler's OWN file;
+// it does not share the fixed Lookout's single-pane map.html.
+var SELF_ID   = "LOOKOUT";       // the box's own-position unit; it is what we center/follow
+var GREEN="#2ecc71", AMBER="#f1c40f", ME="#37e0ff";
+var INIT_ZOOM = 16;              // first framing zoom when we lock onto "you are here"
+var EXTENT_TOL_DEG = 0.0005;     // ~50 m: bounds must match within this to be "the same area"
+
+var mapA = L.map("mapA",{zoomControl:true,  attributionControl:false});
+var mapB = L.map("mapB",{zoomControl:false, attributionControl:false});
+mapA.setView([30.40,-81.93], 12); mapB.setView([30.40,-81.93], 12);   // sane default pre-load
+
+// ---- two-way pan/zoom sync (hand-rolled, re-entrancy guarded) ----
+var syncing=false;
+function linkSync(src,dst){
+  src.on("move zoom",function(){
+    if(syncing) return;
+    syncing=true;
+    dst.setView(src.getCenter(), src.getZoom(), {animate:false});
+    syncing=false;
+  });
+}
+linkSync(mapA,mapB); linkSync(mapB,mapA);
+
+// ---- follow "you are here": center on the self-unit unless the user has grabbed the view ----
+var userMoved=false, haveMe=false, firstFrame=false;
+function markMoved(){ if(!syncing){ userMoved=true; document.getElementById("recenter").style.display="block"; } }
+[mapA,mapB].forEach(function(m){
+  m.on("dragstart", markMoved);
+  m.getContainer().addEventListener("wheel", markMoved, {passive:true});
+  m.on("zoomstart", function(){ /* user zoom via controls/pinch counts as grabbing */ if(!syncing) markMoved(); });
+});
+function centerOnMe(ll, z){
+  syncing=true;
+  mapA.setView(ll, z||mapA.getZoom(), {animate:false});
+  mapB.setView(ll, z||mapB.getZoom(), {animate:false});
+  syncing=false;
+}
+document.getElementById("recenter").onclick=function(){
+  userMoved=false; this.style.display="none";
+  if(window.__meLL) centerOnMe(window.__meLL);
+};
+
+// ---- tiles: each pane loads its own basemap from the box ----
+function addTiles(map, base, meta){
+  var b=meta.bounds, sw=[b[1],b[0]], ne=[b[3],b[2]];
+  L.tileLayer(base+"/tiles/{z}/{x}/{y}",{
+    minZoom:meta.minzoom, maxZoom:22, maxNativeZoom:meta.maxzoom, bounds:[sw,ne],
+    errorTileUrl:"data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+  }).addTo(map);
+}
+
+// ---- extent guard: the two maps MUST be the same area ----
+function extentsMatch(a,b){
+  if(!a||!b) return false;
+  for(var i=0;i<4;i++){ if(Math.abs(a[i]-b[i])>EXTENT_TOL_DEG) return false; }
+  return true;
+}
+function banner(kind,msg){
+  if(kind==="ok") return;            // matched pair = silent; only the mismatch alarm shows
+  var el=document.getElementById("banner");
+  el.className=kind; el.textContent=msg; el.style.display="block";
+  if(kind==="ok") setTimeout(function(){ if(el.className==="ok") el.style.display="none"; },2600);
+}
+
+// ---- resolve the pair from /maps.json, verify, wire up ----
+function setup(){
+  fetch("/maps.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(d){
+    var maps=(d.maps||[]).filter(function(m){return m.has_tiles;});
+    if(maps.length<2){
+      banner("warn","Traveler needs TWO maps of the same area on the SSD - found "+maps.length+".");
+      return;
+    }
+    // Top pane = HYBRID/satellite (context); bottom = STREET (tracking). Pick by NAME so the
+    // operator's natural file names work in any sort order; fall back to alphabetical.
+    var hy = maps.find(function(m){ return /hybrid|ghy|sat|imagery|aerial/.test(m.name.toLowerCase()); });
+    var st = maps.find(function(m){ return /street|osm|road/.test(m.name.toLowerCase()); });
+    var A, B;
+    if(hy && st && hy!==st){ A=hy; B=st; } else { A=maps[0]; B=maps[1]; }
+    document.getElementById("labA").textContent=A.name;
+    document.getElementById("labB").textContent=B.name;
+    // pull each pane's authoritative meta (bounds + zoom), then tiles + the extent check
+    Promise.all([
+      fetch(A.base.replace(/\/+$/,"")+"/meta.json",{cache:"no-store"}).then(function(r){return r.json()}),
+      fetch(B.base.replace(/\/+$/,"")+"/meta.json",{cache:"no-store"}).then(function(r){return r.json()})
+    ]).then(function(ms){
+      var mA=ms[0], mB=ms[1];
+      addTiles(mapA, A.base.replace(/\/+$/,""), mA);
+      addTiles(mapB, B.base.replace(/\/+$/,""), mB);
+      if(!extentsMatch(mA.bounds, mB.bounds)){
+        banner("warn","⚠ These two maps aren't the same area - a Traveler needs a matching pair.");
+      } else {
+        var zmsg = (mA.minzoom!==mB.minzoom || mA.maxzoom!==mB.maxzoom)
+          ? " (zoom ranges differ - still synced)" : "";
+        banner("ok","✓ Matched pair - "+A.name+" | "+B.name+zmsg);
+      }
+      // frame to the shared extent until "you are here" shows up
+      if(!userMoved && !haveMe){
+        var b=mA.bounds; centerOnMeBounds([[b[1],b[0]],[b[3],b[2]]]);
+      }
+    }).catch(function(){ banner("warn","Could not read the maps' details from the box."); });
+  }).catch(function(){ banner("warn","Could not reach the box (/maps.json)."); });
+}
+function centerOnMeBounds(bb){ syncing=true; mapA.fitBounds(bb); mapB.setView(mapA.getCenter(),mapA.getZoom(),{animate:false}); syncing=false; }
+
+// ---- live units on BOTH panes ----
+var markA={}, markB={};
+function drawOn(map, store, u){
+  var ll=[u.lat,u.lon], isMe=(u.id===SELF_ID), col=isMe?ME:(u.stale?AMBER:GREEN);
+  var lab=u.name+" · "+u.age+(u.stale?" (stale)":"");
+  if(store[u.id]){ store[u.id].setLatLng(ll).setStyle({color:col,fillColor:col}); store[u.id].setTooltipContent(lab); }
+  else {
+    var m=L.circleMarker(ll,{radius:isMe?8:7,color:col,fillColor:col,fillOpacity:1,weight:isMe?3:2,
+      className:isMe?"me-ring":""}).addTo(map);
+    m.bindTooltip(lab,{permanent:true,direction:"right",className:"ulbl",offset:[8,0]});
+    store[u.id]=m;
+  }
+}
+function update(d){
+  var ban=d.alarm&&d.alarm.down;   // the Traveler's own bridge won't raise this; harmless if it does
+  var seen={}, me=null;
+  (d.units||[]).forEach(function(u){
+    seen[u.id]=1; drawOn(mapA,markA,u); drawOn(mapB,markB,u);
+    if(u.id===SELF_ID) me=[u.lat,u.lon];
+  });
+  [[mapA,markA],[mapB,markB]].forEach(function(p){
+    Object.keys(p[1]).forEach(function(id){ if(!seen[id]){ p[0].removeLayer(p[1][id]); delete p[1][id]; }});
+  });
+  if(me){
+    window.__meLL=me; haveMe=true;
+    if(!firstFrame){ firstFrame=true; centerOnMe(me, INIT_ZOOM); }   // first lock: frame on you
+    else if(!userMoved){ centerOnMe(me); }                          // follow unless the user grabbed it
+  }
+}
+function tick(){
+  fetch("/units.json",{cache:"no-store"}).then(function(r){return r.json()}).then(update).catch(function(){});
+}
+// flex-sized Leaflet panes: make sure both know their real size after layout / rotation
+function fixSize(){ mapA.invalidateSize(false); mapB.invalidateSize(false); }
+window.addEventListener("load", function(){ setTimeout(fixSize,60); });
+window.addEventListener("resize", fixSize);
+window.addEventListener("orientationchange", function(){ setTimeout(fixSize,200); });
+
+setup(); tick(); setInterval(tick,3000);
+setInterval(setup,30000);   // re-resolve maps so a just-mounted SSD appears
+</script></body></html>
