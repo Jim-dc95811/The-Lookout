@@ -48,6 +48,12 @@ see configs). Put it in a backpack and it tracks the whole fleet as the operator
 walks the incident. The fixed Lookout rides in a vehicle or on a bench; the
 Traveler rides on a back.
 
+**Signal flow** (source: `docs/graphics/traveler_signal_flow.html`, rendered to
+`images/the_lookout_traveler_signal_flow.png` with Playwright at 2×). Radio + GPS in
+over USB, two tiny Python programs in the box, a live split-screen map out over Wi-Fi:
+
+![The Lookout Traveler signal flow — a USB GPS puck (serial NMEA · /dev/ttyACM0), a BK radio (USB RNDIS over usb0, TCP 10.250.46.6:65535), a maps USB drive and a battery into a GL-MT3000; gps_source.py reads the puck, bk_bridge.py reads the radio and folds in the self-GPS to serve a clean feed on TCP :10110, units_kml.py serves the locked split-screen on :8080; out over Wi-Fi (or USB-C→Ethernet, battery-saving) to any browser](../images/the_lookout_traveler_signal_flow.png)
+
 **Naming — RV-style lineup (Jim, 2026-11-21).** Products are badged like travel
 trailers: a brand line + a model + a maker's signature. **The Lookout** is the line;
 the models are **The Lookout** (the hub) and **The Lookout Traveler** (this, the

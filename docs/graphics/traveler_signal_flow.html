@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  html,body{margin:0;padding:0;background:#ffffff}
+  #stage{width:2400px;height:1180px;background:#ffffff;font-family:"Segoe UI",system-ui,Arial,sans-serif}
+  text{font-family:"Segoe UI",system-ui,Arial,sans-serif}
+</style>
+</head>
+<body>
+<div id="stage">
+<svg id="svg" width="2400" height="1180" viewBox="0 0 2400 1180" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arw" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#15202b"/>
+    </marker>
+    <marker id="arwg" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arwpow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9aa7b4"/>
+    </marker>
+  </defs>
+
+  <!-- title -->
+  <text x="70" y="70" font-size="46" font-weight="700" fill="#15202b">The Lookout Traveler — Signal Flow</text>
+  <text x="72" y="110" font-size="23" fill="#51657a">From a radio and a GPS to a live locked split-screen map on any browser — offline, nothing installed on the viewer.</text>
+
+  <!-- zone labels -->
+  <text x="290" y="168" font-size="20" font-weight="700" letter-spacing="2" fill="#16a34a" text-anchor="middle">INPUTS — OVER USB</text>
+  <text x="1130" y="168" font-size="20" font-weight="700" letter-spacing="2" fill="#16a34a" text-anchor="middle">THE BOX — GL-MT3000 · OpenWrt</text>
+  <text x="2020" y="168" font-size="20" font-weight="700" letter-spacing="2" fill="#16a34a" text-anchor="middle">OUTPUT — Wi-Fi → ANY BROWSER</text>
+
+  <!-- ===== INPUT DEVICES ===== -->
+  <!-- battery -->
+  <g>
+    <rect x="70" y="192" width="430" height="92" rx="12" fill="#ffffff" stroke="#cfd9e3" stroke-width="2"/>
+    <rect x="70" y="192" width="8" height="92" rx="4" fill="#9aa7b4"/>
+    <text x="100" y="233" font-size="25" font-weight="600" fill="#15202b">Battery bank</text>
+    <text x="100" y="263" font-size="18" fill="#51657a">5 V USB power — run it off-grid</text>
+  </g>
+  <!-- gps puck -->
+  <g>
+    <rect x="70" y="312" width="430" height="110" rx="12" fill="#ffffff" stroke="#cfd9e3" stroke-width="2"/>
+    <rect x="70" y="312" width="8" height="110" rx="4" fill="#16a34a"/>
+    <text x="100" y="352" font-size="25" font-weight="600" fill="#15202b">USB GPS puck</text>
+    <text x="100" y="382" font-size="18" fill="#51657a">u-blox serial GPS — &ldquo;you are here&rdquo;</text>
+    <text x="100" y="406" font-size="18" fill="#51657a">(the box plots its own position)</text>
+  </g>
+  <!-- radio -->
+  <g>
+    <rect x="70" y="452" width="430" height="150" rx="12" fill="#ffffff" stroke="#cfd9e3" stroke-width="2"/>
+    <rect x="70" y="452" width="8" height="150" rx="4" fill="#e08600"/>
+    <text x="100" y="492" font-size="25" font-weight="600" fill="#15202b">BK radio</text>
+    <text x="100" y="522" font-size="18" fill="#51657a">BKR 9000 portable — or —</text>
+    <text x="100" y="546" font-size="18" fill="#51657a">KNG-M150 mobile</text>
+    <text x="100" y="578" font-size="18" fill="#51657a">carries the fleet&rsquo;s GPS positions</text>
+  </g>
+  <!-- maps usb -->
+  <g>
+    <rect x="70" y="632" width="430" height="110" rx="12" fill="#ffffff" stroke="#cfd9e3" stroke-width="2"/>
+    <rect x="70" y="632" width="8" height="110" rx="4" fill="#16a34a"/>
+    <text x="100" y="672" font-size="25" font-weight="600" fill="#15202b">USB drive — your maps</text>
+    <text x="100" y="702" font-size="18" fill="#51657a">a hybrid + a street map of the</text>
+    <text x="100" y="726" font-size="18" fill="#51657a">same area (.tpkx / .mbtiles)</text>
+  </g>
+
+  <!-- ===== THE BOX ===== -->
+  <rect x="630" y="186" width="1000" height="640" rx="18" fill="#f7fafc" stroke="#15202b" stroke-width="2.5"/>
+  <rect x="630" y="186" width="1000" height="56" rx="18" fill="#15202b"/>
+  <rect x="630" y="214" width="1000" height="28" fill="#15202b"/>
+  <text x="1130" y="224" font-size="24" font-weight="700" fill="#ffffff" text-anchor="middle">GL-MT3000 · OpenWrt — two tiny Python programs</text>
+
+  <!-- gps_source -->
+  <g>
+    <rect x="690" y="286" width="880" height="96" rx="12" fill="#e9f8ef" stroke="#16a34a" stroke-width="2"/>
+    <text x="712" y="326" font-size="24" font-weight="700" fill="#166534">gps_source.py</text>
+    <text x="712" y="358" font-size="18" fill="#2f6b45">reads the puck (serial NMEA) → the box&rsquo;s own fix</text>
+  </g>
+  <!-- bk_bridge -->
+  <g>
+    <rect x="690" y="420" width="880" height="126" rx="12" fill="#ffffff" stroke="#15202b" stroke-width="2"/>
+    <text x="712" y="460" font-size="24" font-weight="700" fill="#15202b">bk_bridge.py</text>
+    <text x="712" y="492" font-size="18" fill="#51657a">reads the radio over USB, folds in the box&rsquo;s own GPS,</text>
+    <text x="712" y="516" font-size="18" fill="#51657a">and serves one clean position feed on TCP :10110</text>
+  </g>
+  <!-- units_kml -->
+  <g>
+    <rect x="690" y="584" width="880" height="170" rx="12" fill="#ffffff" stroke="#15202b" stroke-width="2"/>
+    <text x="712" y="624" font-size="24" font-weight="700" fill="#15202b">units_kml.py</text>
+    <text x="712" y="656" font-size="18" fill="#51657a">the map server on :8080 — builds the locked split-screen</text>
+    <text x="712" y="680" font-size="18" fill="#51657a">(map.html + Leaflet) over your map tiles, draws the live</text>
+    <text x="712" y="704" font-size="18" fill="#51657a">units and the box&rsquo;s own position centered in both panes</text>
+    <text x="712" y="734" font-size="16" fill="#8a9aa8" font-style="italic">no audio, no map menu — welded to the split-screen</text>
+  </g>
+
+  <!-- ===== OUTPUT ===== -->
+  <rect x="1720" y="470" width="610" height="360" rx="18" fill="#ffffff" stroke="#0ea5c7" stroke-width="2.5"/>
+  <text x="2025" y="516" font-size="25" font-weight="700" fill="#15202b" text-anchor="middle">Any browser</text>
+  <text x="2025" y="546" font-size="18" fill="#51657a" text-anchor="middle">phone · tablet · laptop — nothing installed</text>
+  <!-- mini split-screen -->
+  <g>
+    <rect x="1800" y="576" width="450" height="110" rx="6" fill="#39506a" stroke="#0ea5c7" stroke-width="1.5"/>
+    <text x="1814" y="600" font-size="13" fill="#cfe4ef">hybrid aerial</text>
+    <circle cx="2025" cy="631" r="9" fill="#2fd4e6"/>
+    <circle cx="2095" cy="648" r="7" fill="#35d07f"/>
+    <rect x="1800" y="690" width="450" height="110" rx="6" fill="#e9f3ea" stroke="#0ea5c7" stroke-width="1.5"/>
+    <text x="1814" y="714" font-size="13" fill="#51657a">street map</text>
+    <circle cx="2025" cy="745" r="9" fill="#2fd4e6"/>
+    <circle cx="2095" cy="762" r="7" fill="#35d07f"/>
+  </g>
+
+  <!-- ===== ARROWS ===== -->
+  <!-- battery power (dashed) -->
+  <line x1="500" y1="238" x2="628" y2="214" stroke="#9aa7b4" stroke-width="2.5" stroke-dasharray="7 6" marker-end="url(#arwpow)"/>
+  <text x="508" y="200" font-size="16" fill="#9aa7b4">5 V power</text>
+
+  <!-- gps -> gps_source -->
+  <line x1="500" y1="366" x2="688" y2="334" stroke="#15202b" stroke-width="2.5" marker-end="url(#arw)"/>
+  <text x="508" y="300" font-size="17" fill="#15202b">serial NMEA · /dev/ttyACM0</text>
+
+  <!-- radio -> bk_bridge -->
+  <line x1="500" y1="528" x2="688" y2="486" stroke="#e08600" stroke-width="3" marker-end="url(#arw)"/>
+  <text x="300" y="440" font-size="17" fill="#b36a00" text-anchor="middle">USB RNDIS (usb0)</text>
+  <text x="300" y="462" font-size="15" fill="#b36a00" text-anchor="middle">TCP 10.250.46.6:65535</text>
+
+  <!-- maps -> units_kml -->
+  <line x1="500" y1="686" x2="688" y2="660" stroke="#16a34a" stroke-width="2.5" marker-end="url(#arwg)"/>
+  <text x="512" y="628" font-size="17" fill="#166534">map tiles (read by seek)</text>
+
+  <!-- internal gps_source -> bk_bridge -->
+  <line x1="1130" y1="382" x2="1130" y2="418" stroke="#16a34a" stroke-width="2.5" marker-end="url(#arwg)"/>
+  <text x="1150" y="406" font-size="16" fill="#166534">box&rsquo;s own position (&ldquo;LOOKOUT&rdquo;)</text>
+
+  <!-- internal bk_bridge -> units_kml -->
+  <line x1="1130" y1="546" x2="1130" y2="582" stroke="#15202b" stroke-width="2.5" marker-end="url(#arw)"/>
+  <text x="1150" y="570" font-size="16" fill="#15202b">clean NMEA + self-GPS · TCP :10110</text>
+
+  <!-- units_kml -> browser -->
+  <path d="M1570,660 C1650,660 1660,648 1718,648" fill="none" stroke="#0ea5c7" stroke-width="3" marker-end="url(#arw)"/>
+  <text x="1586" y="604" font-size="18" font-weight="700" fill="#0e7f99">HTTP :8080</text>
+  <text x="1586" y="628" font-size="15" fill="#0e7f99">Wi-Fi · no internet</text>
+
+  <!-- footer note -->
+  <line x1="70" y1="900" x2="2330" y2="900" stroke="#e2e8f0" stroke-width="2"/>
+  <text x="70" y="946" font-size="19" font-weight="700" fill="#15202b">Standard config:</text>
+  <text x="285" y="946" font-size="19" fill="#51657a">Wi-Fi on — the browser joins the box&rsquo;s own Wi-Fi.</text>
+  <text x="70" y="982" font-size="19" font-weight="700" fill="#15202b">Battery-saving config:</text>
+  <text x="358" y="982" font-size="19" fill="#51657a">Wi-Fi off + a USB-C→Ethernet adapter (eth0) — the display plugs in by cable, less power, longer runtime.</text>
+  <text x="70" y="1024" font-size="18" fill="#8a9aa8" font-style="italic">The box&rsquo;s own GPS gives &ldquo;you are here.&rdquo; The radio brings the fleet. Your map tiles ride on the USB drive. Everything is served, nothing is installed on the screen.</text>
+  <text x="70" y="1066" font-size="16" fill="#aeb9c4">The Lookout Traveler · github.com/Jim-dc95811/The-Lookout · MIT · offline by design</text>
+</svg>
+</div>
+<script>
+  // nudge so the render tool can find the fixed-size stage
+  document.title = "Traveler Signal Flow";
+</script>
+</body>
+</html>

@@ -26,6 +26,10 @@ The Lookout above rides in a vehicle or sits on mains power. Its sibling, **the 
 
 **Proven end to end (2026-11-21):** a bare MT3000, set up in one click by **Traveler Manager**, served the locked split-screen to a plain browser with the box's own **LOOKOUT** position on both panes — **and the first live portable-radio fleet unit on the map** — offline, nothing installed on the viewer. The man-packed fleet tracker doing its job. It's a **completely independent product**: a Traveler box carries only Traveler files, a Lookout box only Lookout files, and Traveler Manager shares nothing with Lookout Manager. Have just a Traveler, just a Lookout, or both.
 
+**How the signal flows** — radio + GPS in over USB, two tiny Python programs in the box, a live split-screen map out over Wi-Fi:
+
+![The Lookout Traveler signal flow — a USB GPS puck (serial NMEA), a BK radio (USB RNDIS), a maps USB drive and a battery into a GL-MT3000; inside, gps_source.py reads the puck, bk_bridge.py reads the radio and serves a clean NMEA feed on :10110, units_kml.py serves the locked split-screen map on :8080; out over Wi-Fi to any browser](images/the_lookout_traveler_signal_flow.png)
+
 Everything below is **the fixed Lookout** — the vehicle/mains build with the full toolkit (maps, live units, radio audio in the browser, the Maps menu).
 
 ---
