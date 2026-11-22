@@ -202,6 +202,13 @@ charging while wired, use an adapter with **USB-C PD pass-through**.
 - **Runtime (ballpark — confirm with an inline watt meter):** GL build ≈ 7–9 W for
   the router + the hub's downstream. A ~150 Wh pack ≈ a full shift; ~72 Wh ≈ half;
   ~240 Wh ≈ two shifts. Battery-saving config (Wi-Fi off) extends all of these.
+- **Wi-Fi default: 5 GHz only, low TX power (Jim 2026-11-21).** Fits the single-user,
+  phone-on-your-chest model: less TX current (stacks with the runtime above), a small
+  RF footprint that doesn't step on other gear (the "don't blow out the Wi-Fi" intent),
+  and the cleaner, less-congested band. Trade: 5 GHz has shorter range / worse
+  penetration than 2.4 — a non-issue at arm's length, but flip 2.4 back on if a viewer
+  needs to stand well off **or** the display device is 2.4-only (most phones + the Fire
+  HD 10 do 5 GHz; a cheap old tablet may not).
 - **The RADIO is the limiting battery, not the box (field rule, Jim 2026-11-21).**
   The power bank runs the router + GPS all day with ease; the box outlasts the shift.
   The limit is the **portable radio's own battery** — but the relay radio is
