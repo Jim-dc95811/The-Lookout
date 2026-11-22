@@ -226,7 +226,7 @@ v1.4 adds a Wi-Fi-join QR + a "join + open" two-code card) carries this:
 |---|---|---|
 | **GL-MT3000 (Beryl AX)** | the brain / Wi-Fi + USB host | 512 MB RAM, Wi-Fi 6; runs the same stack as the MT6000 |
 | **Portable radio** — BKR9000 handheld **or** KNG-M150 mobile | the relay (donor radio) | on its own battery; USB = data link (RNDIS), near-zero draw from the box |
-| **Powered USB hub** (SABRENT 4-port) | fans the one router port out to radio + GPS + storage | self-powered, 17 W / 2.5 A input fed from the 5 V rail |
+| **Powered USB hub** (USBGear 4-port, USB 3.2 Gen 1, mountable) *(SABRENT 4-port was the earlier unit; swapped 2026-11-22)* | fans the one router port out to radio + GPS + storage | self-powered, **5 V / 2 A** adapter fed from the rail; **mountable + no per-port switches** — bolt it down (switch-type hubs can be bumped off in the pack and silently drop a device) |
 | **Garmin GPS 18 USB** *(VK172 u-blox tried, dropped 2026-11-21)* | "you are here" | Garmin D800 over libusb — rides `gps_source.py`'s Garmin branch, **same as the fixed Lookout** (the VK172 wouldn't hold a lock). **Puck needs a metal ground plane** — see note below |
 | **PD power bank** | the pack | single 5 V rail; USB-C pigtails feed router + hub |
 | **USB-C→Ethernet adapter** (UGREEN) | battery-saving config only | phone as host → `eth0`; get the PD-passthrough version if charging while wired |
@@ -245,6 +245,17 @@ v1.4 adds a Wi-Fi-join QR + a "join + open" two-code card) carries this:
 > roof-mount performance. (RF-ground-plane wants any conductive metal; a steel plate gives mount + plane
 > at once.)
 
+> **Watch-item — USB 3 (SuperSpeed) RFI near the GPS puck.** Any USB 3 hub in the pack
+> (the USBGear, like the SABRENT before it) is a documented broadband noise source —
+> infamous for desensing **2.4 GHz** (Wi-Fi/BT) and known to reach into **GPS** bands.
+> With hub, radio, and puck packed inches apart in the cooler, worth a sanity check that
+> the hub and its USB-B uplink cable aren't degrading GPS lock or radio RX. The box's
+> **5 GHz-only** Wi-Fi dodges the main 2.4 GHz hit; the **GPS puck** is the thing to watch.
+> Cheap mitigations if it ever shows: shielded/ferrite'd cables, physical separation, and
+> the puck's steel plate doubles as a shield between it and the hub. *(NOT the cause of the
+> earlier stale-GPS event — that was the ground plane, recovered on metal — but keep USB 3
+> RFI in the differential if GPS gets flaky in the pack.)*
+
 ---
 
 ## Power design
@@ -252,13 +263,13 @@ v1.4 adds a Wi-Fi-join QR + a "join + open" two-code card) carries this:
 - **Single 5 V rail.** Buck output and the battery share one node; an on/off switch
   gates that node; the switch output feeds the GL **and everything else**. There are
   **not** dual 5 V rails — one rail, multiple taps.
-- **The hub carries its own power.** It's a *powered* hub (17 W / 2.5 A input), fed
+- **The hub carries its own power.** It's a *powered* hub (5 V / 2 A input), fed
   off the rail via a USB-C pigtail — so the router's one USB port does **data only**
   and never has to source the radio/GPS/drive current. (A hub's "900 mA combined"
   spec note is its *bus-powered* fallback — irrelevant with the adapter in.)
 - **Current budget is nowhere near tight.** Radio is self-powered (USB ≈ 0 draw),
   VK172 ≈ 40 mA, a thumb drive ≈ 150 mA on read — a couple hundred mA against the
-  hub's 2.5 A. The real rail load is the router itself.
+  hub's 2 A. The real rail load is the router itself.
 - **Runtime (ballpark — confirm with an inline watt meter):** GL build ≈ 7–9 W for
   the router + the hub's downstream. A ~150 Wh pack ≈ a full shift; ~72 Wh ≈ half;
   ~240 Wh ≈ two shifts. Battery-saving config (Wi-Fi off) extends all of these.
