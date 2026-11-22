@@ -49,7 +49,7 @@ The fastest way onto the Traveler's live split‑screen is a printed **QR card**
 
 Make the card with the free **Lookout QR Maker**, a separate one‑click Windows tool:
 
-1. **Download it:** [Lookout_QR_Maker_v1.3.zip](https://github.com/Jim-dc95811/The-Lookout/raw/main/Lookout_QR_Maker_v1.3.zip) — Extract All, then double‑click **Make a QR card.bat**.
+1. **Download it:** [Lookout_QR_Maker_v1.4.zip](https://github.com/Jim-dc95811/The-Lookout/raw/main/Lookout_QR_Maker_v1.4.zip) — Extract All, then double‑click **Make a QR card.bat**.
 2. Type the Traveler's map address: **`192.168.8.1:8080`** (the locked split‑screen opens at the box's root).
 3. It makes a print‑ready card (example below). The card always prints the exact address it encodes, so you can check it before printing.
 4. Print it and tape it to the box. One card, every Traveler.

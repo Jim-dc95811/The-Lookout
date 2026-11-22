@@ -204,7 +204,7 @@ The field build has been hardened and live-proven on the router:
 
 ## QR card maker — point, tap, you're on the map (NEW, 2026-11-17)
 
-**⬇️ [Download Lookout QR Maker v1.3](Lookout_QR_Maker_v1.3.zip)** · **📖 [User manual (PDF)](lookout_qr_maker/Lookout%20QR%20Maker.pdf)**
+**⬇️ [Download Lookout QR Maker v1.4](Lookout_QR_Maker_v1.4.zip)** · **📖 [User manual (PDF)](lookout_qr_maker/Lookout%20QR%20Maker.pdf)**
 
 Phones force **https** when you *type* an address, so a crew that types the router's address lands on nothing. A QR code carries the `http://` part explicitly — so a crew member points their phone camera at a printed card, taps the banner, and the live map opens. **No app, no typing, no login, no GIS.** A sticker on the box is the whole onboarding.
 
