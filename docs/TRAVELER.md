@@ -194,6 +194,30 @@ IP65, 802.3at/passive PoE, 200+ clients) Jim already owns.
   do all the RF (one SSID). Same core, three shells: pocket (on-foot), sleeve (rugged),
   truck + Cudy (base).
 
+## Onboarding a crew phone (once per phone, then automatic)
+
+Proven on a Moto G Play, 2026-11-21. A **Lookout QR card** (made by the Lookout QR Maker;
+v1.4 adds a Wi-Fi-join QR + a "join + open" two-code card) carries this:
+
+1. **Scan ① (Wi-Fi join)** → *add* → *connect* to the box's Wi-Fi.
+2. When Android warns **"network has no internet — stay connected?"** → **Yes / Always.**
+   The box has no internet by design; without this, Android drops it and falls back to
+   cellular. This step is what keeps the phone *on* the box.
+3. **Turn on Auto-connect** for that network (Network details screen). From then on the
+   phone silently rejoins The Traveler whenever it's in range — no re-scanning.
+4. **Scan ② (map)** → the split-screen opens at `http://192.168.8.1:8080/` (or bookmark it).
+
+**Landmines (both cost a cycle to find):**
+- **A phone already saved onto the network will NOT act on a join QR** — the scan appears
+  to do nothing (there's no network to "join"). This only bites when *re-testing* on a
+  phone that already joined; a fresh crew phone is fine. Fix for re-test: **Forget the
+  network first**, then scan.
+- **Match the phone's own Wi-Fi-QR field order.** The `WIFI:` spec says field order doesn't
+  matter, but real parsers (the Moto's) only joined when the string matched Android's own
+  **`WIFI:S:<ssid>;T:WPA;P:<pw>;H:false;;`** (SSID first, `H` always present). The QR Maker
+  (v1.4+) emits exactly that — byte-identical to the phone's "Share Wi-Fi" output. "Spec-valid"
+  ≠ "phone-valid."
+
 ---
 
 ## Hardware
