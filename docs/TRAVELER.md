@@ -204,10 +204,11 @@ charging while wired, use an adapter with **USB-C PD pass-through**.
   ~240 Wh ≈ two shifts. Battery-saving config (Wi-Fi off) extends all of these.
 - **The RADIO is the limiting battery, not the box (field rule, Jim 2026-11-21).**
   The power bank runs the router + GPS all day with ease; the box outlasts the shift.
-  What actually dies is the **portable radio's own battery**, drained by its
-  transmitting — and nothing in the Traveler box can extend that. **Advise users to
-  bring a spare radio battery** (or a tail to run the radio off the same pack);
-  otherwise the box will happily chartplot longer than the radio can feed it.
+  The limit is the **portable radio's own battery** — but the relay radio is
+  **RX-only**: seating the USB connector locks out transmit by radio programming
+  (not changeable), so it never TX-drains, just receives. That's gentle enough that
+  **two radio batteries easily cover a full shift.** Advise users to carry a spare
+  radio battery and they're set.
 
 ---
 
