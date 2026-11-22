@@ -51,7 +51,7 @@ The easiest way to get **anyone** onto the live map is a printed **QR card** tap
 
 Make the card with the free **Lookout QR Maker**, a separate one‑click Windows tool:
 
-1. **Download it:** [Lookout_QR_Maker_v1.1.zip](https://github.com/Jim-dc95811/The-Lookout/raw/main/Lookout_QR_Maker_v1.1.zip) — Extract All, then double‑click **Make a QR card.bat**.
+1. **Download it:** [Lookout_QR_Maker_v1.3.zip](https://github.com/Jim-dc95811/The-Lookout/raw/main/Lookout_QR_Maker_v1.3.zip) — Extract All, then double‑click **Make a QR card.bat**.
 2. Type the box's address — just `192.168.8.1` works, or paste a full deep link to one named map.
 3. It makes a print‑ready card (example below). The card always prints the exact address it encodes, so you can check it before printing.
 4. Print it and tape it to the box or the dash. Done.
