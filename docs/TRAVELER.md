@@ -170,6 +170,26 @@ standard Ethernet adapter is adopted as `eth0` natively — the opposite of read
 an RNDIS gadget, which Android can't do (see "What we learned"). If the phone needs
 charging while wired, use an adapter with **USB-C PD pass-through**.
 
+### Base mode (truck + high-power AP, many viewers)
+
+The man-pack bubble scaled up to a whole staging area, for when the truck is on scene
+(Jim 2026-11-21). The Traveler stays the **brain**; a high-power outdoor access point
+becomes the **big antenna**. Proven hardware: a **Cudy AX3000 outdoor AP** (AP3000,
+IP65, 802.3at/passive PoE, 200+ clients) Jim already owns.
+
+- **Wire:** router **LAN port → Ethernet patch cable → Cudy** (the cable rides in a
+  laptop-bag pocket). The Cudy runs off its included PoE injector on truck/inverter
+  power — not battery, but base mode has the truck.
+- **Cudy MUST be a dumb AP** — AP / bridge mode, **its DHCP off** — so the MT3000 stays
+  the single brain (one DHCP authority, the map server at `192.168.8.1:8080`). Leaving
+  the Cudy routing gives double-NAT and moves the map address. One-time config.
+- **The QR card is unchanged:** clients join the Cudy's Wi-Fi but still hit
+  `192.168.8.1:8080` on the MT3000 — the same printed sticker onboards the whole scene.
+- **Two tiers optional:** keep the MT3000's own 5 GHz-low-power radio on for the
+  operator *and* feed the Cudy for the crowd, or kill the MT3000 radio and let the Cudy
+  do all the RF (one SSID). Same core, three shells: pocket (on-foot), sleeve (rugged),
+  truck + Cudy (base).
+
 ---
 
 ## Hardware
