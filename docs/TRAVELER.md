@@ -178,8 +178,12 @@ becomes the **big antenna**. Proven hardware: a **Cudy AX3000 outdoor AP** (AP30
 IP65, 802.3at/passive PoE, 200+ clients) Jim already owns.
 
 - **Wire:** router **LAN port → Ethernet patch cable → Cudy** (the cable rides in a
-  laptop-bag pocket). The Cudy runs off its included PoE injector on truck/inverter
-  power — not battery, but base mode has the truck.
+  laptop-bag pocket).
+- **Power the Cudy DC-native, no inverter (proven on Jim's old OpenCPN AVL rig).** The
+  Cudy is 802.3at / passive PoE; feed it with a **12 V → 48 V boost converter** off
+  vehicle 12 V (cigarette plug) **or solar/battery**, into the passive PoE injector over
+  CAT5. This is the exact field-PoE leg from the OpenCPN backhaul diagram — DC straight
+  through, less loss than an AC inverter, and battery/solar-capable if the truck's away.
 - **Cudy MUST be a dumb AP** — AP / bridge mode, **its DHCP off** — so the MT3000 stays
   the single brain (one DHCP authority, the map server at `192.168.8.1:8080`). Leaving
   the Cudy routing gives double-NAT and moves the map address. One-time config.
