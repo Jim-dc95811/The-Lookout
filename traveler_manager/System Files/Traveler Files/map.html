@@ -9,9 +9,6 @@ html,body{height:100%;background:#0b0f14;color:#e6eef6;font-family:-apple-system
 .pane{position:relative;flex:1 1 50%;min-width:0;min-height:0}
 .pane + .pane{border-top:2px solid #000}
 .lmap{position:absolute;inset:0;background:#0b0f14}
-.plabel{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));left:8px;z-index:600;
-  background:rgba(11,15,20,.78);color:#bfe0ff;font-weight:700;font-size:13px;letter-spacing:.4px;
-  padding:3px 9px;border-radius:6px;pointer-events:none;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #recenter{position:fixed;z-index:650;bottom:calc(18px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);
   background:#17344a;color:#eaf4ff;border:1px solid #3a6b93;border-radius:22px;padding:9px 18px;font-size:14px;font-weight:700;
   cursor:pointer;display:none;box-shadow:0 6px 18px rgba(0,0,0,.45)}
@@ -29,8 +26,8 @@ html,body{height:100%;background:#0b0f14;color:#e6eef6;font-family:-apple-system
 </style></head><body>
 <div id="banner"></div>
 <div id="wrap">
-  <div class="pane"><div id="mapA" class="lmap"></div><div class="plabel" id="labA">top</div></div>
-  <div class="pane"><div id="mapB" class="lmap"></div><div class="plabel" id="labB">bottom</div></div>
+  <div class="pane"><div id="mapA" class="lmap"></div></div>
+  <div class="pane"><div id="mapB" class="lmap"></div></div>
 </div>
 <button id="recenter">&#9678; Re-center on me</button>
 <script src="/leaflet.js"></script>
@@ -116,8 +113,7 @@ function setup(){
     var st = maps.find(function(m){ return /street|osm|road/.test(m.name.toLowerCase()); });
     var A, B;
     if(hy && st && hy!==st){ A=hy; B=st; } else { A=maps[0]; B=maps[1]; }
-    document.getElementById("labA").textContent=A.name;
-    document.getElementById("labB").textContent=B.name;
+    // (map-name chips removed on purpose — the person who loaded the maps knows what they are)
     // pull each pane's authoritative meta (bounds + zoom), then tiles + the extent check
     Promise.all([
       fetch(A.base.replace(/\/+$/,"")+"/meta.json",{cache:"no-store"}).then(function(r){return r.json()}),
@@ -131,7 +127,7 @@ function setup(){
       } else {
         var zmsg = (mA.minzoom!==mB.minzoom || mA.maxzoom!==mB.maxzoom)
           ? " (zoom ranges differ - still synced)" : "";
-        banner("ok","✓ Matched pair - "+A.name+" | "+B.name+zmsg);
+        banner("ok","✓ Matched pair"+zmsg);
       }
       // frame to the shared extent until "you are here" shows up
       if(!userMoved && !haveMe){
