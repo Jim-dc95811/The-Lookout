@@ -203,11 +203,23 @@ IP65, 802.3at/passive PoE, 200+ clients) Jim already owns.
 | **GL-MT3000 (Beryl AX)** | the brain / Wi-Fi + USB host | 512 MB RAM, Wi-Fi 6; runs the same stack as the MT6000 |
 | **Portable radio** — BKR9000 handheld **or** KNG-M150 mobile | the relay (donor radio) | on its own battery; USB = data link (RNDIS), near-zero draw from the box |
 | **Powered USB hub** (SABRENT 4-port) | fans the one router port out to radio + GPS + storage | self-powered, 17 W / 2.5 A input fed from the 5 V rail |
-| **Garmin GPS 18 USB** *(VK172 u-blox tried, dropped 2026-11-21)* | "you are here" | Garmin D800 over libusb — rides `gps_source.py`'s Garmin branch, **same as the fixed Lookout** (the VK172 wouldn't hold a lock) |
+| **Garmin GPS 18 USB** *(VK172 u-blox tried, dropped 2026-11-21)* | "you are here" | Garmin D800 over libusb — rides `gps_source.py`'s Garmin branch, **same as the fixed Lookout** (the VK172 wouldn't hold a lock). **Puck needs a metal ground plane** — see note below |
 | **PD power bank** | the pack | single 5 V rail; USB-C pigtails feed router + hub |
 | **USB-C→Ethernet adapter** (UGREEN) | battery-saving config only | phone as host → `eth0`; get the PD-passthrough version if charging while wired |
 | **Thumb drive(s)** | map / content storage | optional two-drive split: basemaps vs. situational (see `IDEAS.md`) |
 | **Cudy AX3000 AP** (optional) | Wi-Fi range boost | run in **AP / bridge** mode, not router mode |
+
+> **GPS puck needs a metal ground plane — design requirement, not a nicety (Jim 2026-11-21, observed live).**
+> The magnetic puck does double duty off a steel base: the magnet grabs *ferrous* steel to mount,
+> **and** the patch antenna uses the metal as an **RF ground plane**. Lift it onto wood/plastic/foam and
+> you lose the ground plane — the radiation pattern degrades, multipath climbs, effective gain drops →
+> slower lock, fewer sats held, the fix goes **stale** (seen live: GPS stale while the radio stayed fresh,
+> recovered the instant the puck went back on metal — not a socket/keepalive bug; the self-GPS stale
+> detector correctly reported a genuine signal loss). **Implication for the man-pack case:** a puck sitting
+> in a foam cavity has no ground plane and will underperform permanently. **Fix: a small steel disc under
+> the puck's foam cavity** — restores both the magnetic mount and the ground plane in one piece, back to
+> roof-mount performance. (RF-ground-plane wants any conductive metal; a steel plate gives mount + plane
+> at once.)
 
 ---
 
